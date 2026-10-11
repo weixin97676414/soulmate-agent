@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "my-agent-core"
+version = "0.0.1"
+description = "自研智能体框架核心（Agent Core）—— 面向办公职场与日常生活的轻量智能体框架"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.27",
+    "pydantic>=2.7",
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.30",
+    # FastAPI 的 UploadFile / File 依赖它解析 multipart 表单
+    "python-multipart>=0.0.9",
+    # 浏览器自动化（用系统 Edge/Chrome，不打包 Chromium）
+    "playwright==1.63.0",
+    # 语音唤醒词匹配按**拼音**比（同音错字是语音识别的常态，见 routes/voice.py）。
+    # ⚠️ 这条依赖曾漏声明：开发环境没装时唤醒直接 ModuleNotFoundError，
+    # 而它在函数内部导入，报错要等到用户第一次喊唤醒词才出现。
+    "pypinyin>=0.55",
+]
+
+[project.optional-dependencies]
+# 办公 Skill 依赖。
+#
+# 刻意不引入 pandas 与 matplotlib：
+# - Excel 的读写与分组聚合用 openpyxl + 标准库即可完成；
+# - 图表用纯 Python 生成 SVG（my_agent/utils/chart.py）。
+# 两者都是 PyInstaller 打包体积与启动时间的大头（见开发计划风险表）。
+office = [
+    "openpyxl>=3.1",
+    "python-docx>=1.1",
+    "pypdf>=4.2",
+]
+# 生活 Skill 依赖：提醒调度用 asyncio 自建，天气走 HTTP，均无需额外依赖
+life = []
+# MCP 集成（官方 Python SDK）。可选依赖：未安装时应用照常运行，
+# 「MCP 服务」页签会提示需要安装哪个 extra。
+mcp = ["mcp>=2.2"]
+# 长期记忆（向量检索）。**刻意做成可选依赖**：
+# chromadb 实测裸装约 265 MB（kubernetes 74 + rust 绑定 60.5 + onnxruntime 44
+# + numpy 51 + grpcio/huggingface 等），装进安装包会让体积从 135 MB 涨到 300 MB 量级，
+# 直接击穿 ≤250MB 的交付预算。未启用时相关技能会给出启用说明，而不是报 ImportError。
+memory = ["chromadb>=1.0"]
+# 开发依赖
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "respx>=0.21", "ruff>=0.5"]
+
+[project.scripts]
+agent-core = "my_agent.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# ⚠️ `resources/` 整棵不参与 lint（2026-10-07 加出厂技能时发现）：
+# 那里装的是**第三方技能包**，含它们自带的 Python 脚本（有的一千多行、风格各异）。
+# 它们随包分发、但**不是我们的代码** —— 扫进来会当场多出三千多条 F401/E402，
+# 把真正该看的告警淹掉。这些脚本要跑也是在用户机器上按技能说明跑，
+# 不经过我们的 lint 与测试。
+extend-exclude = ["src/my_agent/resources"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "live: 需要真实模型或网络，默认跳过",
+]

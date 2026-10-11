@@ -1,0 +1,10 @@
+{
+  "meta": {"desc": "商品档案 schema（深度感知·外延自我）。每次生成沉淀，二次使用更贴偏好。", "version": "2.0.0"},
+  "fields": {
+    "used_count": "累计生成次数",
+    "category_pref": "品类偏好分布，如 {服饰: 3, 数码: 1}",
+    "tone_pref": "平台语气偏好分布，如 {taobao: 2, douyin: 1}",
+    "products": "历史生成过的商品标题计数"
+  },
+  "evolution": "沉淀 ≥3 个个性化字段（category_pref/tone_pref/products）。二次使用时：按历史品类与平台语气偏好自动择模板、推卖点风格，数据越用越厚，迁移成本越高。"
+}

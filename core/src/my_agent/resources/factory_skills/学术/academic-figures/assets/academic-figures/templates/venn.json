@@ -1,0 +1,52 @@
+{
+  "_chart_type": "venn",
+  "_command": "python3 scripts/gen_figure.py -t venn -d templates/venn.json -o venn.png",
+  "sets": {
+    "基因组A（WES）": [
+      "TP53",
+      "BRCA1",
+      "EGFR",
+      "MYC",
+      "KRAS",
+      "PTEN",
+      "NRAS",
+      "BRAF",
+      "PIK3CA",
+      "ERBB2"
+    ],
+    "基因组B（RNA-seq）": [
+      "TP53",
+      "EGFR",
+      "ALK",
+      "ROS1",
+      "MET",
+      "BRAF",
+      "KRAS",
+      "RET",
+      "NTRK1",
+      "FGFR2",
+      "ERBB2"
+    ],
+    "基因组C（甲基化）": [
+      "TP53",
+      "MYC",
+      "ALK",
+      "NRAS",
+      "BRAF",
+      "CDKN2A",
+      "MGMT",
+      "KRAS"
+    ],
+    "基因组D（蛋白组）": [
+      "TP53",
+      "EGFR",
+      "MYC",
+      "PTEN",
+      "AKT1",
+      "MTOR",
+      "KRAS",
+      "ERBB2",
+      "ALK"
+    ]
+  }
+}

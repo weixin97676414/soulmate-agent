@@ -1,0 +1,18 @@
+{
+  "version": "1.0.0",
+  "default_theme": "auto",
+  "default_mode": "safe",
+  "output_dir": "./wechat-output",
+  "preview": {
+    "enabled": true,
+    "auto_open": false
+  },
+  "copy_endpoint": {
+    "enabled": false,
+    "url": "",
+    "timeout_seconds": 20
+  },
+  "assets": {
+    "copy_local_images": true
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "_comment": "知乎数据抓取配置文件 - 在此填入你的知乎 Cookie",
+  "cookie": {},
+  "auth": {
+    "_comment": "Cookie 过期后会自动重新提取，无需手动维护",
+    "priority": ["file_cookie", "browser_profile", "fallback_source"]
+  },
+  "fallbacks": [
+    {
+      "name": "zhihu-hot-hub",
+      "url": "https://raw.githubusercontent.com/snaildev/zhihu-hot-hub/master/data/zhihu-hot.json",
+      "type": "json",
+      "priority": 1
+    },
+    {
+      "name": "zhihu-hot-questions",
+      "url": "https://api.zhihu.com/topstory/hot-lists/total?limit=50&reverse_order=0",
+      "type": "json_api",
+      "priority": 2
+    }
+  ],
+  "rate_limit_ms": 2000
+}

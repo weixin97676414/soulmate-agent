@@ -1,0 +1,1128 @@
+@import 'tailwindcss';
+
+/* 深色模式用 class 控制，而不是跟随系统 —— 用户可以手动切换 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------ *
+ * 原生下拉（<select>）展开后的选项
+ *
+ * ⚠️ 这一条是**必需的**，不是美化：展开的选项列表由 Chromium **原生绘制**，
+ * 完全不受 Tailwind 类控制（`<Select>` 上那些 `bg-*` 只作用于收起时的那个框）。
+ * 不管的话它会用系统默认底色 —— 在夜间皮肤上就是一片**与主色调无关的灰**，
+ * 用户反馈"所有下拉选单背景是灰色，希望跟随 UI 主色"。
+ *
+ * 用 `--app-elevated`（浮层底）而不是 `--app-panel`：下拉是**浮在最上层**的东西，
+ * 该比它下面那层面板亮一档，否则弹出来会像"挖了个洞"。主色则由 `accent-color`
+ * 提供给选中项的高亮（Chrome 支持）。
+ * ------------------------------------------------------------------ */
+option {
+  background-color: var(--app-elevated);
+  color: var(--app-ink);
+}
+
+:root {
+  /* 让浏览器自绘的控件（下拉、滚动条、日期选择器）按深浅选对基调；
+     没有它，夜间皮肤下弹出的原生控件会是浅色的。 */
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------ *
+ * 设计令牌（Relation Buddy 办公简洁风）
+ *
+ * 用 `@theme inline` + CSS 变量：Tailwind 生成的工具类会直接引用
+ * var(--app-*)，这样切换 .dark 时整站配色即时生效，无需重新构建。
+ * ------------------------------------------------------------------ */
+@theme inline {
+  --color-canvas: var(--app-canvas);
+  --color-panel: var(--app-panel);
+  /* 列表 / 侧栏再压一档（混了品牌色），与面板拉开层次 */
+  --color-panel-sunken: var(--app-panel-sunken);
+  --color-elevated: var(--app-elevated);
+  /* 对话正文区用的**不透明**底色：有壁纸时也不透出照片（见 --app-chat-surface） */
+  --color-chat-surface: var(--app-chat-surface);
+  --color-line: var(--app-line);
+  --color-line-soft: var(--app-line-soft);
+  --color-ink: var(--app-ink);
+  --color-ink-soft: var(--app-ink-soft);
+  --color-ink-faint: var(--app-ink-faint);
+  --color-brand: var(--app-brand);
+  --color-brand-soft: var(--app-brand-soft);
+  --color-success: var(--app-success);
+  --color-success-soft: var(--app-success-soft);
+  --color-warning: var(--app-warning);
+  --color-warning-soft: var(--app-warning-soft);
+  --color-danger: var(--app-danger);
+  --color-danger-soft: var(--app-danger-soft);
+  --color-hover: var(--app-hover);
+
+  --radius-card: 10px;
+  --radius-control: 8px;
+
+  --font-sans:
+    'Microsoft YaHei UI', 'Microsoft YaHei', 'Segoe UI', system-ui, -apple-system,
+    'PingFang SC', sans-serif;
+  --font-mono: 'Cascadia Code', 'JetBrains Mono', Consolas, 'Courier New', monospace;
+}
+
+/* ------------------------------------------------------------------ *
+ * 皮肤
+ *
+ * 每一套皮肤都定义 **-solid 后缀**的三块底色（画布 / 面板 / 浮层），
+ * 再由下面统一映射成 --app-canvas / --app-panel / --app-elevated。
+ *
+ * **为什么要绕一层 -solid**：因为"用户上传壁纸"时这三块要变成半透明的，
+ * 让壁纸透出来。如果直接写死 --app-canvas，半透明版本就得再抄一遍全部
+ * 皮肤的色值（两套必然长歪）。绕一层之后，透明化只有**一处**规则。
+ *
+ * 切换靠 <html data-theme="..."> —— 不用 class，是为了让"皮肤"和
+ * "深色/浅色"这两件事收在同一个属性上，避免两套开关互相打架。
+ * ------------------------------------------------------------------ */
+:root,
+[data-theme='light'] {
+  --app-canvas-solid: #ffffff;
+  --app-panel-solid: #f7f8fa;
+  --app-elevated-solid: #ffffff;
+  --app-line: #e5e7eb;
+  --app-line-soft: #eef0f3;
+  --app-ink: #1f2329;
+  --app-ink-soft: #646a73;
+  --app-ink-faint: #8f959e;
+  --app-brand: #2563eb;
+  --app-brand-soft: #eff4ff;
+  --app-success: #16a34a;
+  --app-success-soft: #ecfdf3;
+  --app-warning: #d97706;
+  --app-warning-soft: #fff7ed;
+  --app-danger: #dc2626;
+  --app-danger-soft: #fef2f2;
+  --app-hover: #f2f3f5;
+  --app-scroll-thumb: #d6d9de;
+}
+
+/* 夜间。保留 .dark 这个别名：老的深/浅判断与自定义 variant 还在用它
+ *
+ * ⚠️⚠️ 2026-10-08（用户："极光亮部更亮一点、暗部再稍微暗一点"+"我们夜间有 7 套，你都改掉啊"）：
+ * **夜间那 7 套（dark / plum / forest / ocean / pine / charcoal / deepnight）一起调的**，
+ * 用的是同一条规则，改的时候也是同一轮（各自的两段：令牌块 + 文件后面极光段）：
+ *
+ *   · 暗部：画布 / 面板的**相对亮度压到原来的约 80%**（逐通道缩放取整）；
+ *   · 亮部：极光层 `--app-aurora-opacity` **+0.08（上限 0.98）**、
+ *           三束光 alpha **× 1.3**（两位小数）。
+ *
+ * ⚠️ 改的是"底"和"光"：**文字色 / 边框 / 悬停 / 浮层底一律没动** ——
+ * 暗底 + 原来的浅字本来就是变好读，动它们只会把已经调好的层次打乱（实测正文对比度是上升的）。
+ * ⚠️ 光的颜色也不改（`--app-aurora-1` 就是各家品牌色）：只调 alpha，改色相会让极光与按钮/选中态对不上。
+ *
+ * ⚠️ 画布色是**三处共用的口径**，改一套要同时改三处，漏一处就"预览色不对 / 启动闪一下旧底色"：
+ *   · 本文件该皮肤的 `--app-canvas-solid`
+ *   · `desktop/electron/main.ts` 的 `WINDOW_BACKGROUNDS.<皮肤>`
+ *   · `AppearanceSettings.tsx` 里该皮肤那条的 `canvas`
+ *
+ * 改前快照与**一键恢复**（双击 `一键恢复夜间UI.cmd`）：
+ * `D:\win版客户端开发\源码备份\04-夜间UI皮肤备份\` —— 快照是 7 套**全都还没改**时的原文。 */
+[data-theme='dark'],
+.dark {
+  --app-canvas-solid: #16171a;
+  --app-panel-solid: #111214;
+  --app-elevated-solid: #232529;
+  --app-line: #2a2c30;
+  --app-line-soft: #232529;
+  --app-ink: #e8e8ea;
+  --app-ink-soft: #9aa0a6;
+  --app-ink-faint: #6b7075;
+  --app-brand: #4d84f5;
+  --app-brand-soft: #1e2635;
+  --app-success: #34d399;
+  --app-success-soft: #132a21;
+  --app-warning: #fbbf24;
+  --app-warning-soft: #2a2113;
+  --app-danger: #f87171;
+  --app-danger-soft: #2b1a1a;
+  --app-hover: #26282c;
+  --app-scroll-thumb: #3a3d42;
+}
+
+/* 暖阳：米色纸感，长时间看不刺眼 */
+[data-theme='warm'] {
+  --app-canvas-solid: #fdf8f1;
+  --app-panel-solid: #f7efe3;
+  --app-elevated-solid: #fffdf9;
+  --app-line: #ece0d0;
+  --app-line-soft: #f3eadc;
+  --app-ink: #3a2e21;
+  --app-ink-soft: #7a6a56;
+  --app-ink-faint: #a2907c;
+  --app-brand: #c2410c;
+  --app-brand-soft: #fdeee2;
+  --app-success: #4d7c0f;
+  --app-success-soft: #f0f7e6;
+  --app-warning: #b45309;
+  --app-warning-soft: #fdf0dc;
+  --app-danger: #b91c1c;
+  --app-danger-soft: #fbe9e9;
+  --app-hover: #f2e8da;
+  --app-scroll-thumb: #ddcdb8;
+}
+
+/* 森野：低饱和深绿 */
+[data-theme='forest'] {
+  --app-canvas-solid: #0f1512;
+  --app-panel-solid: #0c100d;
+  --app-elevated-solid: #1b211c;
+  --app-line: #232b25;
+  --app-line-soft: #1b211c;
+  --app-ink: #dfe6df;
+  --app-ink-soft: #9aa79c;
+  --app-ink-faint: #6d7a70;
+  --app-brand: #34d399;
+  --app-brand-soft: #14251d;
+  --app-success: #4ade80;
+  --app-success-soft: #12261a;
+  --app-warning: #fbbf24;
+  --app-warning-soft: #26200f;
+  --app-danger: #f87171;
+  --app-danger-soft: #2a1515;
+  --app-hover: #1a211c;
+  --app-scroll-thumb: #313a33;
+}
+
+/* 深海：冷调深蓝 */
+[data-theme='ocean'] {
+  --app-canvas-solid: #0d131b;
+  --app-panel-solid: #090e15;
+  --app-elevated-solid: #17202c;
+  --app-line: #1f2a38;
+  --app-line-soft: #17202c;
+  --app-ink: #dce6f2;
+  --app-ink-soft: #93a3b8;
+  --app-ink-faint: #66748a;
+  --app-brand: #38bdf8;
+  --app-brand-soft: #10263a;
+  --app-success: #34d399;
+  --app-success-soft: #102620;
+  --app-warning: #fbbf24;
+  --app-warning-soft: #26200f;
+  --app-danger: #f87171;
+  --app-danger-soft: #2a1515;
+  --app-hover: #16202b;
+  --app-scroll-thumb: #2c3a4c;
+}
+
+/* 樱粉：浅色粉调 */
+[data-theme='sakura'] {
+  --app-canvas-solid: #fffafc;
+  --app-panel-solid: #fdf2f6;
+  --app-elevated-solid: #ffffff;
+  --app-line: #f3dfe8;
+  --app-line-soft: #f8ecf2;
+  --app-ink: #3b2833;
+  --app-ink-soft: #7d6472;
+  --app-ink-faint: #a8909c;
+  --app-brand: #db2777;
+  --app-brand-soft: #fdeef5;
+  --app-success: #16a34a;
+  --app-success-soft: #ecfdf3;
+  --app-warning: #d97706;
+  --app-warning-soft: #fff7ed;
+  --app-danger: #dc2626;
+  --app-danger-soft: #fef2f2;
+  --app-hover: #f9eaf1;
+  --app-scroll-thumb: #e6cfdc;
+}
+
+/* 薄荷：浅绿清新（浅色组） */
+[data-theme='mint'] {
+  --app-canvas-solid: #f7fdfa;
+  --app-panel-solid: #eafaf3;
+  --app-elevated-solid: #ffffff;
+  --app-line: #d6ece1;
+  --app-line-soft: #e5f5ec;
+  --app-ink: #1f3329;
+  --app-ink-soft: #5f7a6c;
+  --app-ink-faint: #8aa595;
+  --app-brand: #059669;
+  --app-brand-soft: #e3f7ee;
+  --app-success: #16a34a;
+  --app-success-soft: #ecfdf3;
+  --app-warning: #d97706;
+  --app-warning-soft: #fff7ed;
+  --app-danger: #dc2626;
+  --app-danger-soft: #fef2f2;
+  --app-hover: #e8f4ee;
+  --app-scroll-thumb: #c3ded1;
+}
+
+/* 天空：浅蓝通透（浅色组） */
+[data-theme='sky'] {
+  --app-canvas-solid: #f7fbff;
+  --app-panel-solid: #ecf5fd;
+  --app-elevated-solid: #ffffff;
+  --app-line: #d9e8f5;
+  --app-line-soft: #e7f1fa;
+  --app-ink: #1e2c3a;
+  --app-ink-soft: #5c7185;
+  --app-ink-faint: #8ba0b4;
+  --app-brand: #0284c7;
+  --app-brand-soft: #e3f2fc;
+  --app-success: #16a34a;
+  --app-success-soft: #ecfdf3;
+  --app-warning: #d97706;
+  --app-warning-soft: #fff7ed;
+  --app-danger: #dc2626;
+  --app-danger-soft: #fef2f2;
+  --app-hover: #e8f2fa;
+  --app-scroll-thumb: #c4dbee;
+}
+
+/* 杏黄：暖米带一点橙（浅色组） */
+[data-theme='apricot'] {
+  --app-canvas-solid: #fffdf6;
+  --app-panel-solid: #fdf3e0;
+  --app-elevated-solid: #ffffff;
+  --app-line: #f0e2c5;
+  --app-line-soft: #f7eeda;
+  --app-ink: #3a2e18;
+  --app-ink-soft: #7c6b4a;
+  --app-ink-faint: #a8977a;
+  --app-brand: #d97706;
+  --app-brand-soft: #fdf1dc;
+  --app-success: #4d7c0f;
+  --app-success-soft: #f0f7e6;
+  --app-warning: #b45309;
+  --app-warning-soft: #fdf0dc;
+  --app-danger: #b91c1c;
+  --app-danger-soft: #fbe9e9;
+  --app-hover: #f8ecd9;
+  --app-scroll-thumb: #e5d5b5;
+}
+
+/* 暮紫：低饱和深紫（深色组） */
+[data-theme='plum'] {
+  --app-canvas-solid: #14101b;
+  --app-panel-solid: #0f0c14;
+  --app-elevated-solid: #201a2b;
+  --app-line: #2b2337;
+  --app-line-soft: #201a2b;
+  --app-ink: #e6dff0;
+  --app-ink-soft: #a094b5;
+  --app-ink-faint: #6f6483;
+  --app-brand: #a78bfa;
+  --app-brand-soft: #241c36;
+  --app-success: #34d399;
+  --app-success-soft: #132a21;
+  --app-warning: #fbbf24;
+  --app-warning-soft: #2a2113;
+  --app-danger: #f87171;
+  --app-danger-soft: #2b1a1a;
+  --app-hover: #1e1827;
+  --app-scroll-thumb: #372d47;
+}
+
+/* 墨绿：比森野更沉的绿（深色组） */
+[data-theme='pine'] {
+  --app-canvas-solid: #0e1311;
+  --app-panel-solid: #0a0e0d;
+  --app-elevated-solid: #182019;
+  --app-line: #222c24;
+  --app-line-soft: #182019;
+  --app-ink: #e0e8e1;
+  --app-ink-soft: #98a89b;
+  --app-ink-faint: #6a7a6d;
+  --app-brand: #2dd4bf;
+  --app-brand-soft: #0f2a24;
+  --app-success: #4ade80;
+  --app-success-soft: #12261a;
+  --app-warning: #fbbf24;
+  --app-warning-soft: #26200f;
+  --app-danger: #f87171;
+  --app-danger-soft: #2a1515;
+  --app-hover: #171e19;
+  --app-scroll-thumb: #2c382e;
+}
+
+/* 炭黑：纯灰阶 + 冷灰点缀，最克制的深色（深色组） */
+[data-theme='charcoal'] {
+  --app-canvas-solid: #141414;
+  --app-panel-solid: #0f0f0f;
+  --app-elevated-solid: #202020;
+  --app-line: #2b2b2b;
+  --app-line-soft: #202020;
+  --app-ink: #e9e9e9;
+  --app-ink-soft: #a3a3a3;
+  --app-ink-faint: #737373;
+  --app-brand: #94a3b8;
+  --app-brand-soft: #1e2229;
+  --app-success: #34d399;
+  --app-success-soft: #132a21;
+  --app-warning: #fbbf24;
+  --app-warning-soft: #2a2113;
+  --app-danger: #f87171;
+  --app-danger-soft: #2b1a1a;
+  --app-hover: #1d1d1d;
+  --app-scroll-thumb: #333333;
+}
+/* ------------------------------------------------------------------ *
+ * 新增皮肤：晨蓝 / 深空
+ *
+ * 与上面 12 套并列，取自「UI 与鼠标指针设计说明」定稿的 14 套体系。
+ * ------------------------------------------------------------------ */
+/* 晨蓝：通透的蓝白（日间组） */
+[data-theme='deepday'] {
+  --app-canvas-solid: #f4f7ff;
+  --app-panel-solid: #ffffff;
+  --app-elevated-solid: #ffffff;
+  --app-line: #e2e7f5;
+  --app-line-soft: #eef1fa;
+  --app-ink: #101725;
+  --app-ink-soft: #5b6478;
+  --app-ink-faint: #8b93a7;
+  --app-brand: #4d6bfe;
+  --app-brand-soft: #eef1ff;
+  --app-success: #0f9d76;
+  --app-success-soft: #e8f8f2;
+  --app-warning: #d97706;
+  --app-warning-soft: #fff7ed;
+  --app-danger: #e5484d;
+  --app-danger-soft: #fff1f1;
+  --app-hover: rgb(77 107 254 / 0.08);
+  --app-scroll-thumb: #cdd5ea;
+  --app-aurora-opacity: 0.85;
+  --app-aurora-1: rgb(77 107 254 / 0.47);
+  --app-aurora-2: rgb(139 92 246 / 0.32);
+  --app-aurora-3: rgb(56 189 248 / 0.32);
+}
+
+/* 深空：低亮的深空蓝（夜间组） */
+[data-theme='deepnight'] {
+  --app-canvas-solid: #06080f;
+  --app-panel-solid: #0e101b;
+  --app-elevated-solid: #1a1e2e;
+  --app-line: #242b44;
+  --app-line-soft: #1b2136;
+  --app-ink: #e9edfa;
+  --app-ink-soft: #98a2bd;
+  --app-ink-faint: #6b7490;
+  --app-brand: #7b93ff;
+  --app-brand-soft: #17203c;
+  --app-success: #34d399;
+  --app-success-soft: #10261f;
+  --app-warning: #fbbf24;
+  --app-warning-soft: #2a2113;
+  --app-danger: #f87171;
+  --app-danger-soft: #2b1a1a;
+  --app-hover: rgb(123 147 255 / 0.12);
+  --app-scroll-thumb: #39415c;
+  --app-aurora-opacity: 0.98;
+  --app-aurora-1: rgb(77 107 254 / 0.52);
+  --app-aurora-2: rgb(139 92 246 / 0.42);
+  --app-aurora-3: rgb(34 211 238 / 0.21);
+}
+
+/* ------------------------------------------------------------------ *
+ * 极光（动态背景）：每套皮肤三团光 + 整体不透明度
+ *
+ * 与皮肤色值拆开写：极光是**叠在皮肤之上的装饰**，塞进每套皮肤里会让
+ * 色值表长到看不清主色。同一选择器在后面出现时声明生效，此处即最终值。
+ * ------------------------------------------------------------------ */
+[data-theme='light'] {
+  --app-aurora-opacity: 0.8;
+  --app-aurora-1: rgb(37 99 235 / 0.44);
+  --app-aurora-2: rgb(124 58 237 / 0.31);
+  --app-aurora-3: rgb(14 165 233 / 0.35);
+}
+[data-theme='dark'] {
+  /* ⚠️ 夜间 7 套一起调的（规则见上面「夜间」令牌段那段注释）：opacity +0.08（上限 0.98）、
+     三束光 alpha ×1.3、颜色一律不动。这里是其中一套 —— 改规则要 7 套一起改。 */
+  --app-aurora-opacity: 0.98;
+  --app-aurora-1: rgb(77 132 245 / 0.42);
+  --app-aurora-2: rgb(124 58 237 / 0.31);
+  --app-aurora-3: rgb(34 211 238 / 0.23);
+}
+[data-theme='warm'] {
+  --app-aurora-opacity: 0.8;
+  --app-aurora-1: rgb(234 88 12 / 0.4);
+  --app-aurora-2: rgb(217 119 6 / 0.35);
+  --app-aurora-3: rgb(225 29 72 / 0.22);
+}
+[data-theme='forest'] {
+  --app-aurora-opacity: 0.98;
+  --app-aurora-1: rgb(52 211 153 / 0.39);
+  --app-aurora-2: rgb(45 212 191 / 0.29);
+  --app-aurora-3: rgb(74 222 128 / 0.21);
+}
+[data-theme='ocean'] {
+  --app-aurora-opacity: 0.98;
+  --app-aurora-1: rgb(56 189 248 / 0.42);
+  --app-aurora-2: rgb(59 130 246 / 0.34);
+  --app-aurora-3: rgb(129 140 248 / 0.21);
+}
+[data-theme='sakura'] {
+  --app-aurora-opacity: 0.8;
+  --app-aurora-1: rgb(219 39 119 / 0.4);
+  --app-aurora-2: rgb(192 38 211 / 0.31);
+  --app-aurora-3: rgb(139 92 246 / 0.26);
+}
+[data-theme='mint'] {
+  --app-aurora-opacity: 0.8;
+  --app-aurora-1: rgb(5 150 105 / 0.4);
+  --app-aurora-2: rgb(13 148 136 / 0.31);
+  --app-aurora-3: rgb(101 163 13 / 0.26);
+}
+[data-theme='sky'] {
+  --app-aurora-opacity: 0.8;
+  --app-aurora-1: rgb(2 132 199 / 0.44);
+  --app-aurora-2: rgb(6 182 212 / 0.31);
+  --app-aurora-3: rgb(99 102 241 / 0.26);
+}
+[data-theme='apricot'] {
+  --app-aurora-opacity: 0.8;
+  --app-aurora-1: rgb(217 119 6 / 0.4);
+  --app-aurora-2: rgb(234 88 12 / 0.31);
+  --app-aurora-3: rgb(244 63 94 / 0.22);
+}
+[data-theme='plum'] {
+  --app-aurora-opacity: 0.98;
+  --app-aurora-1: rgb(167 139 250 / 0.42);
+  --app-aurora-2: rgb(217 70 239 / 0.26);
+  --app-aurora-3: rgb(99 102 241 / 0.26);
+}
+[data-theme='pine'] {
+  --app-aurora-opacity: 0.98;
+  --app-aurora-1: rgb(45 212 191 / 0.36);
+  --app-aurora-2: rgb(16 185 129 / 0.29);
+  --app-aurora-3: rgb(34 211 238 / 0.18);
+}
+[data-theme='charcoal'] {
+  --app-aurora-opacity: 0.93;
+  --app-aurora-1: rgb(148 163 184 / 0.31);
+  --app-aurora-2: rgb(100 116 139 / 0.29);
+  --app-aurora-3: rgb(56 189 248 / 0.16);
+}
+
+
+/* ---- 统一映射：三块底色一律**半透明** -------------------------------- *
+ * 动态背景（极光）要靠底色半透明才透得出来，"透多少"是同一个决定（78%），
+ * 不写 14 份副本。浮层 / 弹窗 / 菜单留得实一些（94%）：它们常压在任意内容上，
+ * 可读性优先。 */
+:root,
+[data-theme] {
+  --app-canvas: color-mix(in srgb, var(--app-canvas-solid) 78%, transparent);
+  --app-panel: color-mix(in srgb, var(--app-panel-solid) 78%, transparent);
+  --app-elevated: color-mix(in srgb, var(--app-elevated-solid) 94%, transparent);
+  /* 列表 / 侧栏再压一档，并混自己的品牌色（混中性灰会"发乌"） */
+  --app-panel-sunken: color-mix(in srgb, var(--app-panel) 93%, var(--app-brand));
+}
+
+/* 有壁纸时底色再透一档，让壁纸看得清楚 */
+[data-wallpaper='on'] {
+  --app-canvas: color-mix(in srgb, var(--app-canvas-solid) 74%, transparent);
+  --app-panel: color-mix(in srgb, var(--app-panel-solid) 74%, transparent);
+  --app-elevated: color-mix(in srgb, var(--app-elevated-solid) 88%, transparent);
+}
+
+/* 对话区专用：**70% 半透明** —— 它带 `relative` 画在极光**之上**，
+ * 太实就"完全看不到动态背景了"，太透长文会累。 */
+:root,
+[data-theme] {
+  --app-chat-surface: color-mix(in srgb, var(--app-canvas-solid) 70%, transparent);
+}
+
+/* 有壁纸时对话区钉回不透明：壁纸只在标题栏 / 导航栏 / 侧栏这些"框"上透出来；
+ * 对话正文里透出照片会让文字压在明暗不定的花纹上，长文阅读非常累，
+ * 而聊天正文恰恰是这个应用里读得最多的内容。 */
+[data-wallpaper='on'][data-theme] {
+  --app-chat-surface: var(--app-canvas-solid);
+}
+
+/* ------------------------------------------------------------------ *
+ * 动态背景（极光）：三层壳套一层光，纯 CSS，14 套皮肤通用
+ *
+ * ⚠️ 层叠位置：`fixed + z-index: 0` ⇒ 只画在**定位元素之下**、所有**非定位元素之上**。
+ * 所以标题栏 / 列表栏这些非定位的"框"看着有光，是极光**叠在它们上面**；
+ * 而正文卡片带 `relative`，压在极光之上，靠自己的 70% 底色透出光来。
+ * ------------------------------------------------------------------ */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: var(--app-aurora-opacity, 0);
+  transition: opacity 0.6s ease;
+}
+
+/* 有壁纸就不叠极光：两套"有纹理的背景"叠一起，画面对不上焦 */
+[data-wallpaper='on'] .aurora {
+  opacity: 0;
+}
+
+/* 噪声层（抗色带）：把渐变色阶打散；必须去色，否则叠出彩噪 */
+.aurora::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+}
+
+.aurora-sway {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+
+.aurora-sway-x {
+  animation: aurora-sway-x 11s ease-in-out infinite alternate;
+}
+
+.aurora-sway-y {
+  animation: aurora-sway-y 17s ease-in-out infinite alternate;
+}
+
+.aurora-field {
+  position: absolute;
+  inset: -35%;
+  background:
+    radial-gradient(
+      circle at 32% 30%,
+      var(--app-aurora-1) 0%,
+      color-mix(in srgb, var(--app-aurora-1) 55%, transparent) 12%,
+      color-mix(in srgb, var(--app-aurora-1) 24%, transparent) 26%,
+      color-mix(in srgb, var(--app-aurora-1) 7%, transparent) 40%,
+      transparent 53%
+    ),
+    radial-gradient(
+      circle at 60% 26%,
+      var(--app-aurora-2) 0%,
+      color-mix(in srgb, var(--app-aurora-2) 55%, transparent) 12%,
+      color-mix(in srgb, var(--app-aurora-2) 24%, transparent) 26%,
+      color-mix(in srgb, var(--app-aurora-2) 7%, transparent) 40%,
+      transparent 53%
+    ),
+    radial-gradient(
+      circle at 46% 70%,
+      var(--app-aurora-3) 0%,
+      color-mix(in srgb, var(--app-aurora-3) 55%, transparent) 12%,
+      color-mix(in srgb, var(--app-aurora-3) 24%, transparent) 26%,
+      color-mix(in srgb, var(--app-aurora-3) 7%, transparent) 40%,
+      transparent 53%
+    );
+  animation: aurora-breath 9s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-sway-x {
+  from {
+    transform: translate3d(-28vw, 0, 0);
+  }
+  to {
+    transform: translate3d(28vw, 0, 0);
+  }
+}
+
+@keyframes aurora-sway-y {
+  from {
+    transform: translate3d(0, -15vh, 0);
+  }
+  to {
+    transform: translate3d(0, 15vh, 0);
+  }
+}
+
+@keyframes aurora-breath {
+  from {
+    opacity: 0.66;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-sway-x,
+  .aurora-sway-y,
+  .aurora-field {
+    animation: none;
+  }
+  /* 转圈的加载图标（Tailwind 的 animate-spin）也一起停：开了"减少动态效果"的用户，
+   * 不该再看到任何持续旋转的东西（`!important` 是为了盖过 utilities 层那条）。 */
+  .animate-spin {
+    animation: none !important;
+  }
+  /* ⚠️ 下面这三个是第 90 批（M-37）补的 —— 原来的分支只关了极光与转圈，
+   * 漏掉了另外三处**持续或带位移**的动效：
+   *   · `.boot-progress`：启动页那条**无限往返**的进度条（最显眼的一处，
+   *     用户开了"减少动态效果"却还是能盯着它跑）；
+   *   · `.caret::after`：流式输出时闪烁的光标；
+   *   · `.animate-enter`：通知入场（只有 0.18s，但它带位移，同属"动效"）。
+   * ⚠️ 只关动画、**不隐藏元素**：光标那条要留个静止的 `▍`，
+   * 否则"正在输入"这个信息会一起消失。 */
+  .boot-progress,
+  .animate-enter,
+  .caret::after {
+    animation: none !important;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * 基础
+ * ------------------------------------------------------------------ */
+@layer base {
+  * {
+    border-color: var(--app-line);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    /* 页面自身的"实底"必须是**不透明**的皮肤色：半透明画布底下压着的是 Electron
+       窗口底色，两边一旦对不上，卡片之间的缝隙就会透出"上一个皮肤的底色"（灰框）。 */
+    background-color: var(--app-canvas-solid);
+    position: relative;
+  }
+
+  /* 壁纸画在 body::before 上（用户要求 **50% 透明度**）：
+      直接铺在 body 上会盖过底色、对比过强；半透明后文字仍然可读，
+      面板/标题栏又能透出壁纸。内容层 z-index 高于它。 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: var(--app-wallpaper, none);
+    background-size: 100% 100%;
+    background-position: center;
+    background-attachment: fixed;
+    opacity: 0.5;
+  }
+
+  body {
+    /* 壁纸由 body::before 渲染（半透明） */
+    color: var(--app-ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* 可选中文本的区域 */
+  input,
+  textarea,
+  .selectable {
+    user-select: text;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--app-scroll-thumb);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--app-ink-faint);
+    background-clip: content-box;
+  }
+
+  textarea,
+  input {
+    font-family: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--app-brand);
+    outline-offset: 1px;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Markdown 渲染
+ * ------------------------------------------------------------------ */
+.md-body {
+  user-select: text;
+  word-break: break-word;
+}
+.md-body > *:first-child {
+  margin-top: 0;
+}
+.md-body > *:last-child {
+  margin-bottom: 0;
+}
+.md-body p {
+  margin: 0.55em 0;
+}
+.md-body h1,
+.md-body h2,
+.md-body h3,
+.md-body h4 {
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 1.2em 0 0.55em;
+  color: var(--app-ink);
+}
+.md-body h1 {
+  font-size: 1.4em;
+}
+.md-body h2 {
+  font-size: 1.22em;
+}
+.md-body h3 {
+  font-size: 1.08em;
+}
+.md-body h4 {
+  font-size: 1em;
+}
+.md-body ul,
+.md-body ol {
+  margin: 0.5em 0;
+  padding-left: 1.4em;
+}
+.md-body ul {
+  list-style: disc;
+}
+.md-body ol {
+  list-style: decimal;
+}
+.md-body li {
+  margin: 0.22em 0;
+}
+.md-body li > ul,
+.md-body li > ol {
+  margin: 0.2em 0;
+}
+.md-body a {
+  color: var(--app-brand);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--app-brand) 35%, transparent);
+}
+.md-body a:hover {
+  border-bottom-color: var(--app-brand);
+}
+.md-body strong {
+  font-weight: 600;
+}
+.md-body blockquote {
+  margin: 0.7em 0;
+  padding: 0.1em 0 0.1em 0.9em;
+  border-left: 3px solid var(--app-line);
+  color: var(--app-ink-soft);
+}
+.md-body hr {
+  margin: 1.2em 0;
+  border: 0;
+  border-top: 1px solid var(--app-line);
+}
+.md-body code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--app-panel);
+  border: 1px solid var(--app-line-soft);
+  border-radius: 5px;
+  padding: 0.1em 0.35em;
+}
+.md-body pre {
+  margin: 0.8em 0;
+  padding: 0.85em 1em;
+  background: var(--app-panel);
+  border: 1px solid var(--app-line);
+  border-radius: var(--radius-card);
+  overflow-x: auto;
+  line-height: 1.6;
+}
+.md-body pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: 0.86em;
+}
+.md-body table {
+  width: 100%;
+  margin: 0.8em 0;
+  border-collapse: collapse;
+  font-size: 0.94em;
+  display: block;
+  overflow-x: auto;
+}
+.md-body th,
+.md-body td {
+  border: 1px solid var(--app-line);
+  padding: 0.45em 0.7em;
+  text-align: left;
+  vertical-align: top;
+}
+.md-body th {
+  background: var(--app-panel);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.md-body tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--app-panel) 55%, transparent);
+}
+
+/* 任务列表（GFM 的 `- [ ]`）：`mdast-util-to-hast` 会给这些 <li> 加 .task-list-item
+   类，它的源码注释写得很直白 —— 这个类是**留给 CSS 隐藏圆点用的**（对齐
+   github-markdown-css 的约定）。少了下面这条规则，渲染出来就是"圆点 + 复选框"
+   叠在一起（• ☐ 事项），而模型列 TODO 时非常爱用这个语法。 */
+.md-body li.task-list-item {
+  list-style: none;
+}
+.md-body li.task-list-item input[type='checkbox'] {
+  margin: 0 0.35em 0 0;
+  vertical-align: middle;
+}
+
+/* 图片：模型贴一张大图时，按原始尺寸渲染会把气泡撑宽、挤出横向滚动。
+   等比缩到气泡内，圆角跟卡片保持同一套观感。 */
+.md-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  vertical-align: middle;
+}
+
+/* ------------------------------------------------------------------ *
+ * 搭子简介的紧凑 Markdown（小字号 + 窄容器）
+ *
+ * 做成**修饰类**而不是改 `.md-body`：后者管着所有聊天气泡。
+ *
+ * 它现在只做一件事：把标题与段距压到正文尺度 —— 简介是 11~12px 的小字，
+ * 1.4em 的标题和 0.55em 的段距在侧栏里会喧宾夺主。
+ *
+ * ⚠️ 这里**曾经**用 `white-space: pre-wrap` 来让"单个换行也断行"。已撤掉：
+ * `mdast-util-to-hast` 会给**松列表**（条目之间有空行）的 <li> 里插进纯 \n
+ * 文本节点，pre-wrap 会把它们变成真实空行，把列表撑出一堆空白。
+ * 换行现在由 remark 插件统一负责（见 src/lib/remarkLineBreaks.ts）。
+ * ------------------------------------------------------------------ */
+.md-compact p,
+.md-compact ul,
+.md-compact ol,
+.md-compact blockquote,
+.md-compact pre,
+.md-compact table {
+  margin: 0.25em 0;
+}
+.md-compact h1,
+.md-compact h2,
+.md-compact h3,
+.md-compact h4,
+.md-compact h5,
+.md-compact h6 {
+  font-size: 1em;
+  margin: 0.4em 0 0.15em;
+}
+.md-compact ul,
+.md-compact ol {
+  padding-left: 1.15em;
+}
+.md-compact li {
+  margin: 0.1em 0;
+}
+.md-compact hr {
+  margin: 0.5em 0;
+}
+.md-compact pre {
+  padding: 0.5em 0.6em;
+  line-height: 1.45;
+}
+
+/* ------------------------------------------------------------------ *
+ * 公式（KaTeX）
+ *
+ * KaTeX 自带的样式在 main.tsx 里**先**加载（顺序见那里的注释），这里只补两件
+ * 它管不到的事：
+ *
+ * 1. 独立成行的公式（$$...$$）可能比气泡还宽 —— 让它自己横向滚动，而不是把整个
+ *    气泡顶宽。`.katex-display` 是 KaTeX 给块级公式的外层容器；内层 `.katex`
+ *    自带 `white-space: nowrap`，所以滚动条出来的是**整条公式**，不会被断成两行
+ *    （公式断行比滚动更难读）。
+ * 2. 颜色：KaTeX 默认继承 color，换主题时跟着变；只有"公式写错了"的那处提示色
+ *    是它写死的红，这里接上本项目的 danger 色（深浅主题各有一档）。
+ * ------------------------------------------------------------------ */
+.md-body .katex-display {
+  margin: 0.8em 0;
+  padding: 0.1em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.md-body .katex-error {
+  color: var(--app-danger);
+}
+
+/* 代码高亮：自写主题，不依赖 highlight.js 的 CSS 包 */
+.hljs-comment,
+.hljs-quote {
+  color: var(--app-ink-faint);
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-type {
+  color: #a626a4;
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-addition {
+  color: #50a14f;
+}
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet {
+  color: #986801;
+}
+.hljs-title,
+.hljs-section,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: #4078f2;
+}
+.hljs-attr,
+.hljs-attribute,
+.hljs-variable,
+.hljs-template-variable {
+  color: #c18401;
+}
+.hljs-built_in,
+.hljs-builtin-name {
+  color: #0184bc;
+}
+.hljs-meta,
+.hljs-deletion {
+  color: #e45649;
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: 600;
+}
+
+.dark .hljs-keyword,
+.dark .hljs-selector-tag,
+.dark .hljs-literal,
+.dark .hljs-type {
+  color: #c678dd;
+}
+.dark .hljs-string,
+.dark .hljs-regexp {
+  color: #98c379;
+}
+.dark .hljs-number,
+.dark .hljs-symbol,
+.dark .hljs-bullet {
+  color: #d19a66;
+}
+.dark .hljs-title,
+.dark .hljs-section,
+.dark .hljs-name,
+.dark .hljs-selector-id,
+.dark .hljs-selector-class {
+  color: #61afef;
+}
+.dark .hljs-attr,
+.dark .hljs-attribute,
+.dark .hljs-variable,
+.dark .hljs-template-variable {
+  color: #e5c07b;
+}
+.dark .hljs-built_in,
+.dark .hljs-builtin-name {
+  color: #56b6c2;
+}
+
+/* ------------------------------------------------------------------ *
+ * 动画
+ * ------------------------------------------------------------------ */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-enter {
+  animation: fade-in-up 0.18s ease-out;
+}
+
+/* 启动页的循环进度条（BootScreen）：不确定时长时用往返滑动表达"正在加载" */
+@keyframes boot-progress {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(420%);
+  }
+}
+.boot-progress {
+  animation: boot-progress 1.15s ease-in-out infinite;
+}
+
+@keyframes blink-caret {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+.caret::after {
+  content: '▍';
+  margin-left: 1px;
+  color: var(--app-brand);
+  animation: blink-caret 1s steps(1) infinite;
+}
+
+/*
+ * 会话列表的**渲染层虚拟化**（第 95 批，L-20）。
+ *
+ * `content-visibility: auto` 让 Chromium **跳过视口外元素的布局与绘制**
+ * （会话上千条时，这正是滚动卡顿的主要来源），但元素**仍留在 DOM 里** ——
+ * 所以它不像"真窗口化"那样要牺牲键盘可达性：Tab 逐行、右键菜单、双击重命名
+ * 全都照旧。
+ *
+ * ⚠️ `contain-intrinsic-size: auto 50px` 里的 `50px` 是**会话行的估值行高**
+ * （`px-2 py-1.5` + 标题 13px + 一行「N 条消息」11px）。它参与父容器的总高计算，
+ * **估错就会表现为滚动条跳动** —— 改行的内边距或字号时必须一起改这个值。
+ * 前面的 `auto` 关键字让浏览器渲染过一次之后**记住实测高度**，
+ * 于是只有"从没渲染过的行"才用估值，漂移被压到最小。
+ *
+ * ⚠️ 为什么不做"只渲染可见行"的真窗口化：那必须把元素从 DOM 移除，于是
+ * **未渲染的行不可 Tab 到** —— 第 90 批（M-38）刚把会话行的键盘可达性补上，
+ * 不该为了性能把它收回去。真窗口化要配套改成"roving tabindex + 方向键"
+ * 的键盘模型（那是另一种交互，得单独拍板）。
+ */
+.cv-session-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 50px;
+}
+
+/* Electron 拖拽区域 */
+.drag-region {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}

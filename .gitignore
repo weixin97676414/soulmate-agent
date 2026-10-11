@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+core/dist/
+# PyInstaller 的工作目录。注意**不能**直接忽略 build/：core/build/ 里放着
+# agent-core.spec 与 entry.py，它们是源文件，必须入库。
+core/build/.pyi/
+desktop/build/
+
+# Node / Electron
+node_modules/
+desktop/dist/
+desktop/dist-electron/
+desktop/release/
+*.log
+
+# 本地配置与密钥：绝不入库
+.env
+*.local
+config.local.json
+secrets.bin
+.pytest-tmp/
+
+# 构建脚本在被「批量删除保护」拦住时会把旧产物**改名**成 .stale-* 绕过，所以直接忽略
+.stale-*/
+
+# 本机跑测试/构建时把输出重定向到文件留下的副产物
+core/*.txt
+desktop/*.txt
+core/rep*.xml
+
+# 语音与嵌入模型的权重：不随包分发，按需下载
+core/models/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,100 @@
+{
+  "frameworks": {
+    "AIDA": {
+      "name": "Attention-Interest-Desire-Action",
+      "stages": ["Attention（抓住注意力）", "Interest（激发兴趣）", "Desire（唤起欲望）", "Action（推动行动）"],
+      "best_for": ["落地页", "广告文案", "产品介绍", "邮件营销"],
+      "example_flow": "你知道吗？90%的人都在浪费时间做这件事 → 其实只需要换一个方法 → 想象一下每天多出2小时 → 点击领取你的效率工具包"
+    },
+    "PAS": {
+      "name": "Problem-Agitate-Solution",
+      "stages": ["Problem（精准描述痛点）", "Agitate（放大痛感）", "Solution（给出方案）"],
+      "best_for": ["产品销售文案", "转化型文章", "销售信"],
+      "example_flow": "写公众号3个月，阅读量还是两位数 → 更可怕的是，你根本不知道问题出在哪 → 这套内容诊断清单，帮你5分钟找到卡点"
+    },
+    "BAB": {
+      "name": "Before-After-Bridge",
+      "stages": ["Before（用户的困境）", "After（理想状态）", "Bridge（如何连接）"],
+      "best_for": ["品牌故事", "案例研究", "转型叙事"],
+      "example_flow": "一年前，他还在地铁上改PPT到凌晨 → 现在，他靠一门课月入10万 → 改变的起点，是这3个决定"
+    },
+    "4P": {
+      "name": "Picture-Promise-Prove-Push",
+      "stages": ["Picture（描绘场景）", "Promise（核心承诺）", "Prove（数据/案例证明）", "Push（推动行动）"],
+      "best_for": ["长文案", "销售页", "深度软文"]
+    },
+    "Heros Journey": {
+      "name": "英雄之旅",
+      "stages_brand": ["起源（为什么做）", "挣扎（最大困难）", "转折（关键突破）", "成果（带来什么改变）", "愿景（未来去哪）"],
+      "best_for": ["品牌故事", "创始人故事", "长视频脚本"]
+    },
+    "SCQA": {
+      "name": "Situation-Complication-Question-Answer",
+      "stages": ["Situation（设定共识背景）", "Complication（揭示矛盾）", "Question（提出核心问题）", "Answer（给出答案）"],
+      "best_for": ["商业提案", "行业分析", "策略文档", "深度文章"]
+    },
+    "FAB": {
+      "name": "Feature-Advantage-Benefit",
+      "stages": ["Feature（功能属性）", "Advantage（相对优势）", "Benefit（用户利益）"],
+      "best_for": ["产品介绍", "详情页", "功能介绍"],
+      "rule": "每个功能必须回答：这对我有什么好处？"
+    }
+  },
+  "platforms": {
+    "微信公众号": {
+      "title_max": 40,
+      "opening_rule": "前3句必须抓人，禁止'大家好今天我们来聊'式开头",
+      "body_format": "H2分段，每段3-5行，图:文=1:3",
+      "closing": "金句收尾 + 互动引导 + 关注引导",
+      "typesetting": "15px字号 / 1.75行距 / 2行段距 / ≤3配色"
+    },
+    "小红书": {
+      "title_max": 20,
+      "title_format": "数字+核心卖点+情绪钩子",
+      "opening_rule": "个人体验式开头（'谁懂啊''真的巨好用'）",
+      "body_style": "'我'视角 + emoji分段",
+      "tags": "3-8个，#主题词 #长尾词 #品牌词",
+      "word_count_optimal": "300-800字"
+    },
+    "知乎": {
+      "opening_rule": "直接给结论，一句话说清立场",
+      "structure": "总分总，每论点附数据/案例",
+      "min_length": 1500,
+      "style": "专业+引用来源+实操经验"
+    },
+    "抖音脚本": {
+      "hook_seconds": 3,
+      "structure": "钩子(3s)→展开(15-30s)→高潮(5s)→CTA(5s)",
+      "duration_short": "15-45s",
+      "duration_medium": "60-90s",
+      "rhythm": "每5-8s换信息点或画面切换点"
+    },
+    "LinkedIn": {
+      "opening_rule": "观点先行，一句话亮明核心立场",
+      "structure": "观点→为什么→怎么做→结论",
+      "style": "专业不学术，第一人称"
+    },
+    "Twitter/微博": {
+      "thread_first": "核心观点≤140字，加🧵",
+      "per_tweet": "每条一个分论点，数字编号",
+      "last_tweet": "总结+CTA（点赞/转发/关注）"
+    }
+  },
+  "headline_formulas": {
+    "数字清单": "[数字]+[关键词]+[承诺]",
+    "对比反差": "[A] vs [B]：[结论]",
+    "痛点提问": "[痛点场景]？[暗示有解]",
+    "反常识": "[挑战常规认知]",
+    "身份标签": "[目标人群]必看：[价值点]",
+    "悬念式": "[结果]背后的[秘密/真相]",
+    "紧迫感": "[时间/数量限制]+[行动]",
+    "故事钩子": "[具体事件]+[引发好奇]"
+  },
+  "styles": {
+    "专业深度": {"features": "多引用+对比分析+术语", "scenes": "行业分析/知乎/B2B"},
+    "亲切口语": {"features": "第一人称+短句+口语词", "scenes": "小红书/朋友圈/短视频"},
+    "情感共鸣": {"features": "故事化+细节描写+情绪词", "scenes": "品牌故事/软文/公关稿"},
+    "犀利观点": {"features": "短句+反常识+金句", "scenes": "LinkedIn/Twitter/微博"},
+    "教程型": {"features": "步骤化+清单+模板", "scenes": "知识付费/公众号干货"}
+  }
+}

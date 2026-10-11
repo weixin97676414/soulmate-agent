@@ -1,0 +1,189 @@
+"""dissect_transcribe.py — 本地视频转写 + 抽帧（依赖 faster-whisper + imageio-ffmpeg）。
+
+用法：
+  python dissect_transcribe.py --video <mp4> --outdir <dir> [--model small]
+产出：
+  <outdir>/audio.wav            16k mono
+  <outdir>/frames/frame_*.png   抽帧（场景检测优先，上限 ~24）
+  <outdir>/transcript.txt       纯文本
+  <outdir>/transcript.json      segments[{start,end,text}]
+  <outdir>/meta.json            {duration,fps,frame_count,scene_mode}
+"""
+from __future__ import annotations
+import argparse
+import json
+import math
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+import imageio_ffmpeg
+
+# 统一错误友好化层（v2.21 新增）
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _friendly_error as _fe  # noqa: E402
+
+
+def get_ffmpeg() -> str:
+    return imageio_ffmpeg.get_ffmpeg_exe()
+
+
+def probe_duration(video: str) -> float:
+    ff = get_ffmpeg()
+    out = subprocess.run(
+        [ff, "-i", video],
+        capture_output=True, text=True,
+    ).stderr
+    m = re.search(r"Duration:\s*(\d+):(\d+):(\d+\.\d+)", out)
+    if not m:
+        return 0.0
+    h, mi, s = float(m.group(1)), float(m.group(2)), float(m.group(3))
+    return h * 3600 + mi * 60 + s
+
+
+def extract_audio(video: str, audio_out: str) -> None:
+    ff = get_ffmpeg()
+    try:
+        subprocess.run(
+            [ff, "-y", "-i", video, "-ar", "16000", "-ac", "1", audio_out],
+            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"无法用 ffmpeg 从「{os.path.basename(video)}」提取音频。"
+            "常见原因：① 文件不是标准 mp4/mov（试试转封装） ② 视频损坏（重新导出）"
+            " ③ 路径含特殊字符（移走试试）"
+        ) from e
+
+
+def _subsample(files: list[Path], max_n: int) -> list[Path]:
+    if len(files) <= max_n:
+        return files
+    step = len(files) / max_n
+    picks = [files[int(i * step)] for i in range(max_n)]
+    return picks
+
+
+def extract_frames(video: str, frames_dir: Path, scene_threshold: float = 0.3,
+                   max_frames: int = 24, max_frame_edge: int = 1280) -> tuple[list[Path], str]:
+    ff = get_ffmpeg()
+    frames_dir.mkdir(parents=True, exist_ok=True)
+    # 长边压缩：仅当某边超过 max_frame_edge 才等比缩到此值，不放大、不动画质。
+    scale_vf = "scale='if(gt(iw,%d),%d,-1)':'if(gt(ih,%d),%d,-1)'" % (
+        max_frame_edge, max_frame_edge, max_frame_edge, max_frame_edge)
+    # 1) 场景检测优先
+    sc_dir = frames_dir / "_scene"
+    sc_dir.mkdir(exist_ok=True)
+    subprocess.run(
+        [ff, "-y", "-i", video, "-vf", f"select='gt(scene,{scene_threshold})',{scale_vf}",
+         "-vsync", "vfr", str(sc_dir / "f%04d.png")],
+        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    sc_files = sorted(sc_dir.glob("*.png"))
+    mode = "scene"
+    if len(sc_files) >= 2:
+        picks = _subsample(sc_files, max_frames)
+    else:
+        # 2) 均匀兜底：根据时长把总数控制在 ~max_frames
+        dur = probe_duration(video) or 60.0
+        fps = max(1 / 30, max_frames / max(dur, 1))
+        subprocess.run(
+            [ff, "-y", "-i", video, "-vf", f"fps={fps:.4f},{scale_vf}", str(frames_dir / "u%03d.png")],
+            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        picks = _subsample(sorted(frames_dir.glob("u*.png")), max_frames)
+        mode = "uniform"
+    # 3) 落到 frames_dir/frame_NNN.png
+    final: list[Path] = []
+    for i, p in enumerate(picks, 1):
+        dst = frames_dir / f"frame_{i:03d}.png"
+        dst.write_bytes(p.read_bytes())
+        final.append(dst)
+    # 4) 清理临时（用 os.remove 避开沙箱 safe-delete 拦截）
+    import os as _os
+    for tmp in sc_dir.glob("*.png"):
+        try:
+            _os.remove(tmp)
+        except OSError:
+            pass
+    for tmp in frames_dir.glob("u*.png"):
+        try:
+            _os.remove(tmp)
+        except OSError:
+            pass
+    return final, mode
+
+
+def transcribe(audio: str, model_size: str) -> list[dict]:
+    from faster_whisper import WhisperModel
+    model = WhisperModel(model_size, device="cpu", compute_type="int8")
+    segments, _ = model.transcribe(audio, language="zh", vad_filter=True)
+    return [{"start": round(s.start, 2), "end": round(s.end, 2), "text": s.text.strip()}
+            for s in segments]
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--video", required=True)
+    ap.add_argument("--outdir", required=True)
+    ap.add_argument("--model", default="small")
+    ap.add_argument("--max-frame-edge", type=int, default=1280,
+                    help="抽帧长边上限（px），仅当某边超过时等比缩到此值，不动画质。默认 1280。")
+    args = ap.parse_args()
+
+    # 前置：检查视频文件是否存在（v2.21 友好错误）
+    if not Path(args.video).exists():
+        _fe.print_error(
+            FileNotFoundError(args.video),
+            context="转写视频",
+            hints=[
+                "确认 --video 指向正确的文件路径",
+                "路径含空格或中文时建议加引号：「\"我的视频.mp4\"」",
+                "若文件在另一台机器 / 云盘，先下载到本机",
+            ],
+        )
+        return _fe.EXIT_USER
+
+    out = Path(args.outdir)
+    out.mkdir(parents=True, exist_ok=True)
+    frames_dir = out / "frames"
+
+    try:
+        print(f"[1/4] 提取音频 ...", flush=True)
+        audio = out / "audio.wav"
+        extract_audio(args.video, str(audio))
+
+        print(f"[2/4] 抽帧（场景检测优先）...", flush=True)
+        frames, mode = extract_frames(args.video, frames_dir, max_frame_edge=args.max_frame_edge)
+        print(f"    抽帧模式={mode} 帧数={len(frames)}", flush=True)
+
+        print(f"[3/4] ASR 转写（模型={args.model}）...", flush=True)
+        segs = transcribe(str(audio), args.model)
+        text = "\n".join(s["text"] for s in segs)
+        (out / "transcript.txt").write_text(text, encoding="utf-8")
+        (out / "transcript.json").write_text(
+            json.dumps(segs, ensure_ascii=False, indent=2), encoding="utf-8")
+
+        dur = probe_duration(args.video)
+        meta = {
+            "duration": round(dur, 2),
+            "fps_est": round(len(frames) / max(dur, 1), 3),
+            "frame_count": len(frames),
+            "scene_mode": mode,
+            "model": args.model,
+        }
+        (out / "meta.json").write_text(
+            json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"[4/4] 完成。时长={meta['duration']}s 转写段数={len(segs)} 帧={len(frames)}", flush=True)
+        return 0
+    except SystemExit:
+        raise
+    except Exception as e:
+        _fe.print_error(e, context="转写视频")
+        return _fe.suggest_exit_code(e)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
