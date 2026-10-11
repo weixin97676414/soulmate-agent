@@ -1,0 +1,29 @@
+{
+  "schema": "vgraph/v1",
+  "meta": {
+    "title": "【图标题】",
+    "graph_type": "architecture",
+    "purpose": "【一句话：这张图表达什么，给谁看】",
+    "direction": "TB",
+    "author": "",
+    "date": ""
+  },
+  "groups": [
+    {"id": "g1", "label": "接入层", "desc": "【这个边界的职责】", "parent": null}
+  ],
+  "nodes": [
+    {
+      "id": "n1", "label": "Web 前端", "type": "service",
+      "group": "g1", "layer": 0,
+      "desc": "【一句话解释这个节点是什么/干什么，图形说明会引用】",
+      "note": ""
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1", "source": "n1", "target": "n2",
+      "label": "HTTPS 下单请求", "type": "sync",
+      "desc": "【这条连线承载什么】"
+    }
+  ]
+}

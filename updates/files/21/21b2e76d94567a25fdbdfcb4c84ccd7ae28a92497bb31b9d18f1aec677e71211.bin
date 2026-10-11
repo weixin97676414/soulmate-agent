@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知乎内容创作 · 发布看板</title>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --card-bg: #16213e;
+    --card-hover: #1a2744;
+    --accent: #e94560;
+    --accent2: #0f3460;
+    --text: #e0e0e0;
+    --text2: #a0a0b0;
+    --success: #00c853;
+    --warning: #ffc107;
+    --border: #2a2a4a;
+    --tag-bg: #0f3460;
+    --answer-bg: #1e2a3a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+  header {
+    text-align: center;
+    padding: 32px 0 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0;
+  }
+  header h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+  header .subtitle { color: var(--text2); font-size: 14px; }
+  .date-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff; padding: 3px 12px; border-radius: 12px;
+    font-size: 13px; margin-left: 8px;
+  }
+
+  .tabs {
+    display: flex; gap: 0; margin: 0 0 24px; border-bottom: 2px solid var(--border);
+  }
+  .tab-btn {
+    padding: 12px 28px;
+    background: none; border: none; color: var(--text2);
+    font-size: 15px; cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px; transition: .2s;
+  }
+  .tab-btn.active { color: #fff; border-bottom-color: var(--accent); }
+  .tab-btn:hover { color: #fff; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .stats-row { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+  .stat-card {
+    flex: 1; min-width: 140px;
+    background: var(--card-bg);
+    border-radius: 12px; padding: 18px; text-align: center;
+    border: 1px solid var(--border);
+  }
+  .stat-card .num { font-size: 32px; font-weight: 700; color: var(--accent); }
+  .stat-card .label { color: var(--text2); font-size: 12px; margin-top: 4px; }
+
+  .section-title {
+    font-size: 20px; font-weight: 600;
+    margin: 32px 0 16px;
+    padding-left: 14px; border-left: 4px solid var(--accent);
+  }
+
+  .q-card {
+    background: var(--card-bg);
+    border-radius: 12px; padding: 20px 24px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    transition: background .2s;
+  }
+  .q-card:hover { background: var(--card-hover); }
+  .article-card { border-left: 4px solid var(--accent); }
+
+  .q-header {
+    display: flex; justify-content: space-between;
+    align-items: flex-start; flex-wrap: wrap; gap: 12px;
+  }
+  .q-title { font-size: 16px; font-weight: 600; flex: 1; color: #fff; }
+  .q-num {
+    background: var(--accent); color: #fff;
+    border-radius: 50%; width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+  }
+  .q-meta {
+    display: flex; gap: 14px; margin: 10px 0 0;
+    flex-wrap: wrap; font-size: 13px; color: var(--text2);
+  }
+  .q-meta span { display: flex; align-items: center; gap: 5px; }
+  .q-url { font-size: 12px; color: var(--text2); margin-top: 6px; word-break: break-all; }
+  .q-url a { color: #64b5f6; text-decoration: none; }
+  .q-url a:hover { text-decoration: underline; }
+
+  .tag {
+    display: inline-block;
+    background: var(--tag-bg); color: #90caf9;
+    padding: 2px 10px; border-radius: 10px;
+    font-size: 12px; margin-right: 6px;
+  }
+  .tag-article { background: rgba(233,69,96,.2); color: #e94560; }
+  .tag-hot { background: rgba(255,193,7,.15); color: var(--warning); }
+
+  .answer-preview {
+    margin-top: 16px;
+    background: var(--answer-bg);
+    border-radius: 8px; padding: 16px;
+    font-size: 14px; color: #c0c0d0;
+    line-height: 1.8;
+    border-left: 3px solid var(--accent);
+    max-height: 400px; overflow-y: auto;
+  }
+  .article-full {
+    margin-top: 16px;
+    background: var(--answer-bg);
+    border-radius: 8px; padding: 20px;
+    font-size: 15px; color: #d0d0dd;
+    line-height: 2;
+    max-height: 600px; overflow-y: auto;
+  }
+  .toggle-answer {
+    background: none; border: 1px solid var(--border);
+    color: #90caf9; padding: 4px 14px; border-radius: 6px;
+    cursor: pointer; font-size: 13px; margin-top: 10px;
+  }
+  .toggle-answer:hover { background: var(--tag-bg); }
+
+  .publish-status {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 10px;
+    font-size: 12px; font-weight: 500;
+  }
+  .status-done { background: rgba(0,200,83,.15); color: var(--success); }
+  .status-pending { background: rgba(255,193,7,.15); color: var(--warning); }
+
+  .workflow {
+    display: flex; gap: 12px; margin: 24px 0; flex-wrap: wrap;
+    justify-content: center;
+  }
+  .wf-step {
+    background: var(--card-bg);
+    border-radius: 8px; padding: 12px 18px;
+    display: flex; align-items: center; gap: 8px;
+    border: 1px solid var(--border); font-size: 14px;
+  }
+  .wf-step .step-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: 16px;
+  }
+  .wf-arrow { font-size: 20px; color: var(--accent); display: flex; align-items: center; }
+  .wf-done .step-icon { background: rgba(0,200,83,.2); }
+
+  .backup-box {
+    background: var(--card-bg);
+    border-radius: 8px; padding: 16px 20px; margin-top: 16px;
+    border: 1px dashed var(--border);
+  }
+  .backup-box h4 { font-size: 14px; color: var(--text2); margin-bottom: 8px; }
+  .backup-item {
+    padding: 6px 0; font-size: 13px; color: var(--text2);
+    border-bottom: 1px solid rgba(255,255,255,.04);
+  }
+
+  footer {
+    text-align: center; padding: 32px;
+    color: var(--text2); font-size: 12px;
+    border-top: 1px solid var(--border); margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>📋 知乎内容创作 · 发布看板</h1>
+    <div class="subtitle">
+      回答工作流 + 文章工作流 全流程追踪
+      <span class="date-badge">{{DATE}}</span>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('answer')">💬 回答工作流</button>
+    <button class="tab-btn" onclick="switchTab('article')">📝 文章工作流</button>
+  </div>
+
+  <!-- === 回答工作流 === -->
+  <div class="tab-content active" id="tab-answer">
+    <div class="workflow">
+      <div class="wf-step wf-done"><div class="step-icon">🔍</div><div><strong>选题抓取</strong><div style="font-size:12px;color:var(--text2)">推荐+邀请+热榜</div></div></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step wf-done"><div class="step-icon">⭐</div><div><strong>智能筛选</strong><div style="font-size:12px;color:var(--text2)">关键词匹配排序</div></div></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step wf-done"><div class="step-icon">📚</div><div><strong>知识库加载</strong><div style="font-size:12px;color:var(--text2)">内置+用户上传</div></div></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step wf-done"><div class="step-icon">✏️</div><div><strong>内容生成</strong><div style="font-size:12px;color:var(--text2)">去AI味回答</div></div></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step wf-done"><div class="step-icon">📤</div><div><strong>发布草稿</strong><div style="font-size:12px;color:var(--text2)">知乎草稿箱</div></div></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="num">{{ANSWER_STATS_RECOMMEND}}</div><div class="label">推荐问题采集</div></div>
+      <div class="stat-card"><div class="num">{{ANSWER_STATS_INVITED}}</div><div class="label">邀请回答采集</div></div>
+      <div class="stat-card"><div class="num">{{ANSWER_STATS_MATCHED}}</div><div class="label">领域关键词匹配</div></div>
+      <div class="stat-card"><div class="num">{{ANSWER_STATS_SELECTED}}</div><div class="label">最终入选回答</div></div>
+    </div>
+
+    <div class="section-title">入选回答</div>
+    {{QUESTIONS}}
+  </div>
+
+  <!-- === 文章工作流 === -->
+  <div class="tab-content" id="tab-article">
+    <div class="workflow">
+      <div class="wf-step wf-done"><div class="step-icon">🔍</div><div><strong>数据抓取</strong><div style="font-size:12px;color:var(--text2)">热榜+推荐+邀请</div></div></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step wf-done"><div class="step-icon">🎯</div><div><strong>选题分析</strong><div style="font-size:12px;color:var(--text2)">归纳 5 个方向</div></div></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step wf-done"><div class="step-icon">✅</div><div><strong>用户确认</strong><div style="font-size:12px;color:var(--text2)">+ 写作框架</div></div></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step wf-done"><div class="step-icon">📚</div><div><strong>知识库加载</strong><div style="font-size:12px;color:var(--text2)">内置+用户上传</div></div></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step wf-done"><div class="step-icon">✍️</div><div><strong>文章生成</strong><div style="font-size:12px;color:var(--text2)">公众号写手</div></div></div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step wf-done"><div class="step-icon">📤</div><div><strong>发布草稿</strong><div style="font-size:12px;color:var(--text2)">知乎草稿箱</div></div></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="num">{{ARTICLE_STATS_DIRECTIONS}}</div><div class="label">选题方向分析</div></div>
+      <div class="stat-card"><div class="num">{{ARTICLE_STATS_WRITTEN}}</div><div class="label">本次确认写作</div></div>
+      <div class="stat-card"><div class="num">{{ARTICLE_STATS_BACKUP}}</div><div class="label">备选库存档</div></div>
+      <div class="stat-card"><div class="num">{{ARTICLE_STATS_WORDS}}</div><div class="label">文章字数</div></div>
+    </div>
+
+    <div class="section-title">📝 已发布文章</div>
+    {{ARTICLES}}
+
+    <div class="section-title">🗂 备选选题库</div>
+    <div class="backup-box">
+      {{BACKUP_TOPICS}}
+    </div>
+  </div>
+
+  <footer>知乎内容看板 · 数据来源：知乎热榜 / 推荐问题 / 邀请回答</footer>
+</div>
+
+<script>
+function toggleAnswer(id) {
+  const el = document.getElementById(id);
+  const btn = el.previousElementSibling;
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    btn.textContent = '收起 ▲';
+  } else {
+    el.style.display = 'none';
+    btn.textContent = '查看 ▼';
+  }
+}
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    if (b.textContent.includes(tab === 'answer' ? '回答' : '文章')) b.classList.add('active');
+  });
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+</script>
+</body>
+</html>

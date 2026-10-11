@@ -1,0 +1,20 @@
+{
+  "name": "zhihu-fetcher",
+  "version": "1.0.0",
+  "description": "极简知乎数据抓取工具 - Minimalist Zhihu Data Fetcher",
+  "main": "snippets/fetch-hot.js",
+  "scripts": {
+    "hot": "node snippets/fetch-hot.js",
+    "questions": "node snippets/fetch-questions.js",
+    "test": "node snippets/test-simple.js",
+    "db:init": "python scripts/init_db.py",
+    "db:save": "python scripts/save_to_db.py",
+    "db:query": "python scripts/query.py",
+    "db:report": "python scripts/generate_html.py"
+  },
+  "keywords": ["zhihu", "scraper", "hot-list"],
+  "license": "MIT",
+  "optionalDependencies": {
+    "puppeteer": "^22.0.0"
+  }
+}

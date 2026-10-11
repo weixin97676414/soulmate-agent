@@ -1,0 +1,50 @@
+{
+  "schema": "demo-outline/v1",
+  "meta": {
+    "name": "演示名称（对外）",
+    "audience": "受众角色，如：制造企业质量总监与信息化负责人",
+    "goal": "本次演示要达成的目标，如：同意进入试点评估",
+    "duration_min": 20,
+    "created_at": "",
+    "edited_by": "",
+    "edit_note": "",
+    "materials": ""
+  },
+  "pages": [
+    {
+      "id": "P-1",
+      "role": "封面",
+      "title": "开场：一句话价值主张",
+      "goal": "30 秒讲清主题与价值",
+      "minutes": 0.5,
+      "speaker_note": "开场先抛结论……",
+      "candidates": [],
+      "points": []
+    },
+    {
+      "id": "P-2",
+      "role": "痛点",
+      "title": "页面标题",
+      "goal": "本页目的",
+      "minutes": 2,
+      "speaker_note": "讲稿提示",
+      "candidates": [],
+      "points": [
+        {
+          "id": "T-2-1",
+          "text": "给听众看的一句话结论",
+          "quote": "素材中的原文片段，必须逐字一致",
+          "sids": ["S-1"]
+        },
+        {
+          "id": "T-2-2",
+          "text": "人工补充的内容（原素材没有）",
+          "quote": "",
+          "sids": [],
+          "custom": true,
+          "note": "人工补充：说明为什么需要加这一条"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<style>
+:root{
+  --bg:#0f1115; --panel:#171a21; --panel-2:#1d212a; --line:#2a2f3a;
+  --text:#e6e8ee; --muted:#9aa3b2; --accent:#ff4d6d; --accent-2:#ffb020;
+  --ok:#3ecf8e; --warn:#ffb020; --bad:#ff5c5c; --chip:#232833;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --panel-2:#f2f4f7; --line:#e3e6ec;
+    --text:#1a1d24; --muted:#5c6472; --accent:#e0245e; --accent-2:#c47d00;
+    --ok:#0f9d58; --warn:#c47d00; --bad:#d93025; --chip:#eceff5;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:15px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 22px 80px}
+header.hero{border:1px solid var(--line);border-radius:16px;padding:26px 28px;
+  background:linear-gradient(135deg,var(--panel),var(--panel-2));margin-bottom:22px}
+h1{margin:0 0 6px;font-size:26px;letter-spacing:.5px}
+.sub{color:var(--muted);font-size:13px}
+h2{font-size:19px;margin:34px 0 14px;padding-left:11px;border-left:4px solid var(--accent)}
+h3{font-size:15px;margin:22px 0 10px;color:var(--accent-2)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:14px 0}
+.grid{display:grid;gap:12px}
+.g5{grid-template-columns:repeat(5,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:900px){.g5,.g4,.g3,.g2{grid-template-columns:repeat(2,1fr)}}
+.card{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card .k{color:var(--muted);font-size:12px;margin-bottom:6px}
+.card .v{font-size:22px;font-weight:700;letter-spacing:.5px}
+.card .d{font-size:12px;color:var(--muted);margin-top:4px}
+.bar{height:6px;border-radius:4px;background:var(--chip);overflow:hidden;margin-top:8px}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12px;background:var(--panel-2)}
+tbody tr:hover{background:var(--panel-2)}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag{display:inline-block;background:var(--chip);border-radius:999px;padding:2px 9px;
+  font-size:11px;color:var(--muted);margin:2px 4px 2px 0}
+.badge{display:inline-block;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:600}
+.b-ok{background:rgba(62,207,142,.15);color:var(--ok)}
+.b-mid{background:rgba(255,176,32,.15);color:var(--warn)}
+.b-bad{background:rgba(255,92,92,.15);color:var(--bad)}
+.b-accent{background:rgba(255,77,109,.15);color:var(--accent)}
+ul{margin:8px 0 8px 18px;padding:0}
+li{margin:5px 0}
+code{background:var(--chip);padding:1px 6px;border-radius:5px;font-size:12px}
+.chart{width:100%;height:auto;display:block}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.gallery figure{margin:0;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.gallery img{width:100%;display:block;aspect-ratio:3/4;object-fit:cover;background:var(--chip)}
+.gallery figcaption{font-size:11px;color:var(--muted);padding:6px 8px;line-height:1.4}
+.foot{margin-top:40px;color:var(--muted);font-size:12px;text-align:center;line-height:1.9}
+.todo{border:1px dashed var(--accent);border-radius:10px;padding:12px 14px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>{{TITLE}}</h1>
+  <div class="sub">{{SUBTITLE}}</div>
+  <div class="sub" style="margin-top:8px">{{GENERATED_AT}} · 数据来源：小红书公开页面 · 样本 {{SAMPLE_SIZE}} 条笔记</div>
+</header>
+
+<h2>一、结论速览</h2>
+<div class="grid g5">{{SCORE_CARDS}}</div>
+<div class="panel">{{VERDICT}}</div>
+
+<h2>二、账号基本盘</h2>
+<div class="grid g4">{{KPI_GRID}}</div>
+<div class="panel">{{TIER_BLOCK}}</div>
+
+<h2>三、互动结构与流量层级</h2>
+<div class="panel">
+  <h3>点赞分布（按时间倒序）</h3>
+  {{CHART_ENGAGEMENT}}
+</div>
+<div class="grid g4">{{ENGAGE_GRID}}</div>
+<div class="panel">{{HEALTH_BLOCK}}</div>
+
+<h2>四、内容结构拆解</h2>
+<div class="grid g4">{{CONTENT_GRID}}</div>
+<div class="panel"><h3>高频关键词</h3><div>{{KEYWORD_CHIPS}}</div></div>
+<div class="panel"><h3>标签使用</h3>{{TAG_TABLE}}</div>
+
+<h2>五、形式与节奏</h2>
+<div class="grid g3">{{FORMAT_GRID}}</div>
+<div class="panel">{{CADENCE_BLOCK}}</div>
+
+<h2>六、商业定位诊断</h2>
+<div class="panel">{{MONETIZE_BLOCK}}</div>
+
+<h2>七、评论洞察</h2>
+<div class="panel">{{COMMENTS_BLOCK}}</div>
+
+<h2>八、TOP 内容榜</h2>
+<div class="panel">{{TOP_NOTES_TABLE}}</div>
+
+<h2>九、爆款结构拆解</h2>
+{{VIRAL_SECTION}}
+
+<h2>十、差距清单与改进动作</h2>
+<div class="panel">{{GAPS_TABLE}}</div>
+
+<h2>十一、可复制 SOP</h2>
+<div class="panel">{{SOP_SECTION}}</div>
+
+<h2>十二、执行排期</h2>
+<div class="panel">{{ROADMAP_SECTION}}</div>
+
+{{MEDIA_SECTION}}
+
+<div class="foot">
+  本报告由 xhs-account-deconstruct 技能自动生成，数据取自小红书公开可见内容，样本 {{SAMPLE_SIZE}} 条。<br>
+  互动数据为采集时点快照，可能随时间变化；结论供运营决策参考，不构成商业承诺。
+</div>
+
+</div>
+</body>
+</html>

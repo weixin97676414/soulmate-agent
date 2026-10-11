@@ -1,0 +1,89 @@
+﻿---
+name: meeting-minutes-tracking
+description: 会议纪要与待办追踪：把会议文字稿整理为结构化正式纪要（议题 / 结论 / 待办 / 责任人 / 截止日期），含周例会周际联动、跨场问询、客户登记，并把多份工作切片聚合成信函式月度 / 阶段简报或整理周报日报。触发场景：整理会议纪要 / 会议记录 / 周例会纪要 / 行动项追踪 / 客户问题盘点，或出 X 月简报 / 工作简报 / 工作总结 / 周报 / 月报。
+author: Soulmate Agent团队成员：岸
+---
+
+# 会议纪要与待办追踪
+
+
+## 适用场景
+
+- 把会议文字稿整理为结构化正式会议纪要（议题、结论、待办、责任人、截止日期），归档入库、支持跨会议检索。
+- 周期性例会（周例会/月度例会）：提取上一期待办 → 逐项复盘五态进展 → 开放项承接生成本期待办，出纪要 docx + 追踪事项 xlsx。
+- 跨场问询：某客户最近需要配合的问题（5 项优先级清单）、某时段做了什么/交付了什么（3 桶交付清单）。
+- 输入：`.docx` / `.txt` / `.md` 文字稿或直接粘贴。会议录音/视频请先经「会议录音转写校对」功能（`references/asr-transcript-proofread.md`）转写，本功能不承担转写。
+
+## 步骤（先判档，不偷偷换档；模糊时一次问清）
+
+| 用户输入 | 档位 | 走法 |
+|---|---|---|
+| 问会议类型/项目开过哪些会 | A · Quick | 直答，不落盘 |
+| ≤2000 字文字稿 +"整理纪要"/历史纪要小改 | B · Mini | Context → Execute → 自查 → Deliver |
+| ≥2000 字/多场会议/含付款或合规决议/要入库调取/"走正式流程" | C · Full | 10 步全链路（多 Plan/Dispatch/Research/Judge 环节） |
+| "做本周/本月例会纪要" + 存在上一期纪要或台账 | B · 周例档 | 待办周际联动 → 纪要 docx + 追踪 xlsx |
+| "出 X 月简报/给某客户写月度简报/月底整理一下" | B' · 简报档 | 见下「B' 档简报」及 `references/work-brief.md` |
+| "登记新客户/新建客户" | B | 客户登记流程 |
+
+**B 档会议纪要**：
+1) Context（识客户/会议类型/日期，查客户代号与近 90 天历史切片；工作类型八选一：sales / ops-review / project-mgmt / research / site-visit / process-mapping / policy-design / other）。
+2) Execute（先写证据矩阵：论点 / 证据类型 / 来源 quote / 来源位置，再扩写正文；事实句带【实证】/【估算】/【常识】+ `[source: 文件名:位置]`；议题标题用 action title 结论句）。
+3) 自查（三态覆盖率、source token 实存、行动项四要素、客户脱敏、措辞红线，任一不过退回重写）。
+4) Deliver（docx 正本 + markdown 含证据矩阵留档版 + 记忆切片 md）。
+
+**B 档周例**：
+1) 定位四输入（本次转写 / 上一期纪要 / 基准台账 / 别名表+roster）。
+2) 转录校对 + 项目实体核验（三级匹配：别名表 → 基准台账 → roster；确证静默改，拿不准问用户）。
+3) `extract_previous_actions.py` 提上周待办，逐项五态复盘（已完成/进行中/未启动/阻塞/取消；不得把"会上未提及"推断为"未完成"）；开放项强制承接到本周。
+4) 组稿（一、会议议程；二、会议小结与决议；三、待办事项跟踪——上周进展表 + 本周待办表在最末）。
+5) 不确定项一次性问用户（汇成 1 次提问，不在纪要里留"待核实/疑误听"）。
+6) 生成 docx + xlsx（同源同构，内置 `validate_action_links()` 校验承接关系）。
+7) 交付 + 自查。
+
+**跨场问询**：优先级问询按四维加权排序（我方承诺未交付一票顶格 > 紧急度 > 影响面 > 反复频次），输出 5 项清单（问题摘要/来源会议/我方承诺/现状/建议动作）；交付物问询调 `deliverable_mining.scan_deliverables()` 出 3 桶（主交付物/中间产出物/我方独立完成事项）。
+
+**客户登记**：一次问客户真名/行业/项目代号偏好/主要干系人 → 分配代号（公司 甲方A、项目 项目X、干系人 P-角色-姓首字、部门 D1）→ 用户明确"确认登记"后写入客户代号映射表 → 建客户目录骨架（含术语表.md、README.md）。真名一律代号化，精确金额用范围（百万级/千万级）。
+
+**B' 档简报（月度/阶段工作简报）**：把某客户一段时间内的多场会议/工作切片聚合成正式信函式简报 docx。
+1) 一次性确认 4 参数：客户代号（必填，查不到走客户登记）、时间窗（默认本月）、抬头对象（默认读客户 README §1.2）、版本（外发版 / 内部留档版）。
+2) 扫描 + 聚类：`glob memory/projects/clients/{客户}/*/{YYYY-MM-*.md}`（8 类工作目录），按切片 frontmatter `工作主题`（或 `工作类型`）归并成 3–7 个主题块；主题数 >7 让用户选保留哪些。**主题清单先给用户审一次**再进下一步。
+3) 拉日程（本地来源）：由用户提供的本地日程文件（.ics/.csv）或手工录入。同日同主题以切片日志为准（含决议/行动项）；切片没记录的日程标 `[来源:{本地文件/手工录入}]` 补入；无日程来源则跳过，不报错。
+4) 填每个主题块（按 `assets/meeting-minutes-tracking/references/brief-template.md §2.2`）：主题概述、子事项标题（动名词）、日志条目（严格"{月}月{日}日，{动词}{对象}"格式）、备注/建议、相关文件；中间层骨架见 `assets/meeting-minutes-tracking/references/brief-skeleton.md`。
+5) 完成情况对照 + 下月计划：读上月简报"本月计划"对照本月切片已完成行动项 → 三列对照表，状态四态图标 ✅已完成 / 🔄进行中 / ⏸暂缓（附原因）/ ❌未启动（附风险）；下月计划取 deadline 在下月窗口的待办，保守原则（少胜于错）。
+6) 二次事实校对（强制）：日期-动作回溯抽样、文件名实存（《XXX》grep outputs/）、承诺一致性（对照上月"下月计划"）、称谓核对、函号校对（对照客户 README 流水表）；任一失败加红色【二次校对未过】+ 违规清单。
+7) 附件区自动汇总：`deliverable_mining.scan_deliverables()` 出 3 桶（主交付物 / 中间产出物 / 待分桶）。
+8) 人审（强制）：简报草稿先以 markdown + diff 报告交用户审，**用户明确"OK 出 docx"才生成**；输出简报 docx + 归档 `_briefs/{年}-{月}.md`（供下月做完成情况对照）。
+
+简报排版与会议纪要不同：正文仿宋 14pt，大标题黑体 16pt、一级标题 15pt；页边距上 2.5 / 下 3.0 / 左 3.9 / 右 3.2 cm。节序固定为 一、X月辅导工作 ⇒ 三、X月计划完成情况 ⇒ 四、次月工作计划（**跳过"二、"**）；函号、抬头对象、寒暄称谓、联系人、落款日期按客户 README 的"简报签发参数"段填。输出 `outputs/{客户}/{客户}-{年}年{月}月辅导简报.docx`。
+
+**通用周报/日报**：非客户咨询场景，套用 `assets/office-task-dispatch/templates/weekly-report-template.md` 骨架归纳填充（日报可只保留一、二两部分）。
+
+## 输入输出
+
+- 输入：会议文字稿（或校对后清洗稿）；周例档另需上一期纪要、基准台账、别名表/roster；简报档另需客户代号 + 时间窗 + 多份工作切片 + 上月简报归档 + 日程来源（由用户提供的本地 .ics/.csv 文件或手工录入）；客户代号映射表与术语表。
+- 输出：会议纪要 docx（附件10 表格式：单页 A4 + 单张 7 列 10 行表格，微软雅黑、标题 18pt）、含证据矩阵的 markdown 留档版、记忆切片 md；周例档另出「本周追踪事项」xlsx（工作表"本周追踪事项"，筛选、冻结首行、状态列五值下拉、选"完成"整行浅绿）；简报档出 `outputs/{客户}/{客户}-{年}年{月}月辅导简报.docx`（信函式样：正文仿宋 14pt、标题黑体 16/15pt，含函号、寒暄、节序）+ 归档 markdown。
+
+## 注意事项
+
+- **反幻觉红线（P1/P6）**：事实句必带【实证】/【估算】/【常识】，【实证】必含 `[source:]`；禁用模糊归因（业内通行/据说/相关数据显示）、不可证伪量词（大概/应该是/基本上）、AI 痕迹词（首先/其次/综上所述/作为 AI）。
+- **附件10 行动项四要素**：内容 / 责任人 / 追踪人 / 完成时限，缺一不可；时限用 YYYY-MM-DD，禁用"近期/尽快/ASAP"；交付物写在备注列；议题标题用结论句（action title）。
+- **保密（P2/P4）**：真名/精确金额/跨客户内容/个人隐私/无关闲聊禁入纪要；内部组织调整用部门代号。
+- **原件保护（P3/P5）**：文字稿原件只读不改；已入库切片不修改（发现错误起 v2 文件）；不直接改客户代号映射表。
+- 触发任一红线 → 立即停手，输出违规清单等用户决策。
+- C 档比 B 档多 Plan / Dispatch / Research 前后 / Judge 五步（Judge 为独立新会话 5 维盲评 ≥75）；B 档多数场景已够，别为"走流程"硬升档。
+
+## 可复用示例
+
+- 「整理这份会议纪要，提取待办，标注责任人和截止日期」→ B 档：Context → 证据矩阵 → 正文 → 自查 → docx + md + 切片。
+- 「做本周例会纪要」+ 上周纪要 → 周例档：提上周待办 → 五态复盘 → 承接 → docx + xlsx（缺任一不得宣称交付完成）。
+- 「甲方 A 最近有什么需要我们配合的」→ 跨场问询：近 90 天切片四维排序 → 5 项优先级清单。
+- 「登记新客户 XX 公司」→ 客户登记：问 4 参数 → 分配代号 → 确认后写入映射表 → 建目录骨架。
+- 「出 6 月简报」→ B' 档：4 参数（客户 / 6 月 / 默认抬头 / 外发）→ 聚类并用户审主题 → 拉日程 → 填块 → 完成情况对照 + 下月计划 → 二次校对 → 附件汇总 → 人审 → docx。
+- 「这周的周报帮我整理下」+ 素材 → 套 `assets/office-task-dispatch/templates/weekly-report-template.md` 骨架归纳并填充（日报可只保留一、二两部分）。
+
+## 支撑文件
+
+- 脚本：`scripts/meeting_docx.py`（`build_minutes(data, output_path)`）、`scripts/weekly_minutes_docx.py`（CLI `--content/--out/--sample`）、`scripts/build_action_tracker.py`、`scripts/extract_previous_actions.py`、`scripts/deliverable_mining.py`、`scripts/consult_docx_utils.py`；简报档另用 `scripts/brief_docx.py`（`build_brief(data, output_path)`）。
+- 依赖：`pip install python-docx openpyxl`。
+- 参考：`assets/meeting-minutes-tracking/references/`（`meeting-template.md` 附件10 模板、`meeting-types.md` 八类工作类型、`client-codename.md` 代号规则、`client-readme-template.md`、`slice-frontmatter-schema.md`、`memory-permissions.md`、`entity-verification.md`、`weekly-action-linking.md`、`action-tracker-spec.md`、`deliverable-mining-rules.md`、`recall-prioritize-rules.md`；简报档另用 `brief-template.md`、`brief-skeleton.md`）。
+- 模板：`assets/office-task-dispatch/templates/weekly-report-template.md`（通用周报/日报骨架）；简报正文与 `references/work-brief.md` 对应。
