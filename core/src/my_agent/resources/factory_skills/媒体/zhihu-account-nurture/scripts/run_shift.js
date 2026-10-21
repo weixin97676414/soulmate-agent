@@ -1,21 +1,21 @@
-// run_shift.js — 知乎养号三班编排脚本
-// 用法（Bash 必须 dangerouslyDisableSandbox:true，且关闭沙箱开关）：
-//   先把参数写到 /tmp/zhihu_shift_params.json（见底部 schema），再：
-//   ego-browser nodejs < scripts/run_shift.js
-//   兼容旧式 env 传参（其他机器若 ego-browser 透传 env 仍可用）：
-//   SHIFT=morning QID=xxx CONTENT_FILE=xxx ego-browser nodejs < scripts/run_shift.js
-//
-// 行为：读配置 → 按 班次+日序号 轮转话题池取关键词 → 选未答过问题(QID 可覆盖)
-//        → 前10候选随机选3-5点赞(自然化) → 若 answer=true 写/发布/验证1回答 → 按 interactions 做可选收藏/关注/评论
-//
-// 参数优先级：env（SHIFT/CONFIG/QID/CONTENT/CONTENT_FILE/KW/LIMIT/COMMENT_TEXT）> /tmp/zhihu_shift_params.json
-// 注：部分 ego-browser 构建不向 nodejs 运行时透传 shell env，故参数文件为可靠路径。
+
+
+
+
+
+
+
+
+
+
+
+
 
 (async () => {
   const fs = require('fs')
   const path = require('path')
 
-  // ---------- 0. 参数加载（env 优先，回退参数文件） ----------
+  
   function loadParams() {
     const p = {}
     if (process.env.SHIFT) p.shift = process.env.SHIFT
@@ -42,7 +42,7 @@
   }
   const P = loadParams()
 
-  // ---------- 1. 加载配置 ----------
+  
   function loadConfig() {
     const candidates = []
     if (P.configPath) candidates.push(P.configPath)
@@ -65,7 +65,7 @@
     cliLog('WARN: 正在使用 /tmp 影子配置（' + cfg.path + '）——它会覆盖正式 config，且可能缺少 account_status 禁言护栏。确认是刻意临时覆盖，否则删除该文件。')
   }
 
-  // ---------- 0. 账号受限期护栏（fail-safe，优先于一切动作） ----------
+  
   const acct = cfg.data.account_status || {}
   if (acct.silenced === true) {
     cliLog('SILENCED_MODE: 账号处禁言期（' + (acct.silenced_from || '?') + ' → ' + (acct.silenced_until || '?') + '）：本脚本不做任何写操作，直接退出')
@@ -85,7 +85,7 @@
   }
   cliLog('SHIFT: ' + SHIFT + ' answer=' + !!shiftCfg.answer)
 
-  // ---------- 2. 话题轮转（全局池 + 日序号偏移） ----------
+  
   function dayOfYear(d) {
     const start = new Date(d.getFullYear(), 0, 0)
     const diff = d - start
@@ -102,7 +102,7 @@
   }
   cliLog('ROTATED_KW: ' + kw)
 
-  // ---------- 3. 选题（QID 未指定时自动选） ----------
+  
   async function pickQuestion(keywords, limit) {
     const space = 'zhihu-pick'
     const task = await useOrCreateTaskSpace(space)
@@ -157,7 +157,7 @@
   await openOrReuseTab(url, { wait: true, timeout: 20 })
   await wait(4)
 
-  // ---------- 4. 已答过跳过 ----------
+  
   const answered = await js('(() => {'
     + ' const btns = Array.from(document.querySelectorAll("button"));'
     + ' return btns.some(function (b) { return b.innerText.indexOf("查看我的回答") >= 0; });'
@@ -169,12 +169,12 @@
     return
   }
 
-  // ---------- 5. 点赞：前 pool 个候选里随机选 min~max 个（自然化，避免每次固定点赞前 N 被风控） ----------
+  
   cliLog('simulating read 90s (human pace)...')
   await wait(90)
   const interactions = shiftCfg.interactions || {}
 
-  // like spec 兼容：旧式整数 N（=固定 N 个） / 新式对象 {pool,min,max}
+  
   function parseLikeSpec(raw) {
     if (raw == null) return null
     if (typeof raw === 'number') return { pool: raw, min: raw, max: raw }
@@ -244,7 +244,7 @@
     cliLog('like disabled for this shift (interactions.like = 0/null)')
   }
 
-  // ---------- 6. 写回答（answer=true 时） ----------
+  
   let aid = null
   let publishFailed = false
   if (shiftCfg.answer) {
@@ -253,7 +253,7 @@
     if (!content.trim()) {
       cliLog('ANSWER_SKIPPED: no content — do NOT publish empty')
     } else {
-      // 字数护栏：超区间一律跳过发布（deep=true 用深度版区间，否则标准区间）
+      
       const isDeep = P.deep === true || P.deep === 'true'
       const style = isDeep ? (cfg.data.deep_answer || {}) : (cfg.data.answer_style || {})
       const minW = style.min_words || (isDeep ? 800 : 250)
@@ -319,13 +319,13 @@
     cliLog('answer disabled for this shift')
   }
 
-  // ---------- 7. 折叠验证（走官方 CLI，serverFetch API 已于 8/26 起恒 403，不再重试） ----------
+  
   if (aid) {
     cliLog('VERIFY_VIA_CLI: zhihu-cli me contents --type answer --limit 3 (or run scripts/verify_via_cli.js with AID=' + aid + ')')
     cliLog('VERIFY_RULE: summary non-empty = NOT collapsed; empty summary = collapsed (index may lag 1-2 min)')
   }
 
-  // ---------- 8. 可选互动：收藏 / 关注问题 / 评论 ----------
+  
   if (interactions.collect) {
     const done = await js('(() => {'
       + ' const btns = Array.from(document.querySelectorAll("button"));'
@@ -391,14 +391,14 @@
   await completeTaskSpace(space, { keep: false })
 })()
 
-// 参数文件 schema（/tmp/zhihu_shift_params.json）：
-// {
-//   "shift": "morning|noon|evening",
-//   "qid": "2070982459156424668",          // 可选，跳过自动选题
-//   "contentFile": "/abs/answer.txt",       // answer=true 时必填其一
-//   "content": "回答正文...",                // 或直接内联
-//   "configPath": "/abs/config.json",       // 可选
-//   "kw": "历史,神话",                       // 可选，覆盖轮转
-//   "limit": 25,                            // 可选
-//   "commentText": "评论内容"               // 可选，comment=true 时
-// }
+
+
+
+
+
+
+
+
+
+
+

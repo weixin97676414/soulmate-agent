@@ -1,40 +1,40 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""行程规划器：吃 plan.json（纯数据），自动产出全部 spec / 底图 / 照片清单 / docx 内容骨架。
 
-消灭的手写工作:
-  - 凭记忆写坐标（用 spots_db.py）
-  - 手算 bbox / 选 zoom / 拉底图（自动 bbox + fetch_tiles）
-  - 手写 4 个 spec JSON（自动生成 + autolayout 避让）
-  - 手写 photo_queries.json / docx_content.json 骨架
 
-plan.json 结构（AI 只需填行程取舍 + 文案）:
-{
-  "city": "重庆", "days": 3, "dates": ["10.1","10.2","10.3"],
-  "title": {"hl":"3天2晚","suffix":"山城魔幻亲子游","headline":"住宿选解放碑 · 轻轨+打车组合"},
-  "overview": {
-    "title": "重庆3天2晚 · 景点分布图", "subtitle": "按板块就近安排 · 少跑路",
-    "note": "备注：渝中片区景点密集，多为步行/轻轨可达",
-    "corner": {"arrow":"↘","text":"Day3 南山方向"},
-    "zoom": 14,          // 可选，默认按目标宽自动选
-    "merge": {"解放碑":"解放碑 → 洪崖洞"}   // 可选：同点位合并标签
-  },
-  "days": [
-    {"day":1,"title":"重庆 DAY 1 路线","sub":"李子坝 · 扶梯 · 解放碑 · 洪崖洞","date":"10.1",
-     "spots":["李子坝","皇冠大扶梯","解放碑","洪崖洞"],   // 或对象 {"name":"自定义","lon":..,"lat":..,"desc":".."}
-     "dash":[[1,2]],                                     // 可选：虚线链（spot 索引对）
-     "transits":[{"a":"皇冠大扶梯","b":"解放碑","text":"🚇 1号线 2站"}],  // a/b 必须为连续景点
-     "tips":{"title":"💡 山城避坑","lines":["出门右拐是长江索道","洪崖洞晚上8点后最出片"]},
-     "summary":"🍲 晚餐：本地火锅"}
-  ]
-}
 
-输出（--out 目录）:
-  basemap_overview.png / origin.json
-  daymaps/basemap_dayN.png / origin_dayN.json
-  map_spec.json  dayN_spec.json  cards_spec.json
-  photo_queries.json  docx_content.json
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import argparse, json, math, os, sys
 
 DIR = os.path.dirname(os.path.abspath(__file__))
@@ -63,8 +63,8 @@ def bbox_for(coords, pad=0.12, min_pad=0.002):
 
 
 def resolve_spots(city, plan):
-    """把 plan.days[].spots 解析为带完整信息的列表:
-       [{name, lon, lat, tag, pay, icon, desc, query, custom:bool}]"""
+
+
     db = CITIES.get(city, {})
     all_spots = []
     for d in plan['days']:
@@ -96,7 +96,7 @@ def fetch_map(bbox, zoom, out_path, meta_path, cache_dir, reuse=False):
 
 
 def merge_overview_labels(spots, merge_map):
-    """把 overview 中靠得太近(<80px)的同日景点按 merge_map 合并标签名。"""
+
     if not merge_map:
         return spots
     out = []
@@ -111,7 +111,7 @@ def merge_overview_labels(spots, merge_map):
 def build_overview(plan, outdir, cache, reuse=False):
     city = plan['city']
     ov = plan.get('overview', {})
-    exclude = set(ov.get('exclude', []))   # 远郊景点不画进总图（用 corner 指示方向）
+    exclude = set(ov.get('exclude', []))   
     spots = resolve_spots(city, plan)
     spots = [s for s in spots if s['name'] not in exclude]
     coords = [(s['lon'], s['lat']) for s in spots]
@@ -122,7 +122,7 @@ def build_overview(plan, outdir, cache, reuse=False):
     meta = fetch_map(bbox, zoom, bm, meta_path, cache, reuse)
     mw, mh = meta['width'], meta['height']
 
-    # 每个景点像素坐标 + day 归属
+    
     day_of = {}
     for i, d in enumerate(plan['days'], 1):
         for s in d['spots']:
@@ -132,7 +132,7 @@ def build_overview(plan, outdir, cache, reuse=False):
         x, y = geo.to_pixels(s['lon'], s['lat'], meta)
         px[s['name']] = (x, y)
 
-    # 分区圈：按天聚类（仅未被 exclude 的景点）
+    
     zones = []
     zone_labels = []
     by_day = {}
@@ -149,7 +149,7 @@ def build_overview(plan, outdir, cache, reuse=False):
                       "label": f"Day{day}"})
         zone_labels.append([round(cx), round(cy - ry - 32), round(cx + 60), round(cy - ry - 4)])
 
-    # 标签避让（总图 .lbl），occupied = 图例/角标/分区标签
+    
     ndays = len(plan['days'])
     legend_box = [mw - 322, 22, mw - 18, 22 + 60 + 42 * ndays]
     corner = plan.get('overview', {}).get('corner')
@@ -163,7 +163,7 @@ def build_overview(plan, outdir, cache, reuse=False):
     ov_spots = merge_overview_labels(ov_spots, plan.get('overview', {}).get('merge'))
     placed, unresolved = autolayout.layout('map', ov_spots, mw, mh, occupied=occupied)
 
-    # 图例
+    
     legend = []
     for d in plan['days']:
         legend.append({"day": d['day'], "title": f"Day{d['day']}（{d['sub']}）", "desc": d.get('legend_desc', '')})
@@ -205,16 +205,16 @@ def build_day(plan, d, outdir, cache, reuse=False):
     mw, mh = meta['width'], meta['height']
     px = [(geo.to_pixels(s['lon'], s['lat'], meta)) for s in spots]
 
-    # tips 框（占位，四角选最优）
+    
     tip_w = min(320, int(mw * 0.42))
     tip_h = 120 + 34 * len(d.get('tips', {}).get('lines', []))
     corners = [(8, max(40, mh - tip_h - 120)), (8, 60), (mw - tip_w - 8, 60), (mw - tip_w - 8, mh - tip_h - 120)]
-    # 先对 spot 布局（occupied 空），再选 tips 角位，再复核
+    
     d_spots = [{"x": x, "y": y, "name": s['name'], "desc": s['desc']} for (x, y), s in zip(px, spots)]
     placed_s, un_s = autolayout.layout('spot', d_spots, mw, mh, occupied=[])
     spot_boxes = [autolayout.box_of('spot', s['x'], s['y'], s.get('pos', 'b'), s.get('dx', 0), s.get('dy', 0),
                                     s['name'], s.get('desc', '')) for s in placed_s]
-    # tips 选重叠最少的角
+    
     best_corner = corners[0]; best_score = None
     for (cx, cy) in corners:
         tb = (cx, cy, cx + tip_w, cy + tip_h)
@@ -228,7 +228,7 @@ def build_day(plan, d, outdir, cache, reuse=False):
     tip_box = (tips['x'], tips['y'], tips['x'] + tip_w, tips['y'] + tip_h) if tips else None
     occupied = [tip_box] if tip_box else []
 
-    # transits 放到两景点连线中点 + 垂直偏移，再做左锚定 trans 避让
+    
     transits = []
     for t in d.get('transits', []):
         ia = next(i for i, s in enumerate(spots) if s['name'] == t['a'])
@@ -243,12 +243,12 @@ def build_day(plan, d, outdir, cache, reuse=False):
     placed_t, un_t = autolayout.layout_trans(transits, mw, mh, occupied=spot_boxes + occupied)
     trans_out = [{"x": t['x'], "y": t['y'], "text": t['name']} for t in placed_t]
 
-    # route 链
+    
     route = [[list(p) for p in px]]
     for (ia, ib) in d.get('dash', []):
         route.append(([list(px[ia]), list(px[ib])], "14 10"))
 
-    # 编号 + 避让结果
+    
     for i, s in enumerate(placed_s):
         s['num'] = i + 1
 
@@ -308,7 +308,7 @@ def build_cards(plan, outdir):
     }
     json.dump(spec, open(os.path.join(outdir, 'cards_spec.json'), 'w'), ensure_ascii=False, indent=1)
 
-    # photo_queries.json（wiki_photo --batch 直接吃）
+    
     queries = {}
     for d in plan['days']:
         for s in d['spots']:
@@ -344,7 +344,7 @@ def build_docx_content(plan, outdir):
         daymaps.append({"h2": f"Day{d['day']} · {d.get('date','')} {d.get('sub','')}",
                         "img": f"day{d['day']}.jpg"})
 
-    # 住宿节：plan.stays 有具体酒店 → 展示酒店推荐表；否则保留片区对比空表
+    
     stays = plan.get('stays') or []
     if stays:
         stay_section = {"type": "table", "title": "四、住宿推荐（具体酒店 / 民宿）",
@@ -359,7 +359,7 @@ def build_docx_content(plan, outdir):
                         "rows": [["", "", "", ""], ["", "", "", ""], ["", "", "", ""]],
                         "widths": [1600, 2400, 2400, 2626], "note": ""}
 
-    # 交通节：plan.transport 有班次数据 → 大交通拆成高铁/航班具体班次表
+    
     tr = plan.get('transport') or {}
     groups = [
         {"h2": "市内交通", "headers": ["方式", "参考价", "备注"], "rows": [["", "", ""]], "widths": [1500, 1800, 5726]},

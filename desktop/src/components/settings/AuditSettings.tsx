@@ -25,13 +25,13 @@ const FILTERS: Array<{ key: AuditStatus | 'all'; label: string }> = [
   { key: 'denied', label: '被拒绝' },
 ]
 
-/**
- * 留痕类型。
- *
- * 取值与 core 的 `security/audit.py` 一一对应；`skill` 是技能调用，其余是实体操作。
- * 「权限确认」这个类型目前还没有写入点（确认结果记在对应技能那条的 status 上），
- * 留着是为了与后端口径一致 —— 不是漏了筛选项。
- */
+
+
+
+
+
+
+
 const KIND_LABEL: Record<string, string> = {
   skill: '技能调用',
   assistant: '搭子',
@@ -51,13 +51,13 @@ const KIND_FILTERS: Array<{ key: AuditKind | 'all'; label: string }> = [
   { key: 'permission', label: '权限确认' },
 ]
 
-/**
- * 实体操作的动作用词。
- *
- * 这些词来自 core 的 `record_op(action=...)` 调用点，**改核心时要一起改这里**，
- * 否则界面上会直接露出英文原文（兜底就是这么写的：宁可露出原文，也不编一个
- * 看起来像人话、其实对不上的词）。
- */
+
+
+
+
+
+
+
 const ACTION_LABEL: Record<string, string> = {
   create: '新建',
   update: '修改',
@@ -87,12 +87,12 @@ function dayString(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
-/**
- * 把快捷范围换算成后端要的起止日期。
- *
- * 传 **YYYY-MM-DD** 而不是 epoch：后端 `day_range` 负责把结束日算到当天 23:59:59
- * —— 在前端自己算 epoch，"结束日少一天"是最常见的错，而且很难看出来。
- */
+
+
+
+
+
+
 function rangeDates(
   range: RangeKey,
   from: string,
@@ -109,15 +109,15 @@ function rangeDates(
   return { date_from: dayString(start), date_to: dayString(now) }
 }
 
-/**
- * 审计表里的时刻：**不带年、带秒**（表格一行一条记录，带年会把那一列撑得很宽）。
- * 格式实现统一在 `lib/format`（第 92 批，M-36 改用 `Intl`）——
- * 原先它与工作区那份是**两份一模一样的手写实现**。
- */
+
+
+
+
+
 const formatTime = (seconds: number): string =>
   formatDateTime(seconds, { withSeconds: true, withYear: false })
 
-/** 实体操作（建群 / 改搭子 / 跑任务…）的标题 —— 它们的 `skill_name` 是空串。 */
+
 function entityTitle(entry: AuditLogEntry): string {
   const kind = KIND_LABEL[entry.kind ?? ''] ?? '操作'
   const action = entry.action ?? ''
@@ -143,8 +143,8 @@ function EntryRow({ entry, actorName }: { entry: AuditLogEntry; actorName?: stri
               {entry.skill_name || entityTitle(entry)}
             </span>
             <Badge tone={meta.tone}>{meta.label}</Badge>
-            {/* 实体操作不显类型的话，这一行就只剩一个状态徽章 —— 用户看不出刚才
-                到底是"建了个群"还是"跑了一次自动化任务" */}
+            {
+}
             {entry.kind && entry.kind !== 'skill' ? (
               <Badge tone="neutral">{KIND_LABEL[entry.kind] ?? entry.kind}</Badge>
             ) : null}
@@ -185,15 +185,15 @@ function EntryRow({ entry, actorName }: { entry: AuditLogEntry; actorName?: stri
   )
 }
 
-/**
- * 审计日志。
- *
- * 对应开发文档 10.5 节：用户必须能查清「谁在什么时候调用了什么工具、
- * 参数是什么、是否被批准」。参数在写入数据库时已脱敏，这里直接展示。
- */
+
+
+
+
+
+
 export function AuditSettings() {
   const api = useAppStore((state) => state.api)
-  // 搭子列表给「按搭子筛」用：条目里存的只有 actor_id，直接显示 id 等于没说
+  
   const assistants = useAssistantStore((state) => state.assistants)
 
   const [entries, setEntries] = useState<AuditLogEntry[]>([])
@@ -211,14 +211,14 @@ export function AuditSettings() {
 
   const legacyIds = useAssistantStore((state) => state.legacyIds)
   const assistantNames = new Map(assistants.map((item) => [item.id, item.name]))
-  /**
-   * 把审计记录里的搭子 id 翻成名字。
-   *
-   * ⚠️ 必须先试**旧 id → 新 id**：内置搭子在 改过 id（office →
-   * RelationBuddy），而审计日志是历史事实、我们刻意不改写它 —— 少了这一步，
-   * 升级用户翻历史时会看到一串「office」，既不知道那是什么，也不知道那就是
-   * 现在的 Relation Buddy。
-   */
+  
+
+
+
+
+
+
+
   const nameOf = (id: string): string => {
     const direct = assistantNames.get(id)
     if (direct) return direct
@@ -227,12 +227,12 @@ export function AuditSettings() {
   }
   const filtering = filter !== 'all' || kind !== 'all' || actor !== 'all' || range !== 'all'
 
-  /**
-   * 当前筛了什么。
-   *
-   * 空结果时必须把它显示出来 —— 否则用户只会看到一片空白，然后以为"记录都没了"
-   * （他刚刚才点了一堆筛选条件，但屏幕上没有任何东西提示这件事）。
-   */
+  
+
+
+
+
+
   const activeLabels = [
     filter === 'all' ? null : `结果：${STATUS_META[filter].label}`,
     kind === 'all' ? null : `类型：${KIND_LABEL[kind] ?? kind}`,
@@ -339,9 +339,9 @@ export function AuditSettings() {
         </div>
       ) : null}
 
-      {/* 筛选区：结果 / 类型 / 搭子 / 时间范围。
-          用户的原话是"九点半那会儿出了什么事" —— 只能从头翻列表的话，
-          一次失败就得翻到尾。四类条件**可叠加**，右上角一键清空。 */}
+      {
+
+}
       <div className="mt-4 rounded-[10px] border border-line bg-canvas px-3.5 py-3">
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2">
           <span className="w-[28px] text-[11.5px] text-ink-faint">结果</span>

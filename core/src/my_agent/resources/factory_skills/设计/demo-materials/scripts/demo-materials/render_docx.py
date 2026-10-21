@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
-"""
-大纲 → Word 演示脚本
 
-产出 docx：封面信息 → 演示大纲总览表 → 逐页演示脚本（要点 + 原文引文 + 讲稿备注）
-          → 附录：素材溯源表
-可选 --md 同步输出 Markdown 大纲（便于人工调整结构），--reindex 重排页面/要点编号。
 
-用法：
-  python render_docx.py outline.json -o 演示脚本.docx
-  python render_docx.py outline.json -o 演示脚本.docx --md 演示大纲.md
-  python render_docx.py outline.json --reindex --out-json outline_new.json
-"""
+
+
+
+
+
+
+
+
+
+
 import argparse
 import datetime
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from lib_outline import (  # noqa: E402
+from lib_outline import (  
     load_json, save_json, material_index, die,
 )
 
@@ -60,7 +60,7 @@ def _para(doc, text, size=11, bold=False, color=None, italic=False,
 
 
 def reindex(ol):
-    """按当前页面/要点顺序重排编号（P-1..、T-1-1..），人工调整结构后用。"""
+
     for i, p in enumerate(ol.get("pages", []), 1):
         p["id"] = "P-%d" % i
         for j, t in enumerate(p.get("points", []), 1):
@@ -130,7 +130,7 @@ def render_docx(ol, mats, out):
 
     meta = ol.get("meta", {}) or {}
 
-    # 封面
+    
     _para(doc, meta.get("name", "对外演示材料"), size=22, bold=True,
           align=WD_ALIGN_PARAGRAPH.CENTER, space_after=4)
     _para(doc, "演示脚本（含大纲、页面要点与讲稿备注）", size=12,
@@ -153,7 +153,7 @@ def render_docx(ol, mats, out):
         row[1].text = ""
         _set_font(row[1].paragraphs[0].add_run(str(v)), size=10)
 
-    # 一、大纲总览
+    
     doc.add_page_break()
     _para(doc, "一、演示大纲总览", size=16, bold=True, space_after=10)
     tb = doc.add_table(rows=1, cols=6)
@@ -177,7 +177,7 @@ def render_docx(ol, mats, out):
             cells[i].text = ""
             _set_font(cells[i].paragraphs[0].add_run(v), size=9)
 
-    # 二、逐页脚本
+    
     doc.add_page_break()
     _para(doc, "二、逐页演示脚本", size=16, bold=True, space_after=10)
 
@@ -215,7 +215,7 @@ def render_docx(ol, mats, out):
         else:
             _para(doc, "", size=6, space_after=8)
 
-    # 三、素材溯源表
+    
     doc.add_page_break()
     _para(doc, "三、附录：素材溯源表", size=16, bold=True, space_after=8)
     _para(doc, "每条要点的引文均逐字取自下表素材，编号一一对应，便于人工复核与调整。",

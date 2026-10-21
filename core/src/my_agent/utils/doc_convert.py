@@ -1,30 +1,30 @@
-"""文档转换：Markdown ↔ Word ↔ PDF。
 
-## PDF 为什么走浏览器渲染
 
-项目已经把 Playwright（含 Node 驱动）打进冻结产物，用来做浏览器自动化 ——
-而浏览器天生就是一个排版引擎：Markdown → HTML → `page.pdf()` 得到的就是
-**离线、中文正常、不要求用户装 Office** 的 PDF。
 
-对比另外两条路：
-- `reportlab` / `fpdf2`：得自带一个中文字体并随包分发，还要自己实现分页与
-  表格布局，做出来的效果远不如浏览器；
-- `weasyprint`：会拖进 GTK/Pango 原生 DLL，在 PyInstaller onedir 下最容易崩、
-  体积也最大。
 
-所以这里复用已有的 Playwright，**零新增依赖、零新增体积**。
 
-## 渲染 PDF 用的是独立的无头浏览器
 
-不用浏览器技能那个"带界面的会话"：那样每转一次文档都会在用户屏幕上闪一个
-标签页，而且会写进他的浏览记录。这里另起一个无头实例，渲染完就关。
 
-## 转换能力的边界（如实说明，不假装支持）
 
-Word ↔ Markdown 覆盖常用结构：标题、段落、有序/无序列表、表格、加粗斜体、
-代码块。**不还原**：图片、批注、页眉页脚、复杂嵌套样式 —— 排版类的东西转换
-必然有损，与其做出一个"看起来像但其实错位"的结果，不如让用户知道边界。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -36,8 +36,8 @@ from markdown_it import MarkdownIt
 
 logger = logging.getLogger(__name__)
 
-#: 打印用的最小 CSS：中文字体走系统自带（不随包分发字体文件），
-#: 并给表格/代码块一个能看的样子 —— 否则导出的 PDF 是一堆裸文本。
+
+
 _PRINT_CSS = """
 @page { size: A4; margin: 18mm 16mm; }
 body {
@@ -64,12 +64,12 @@ blockquote { margin: 10px 0; padding: 4px 12px; border-left: 3px solid #cfcfcf; 
 
 
 def _markdown_parser() -> MarkdownIt:
-    # 表格不在 commonmark 预设里，但 markdown-it 有这个规则，显式打开即可
+    
     return MarkdownIt("commonmark", {"html": False, "linkify": False}).enable("table")
 
 
 def markdown_to_html(markdown_text: str, *, title: str = "") -> str:
-    """Markdown → 完整的 HTML 文档（带打印样式）。"""
+
     body = _markdown_parser().render(markdown_text or "")
     heading = f"<title>{_escape(title)}</title>" if title else ""
     return (
@@ -89,10 +89,10 @@ def _escape(text: str) -> str:
 
 
 async def html_to_pdf(html: str, target: Path, *, timeout_ms: int = 60_000) -> None:
-    """用系统浏览器把 HTML 渲染成 PDF。
 
-    无头 + 独立实例：不打扰用户正在用的浏览器，也不会在他的会话里留下标签页。
-    """
+
+
+
     from playwright.async_api import async_playwright
 
     from ..browser.session import _apply_frozen_shim, _detect_channel
@@ -110,7 +110,7 @@ async def html_to_pdf(html: str, target: Path, *, timeout_ms: int = 60_000) -> N
         browser = await playwright.chromium.launch(channel=channel, headless=True)
         try:
             page = await browser.new_page()
-            # wait_until="load"：保证样式与字体都已就位，否则可能导出空白页
+            
             await page.set_content(html, wait_until="load", timeout=timeout_ms)
             await page.pdf(
                 path=str(target),
@@ -123,7 +123,7 @@ async def html_to_pdf(html: str, target: Path, *, timeout_ms: int = 60_000) -> N
 
 
 class DocConvertError(Exception):
-    """转换失败（缺依赖、文件损坏、格式不支持）。"""
+
 
     def __init__(self, message: str, *, detail: str = "") -> None:
         super().__init__(message)
@@ -131,11 +131,11 @@ class DocConvertError(Exception):
         self.detail = detail
 
 
-# --------------------------------------------------------------------------- #
-# Markdown → Word
-# --------------------------------------------------------------------------- #
+
+
+
 def markdown_to_docx(markdown_text: str, target: Path, *, title: str = "") -> None:
-    """Markdown → .docx（标题/段落/列表/表格/加粗斜体/代码块）。"""
+
     docx = _require("docx")
     document = docx.Document()
 
@@ -144,9 +144,9 @@ def markdown_to_docx(markdown_text: str, target: Path, *, title: str = "") -> No
 
     tokens = _markdown_parser().parse(markdown_text or "")
     list_stack: list[str] = []
-    # 列表项的样式要在**它内部的段落**上加，而不是在 list_item_open 上 ——
-    # 那时后面跟的是 paragraph_open，inline 内容还没到，直接取会拿到空文本
-    # （这个坑的表现是"列表整段消失"，而其它结构都正常）。
+    
+    
+    
     pending_list_style: str | None = None
 
     index = 0
@@ -201,7 +201,7 @@ def markdown_to_docx(markdown_text: str, target: Path, *, title: str = "") -> No
 
 
 def _append_table(document: Any, tokens: list[Any], index: int) -> int:
-    """把 markdown-it 的表格 token 折成 docx 表格；返回下一个待处理的下标。"""
+
     rows: list[list[tuple[str, bool]]] = []
     current: list[tuple[str, bool]] = []
     header_rows = 0
@@ -236,17 +236,17 @@ def _append_table(document: Any, tokens: list[Any], index: int) -> int:
                 for paragraph in cells[column].paragraphs:
                     for run in paragraph.runs:
                         run.bold = True
-    del header_rows  # 表头加粗由 strong 语法决定，样式上不再另做处理
+    del header_rows  
     return index + 1
 
 
 def _plain(text: str) -> str:
-    """去掉行内标记，留纯文本（供标题/单元格用）。"""
+
     return (text or "").replace("*", "").replace("`", "").strip()
 
 
 def _add_runs(paragraph: Any, inline: Any) -> None:
-    """按行内 token 生成 runs，保留加粗/斜体/行内代码。"""
+
     children = getattr(inline, "children", None) or []
     if not children:
         paragraph.add_run(_plain(inline.content))
@@ -271,15 +271,15 @@ def _add_runs(paragraph: Any, inline: Any) -> None:
             run.italic = italic or None
 
 
-# --------------------------------------------------------------------------- #
-# Word → Markdown
-# --------------------------------------------------------------------------- #
+
+
+
 def docx_to_markdown(path: Path) -> str:
-    """`.docx` → Markdown（标题层级、列表、表格、加粗斜体）。"""
+
     docx = _require("docx")
     try:
         document = docx.Document(str(path))
-    except Exception as exc:  # noqa: BLE001 - 损坏/加密/其实是 .doc
+    except Exception as exc:  
         raise DocConvertError(
             "读不出这个 Word 文件。如果是 .doc（旧格式）请先用 Word 另存为 .docx。",
             detail=str(exc),
@@ -339,32 +339,32 @@ def _table_to_markdown(table: Any) -> list[str]:
     return lines
 
 
-# --------------------------------------------------------------------------- #
-# PDF → 文字
-# --------------------------------------------------------------------------- #
-def pdf_to_text(path: Path) -> str:
-    """抽取 PDF 里的文字。
 
-    **不还原排版**：PDF 里"每一行画在哪"是绘图指令，没有段落概念，
-    抽出来的是按页面顺序的文字。这一点必须让用户知道 ——
-    否则他会以为转换坏了。
-    """
+
+
+def pdf_to_text(path: Path) -> str:
+
+
+
+
+
+
     pypdf = _require("pypdf")
     try:
         reader = pypdf.PdfReader(str(path))
         pages = [page.extract_text() or "" for page in reader.pages]
-    except Exception as exc:  # noqa: BLE001 - 加密/损坏
+    except Exception as exc:  
         raise DocConvertError("这个 PDF 读不出来（可能被加密或已损坏）。", detail=str(exc)) from exc
     return "\n\n".join(pages).strip()
 
 
 def _require(name: str) -> Any:
-    """惰性导入 office 依赖，缺了给一句人话。"""
+
     import importlib
 
     try:
         return importlib.import_module(name)
-    except ImportError as exc:  # pragma: no cover - 打包时一定带着
+    except ImportError as exc:  
         raise DocConvertError(
             f"缺少文档处理依赖 {name}，当前环境不支持文档转换。"
         ) from exc

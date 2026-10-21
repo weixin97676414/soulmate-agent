@@ -1,26 +1,26 @@
-"""官网搭子库：先查、再从官网导入。
 
-## 用户定的流程（2026-09-28）
 
-> AI 要新建搭子 / 建群之前，**先看官网有没有合适的**：有就下载导入并装技能包；
-> 没有才自己建。
 
-三个技能分工：
 
-- ``buddy_library_list`` —— 按**当前线路**打开官网搭子库，列出可导入的搭子；
-- ``buddy_import`` —— 把一个搭子导进来（给它 json 地址或本地路径，技能包会自动跟上）；
-- ``buddy_group_import`` —— 把一个搭子群包导进来。
 
-## 闸门不在描述里，在 orchestrator
 
-"先查再建"如果只写在工具描述里，模型照样会直接建。所以真正的约束在
-``agent/orchestrator.py``：没查过官网就调 ``team_create_assistant`` /
-``team_create_group`` 会被**拒绝**并被告知先去查（与项目既有的
-"独立步骤 + 闸门 + 不静默"同一套路）。
 
-查不到、连不上**不阻断**建 —— 但要求 AI 在回复里说明"官网未查到/查询失败，将自行创建"，
-不许假装查过。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -62,7 +62,7 @@ class LibraryListParams(BaseModel):
 class BuddyLibraryListSkill(BaseSkill):
     async def run(self, ctx: SkillContext, **params: Any) -> dict[str, Any]:
         library = _library(ctx)
-        # 联网抓页面是同步 IO，丢线程里做，别占住事件循环
+        
         return await asyncio.to_thread(library.list_available)
 
 
@@ -100,7 +100,7 @@ class BuddyImportSkill(BaseSkill):
             outcome = await library.import_buddy(args.source, actor_id=ctx.assistant_id)
         except SkillExecutionError:
             raise
-        except Exception as exc:  # noqa: BLE001 - 要把它变成人话，不是堆栈
+        except Exception as exc:  
             raise SkillExecutionError(f"导入失败：{exc}") from exc
         missing = outcome.get("skills_missing") or []
         return {
@@ -143,7 +143,7 @@ class BuddyGroupImportSkill(BaseSkill):
             outcome = await library.import_group(args.source, actor_id=ctx.assistant_id)
         except SkillExecutionError:
             raise
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  
             raise SkillExecutionError(f"导入失败：{exc}") from exc
         return {
             "imported": outcome,

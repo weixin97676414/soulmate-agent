@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""
-高考分数线查询脚本
-用法: python fetch_data.py --place 福建 [--year 2024 2023] [--classify 历史 物理] [--score 600] [--rank 1000]
-detail:{
-    "score" 表示：中间为一个分数，两头是分数段；
-    "num" 表示：本分数的人数;
-    "total_num" 表示：截止到本分数的累计人数（位次）
-}
-新增参数：
-    --score INT   按分数查询，返回该分数的人数和累计位次（省排名）
-    --rank  INT   按位次查询，返回该位次对应的分数区间
-注：stdout 仅输出 JSON，调试信息输出到 stderr，方便 LLM 直接读取结果。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import argparse
 import bisect
@@ -28,7 +28,7 @@ SOURCE = "open_tB0fU5wP"
 
 
 def fetch_data(year: str, place: str, classify: str, read_key: str, retry_times=1) -> list:
-    """从接口获取指定省份的分数线数据，仅读取 read_key 字段"""
+
     url_prefix = f"{BASE_URL}?type={TYPE}&from={SOURCE}&title={urllib.parse.quote('高考;一分一段表')}"
 
     if year != "" and year is not None:
@@ -44,7 +44,7 @@ def fetch_data(year: str, place: str, classify: str, read_key: str, retry_times=
 
     print("读取数据:", url, file=sys.stderr)
 
-    # import pdb;pdb.set_trace()
+    
 
     for _ in range(retry_times):
         try:
@@ -74,27 +74,27 @@ def filter_data(records: list, unwanted_keys: list = None) -> list:
 
 
 def _parse_score(score_str: str) -> int:
-    """
-    将 score 字段解析为可比较的整数（取下界）。
-    - 普通整数字符串 "694"     → 694
-    - 区间字符串     "695-750" → 695（区间下界，用于边界判断）
-    """
+
+
+
+
+
     if "-" in score_str:
         return int(score_str.split("-")[0])
     return int(score_str)
 
 
 def _build_index(detail: list) -> tuple:
-    """
-    将 detail 列表预处理为两个有序数组，便于二分查找。
-    detail 按高分→低分排列，total_num 单调递增。
 
-    返回:
-        scores     : list[int]  — 每条记录的分数（下界），升序（低分→高分）
-        total_nums : list[int]  — 对应的累计人数，降序（配合 scores 的反转）
-        detail_rev : list[dict] — 与 scores 对应的反转后 detail
-    """
-    # 过滤掉无法解析的脏数据
+
+
+
+
+
+
+
+
+    
     valid = []
     for item in detail:
         try:
@@ -102,7 +102,7 @@ def _build_index(detail: list) -> tuple:
         except (KeyError, ValueError, TypeError):
             continue
 
-    # detail 本身高分→低分；反转后变为低分→高分，scores 单调递增，满足 bisect 前提
+    
     valid_rev = list(reversed(valid))
     scores     = [v[1] for v in valid_rev]
     total_nums = [v[2] for v in valid_rev]
@@ -123,28 +123,28 @@ def _make_result(record: dict, item: dict, user_in: int) -> dict:
 
 
 def query_by_score(records: list, score_list: list) -> list:
-    """
-    按分数查询，返回该分数的人数和累计位次（省排名）。
 
-    支持传入多个分数（score_list），返回所有分数对应的查询结果列表。
-    使用二分法在 scores 数组中定位目标分数：
-      - 若命中普通整数分数段，直接返回；
-      - 若落在顶部区间（如 "695-750"）内，也能正确匹配。
-    时间复杂度 O(M * log N)，其中 M 为查询分数的个数，N 为分数段条目数。
-    """
+
+
+
+
+
+
+
+
     rst = []
     for record in records:
         detail = record.get("查询数据", [])
         if not detail:
             continue
 
-        # 对每个 record，只需构建一次索引，避免重复计算
+        
         scores, _, detail_rev = _build_index(detail)
 
-        # 遍历传入的多个分数进行查询
+        
         for score in score_list:
-            # bisect_right(scores, score) - 1 找到最后一个 <= score 的位置
-            # 若 score 低于所有分数（idx=-1），fallback 到最低分行（idx=0）
+            
+            
             idx = bisect.bisect_right(scores, score) - 1
             if idx < 0:
                 idx = 0
@@ -152,16 +152,16 @@ def query_by_score(records: list, score_list: list) -> list:
             item = detail_rev[idx]
             item_score = _parse_score(item["返回的查询分数"])
 
-            # 精确命中：整数分数段完全匹配
+            
             if item_score == score:
                 rst.append(_make_result(record, item, score))
 
-            # 区间命中：score 落在形如 "695-750" 的顶部区间内
-            # 若 score 超出区间上界（如 751 > 750），也返回该最高分行
+            
+            
             elif "-" in item["返回的查询分数"]:
                 rst.append(_make_result(record, item, score))
 
-            # score 低于数据最低分：返回最低分行，表示该分数排名在最末
+            
             elif score < item_score:
                 rst.append(_make_result(record, item, score))
 
@@ -169,24 +169,24 @@ def query_by_score(records: list, score_list: list) -> list:
 
 
 def query_by_rank(records: list, rank_list: list) -> list:
-    """
-    按位次查询，返回该位次对应的分数。
 
-    支持传入多个位次（rank_list），返回所有位次对应的查询结果列表。
-    total_num 在原始 detail（高分→低分）中单调递增，
-    反转后（低分→高分）变为单调递减，不适合直接二分。
-    因此在原始顺序（高分→低分）上对 total_num 升序数组做 bisect，
-    等价于找第一个 total_num >= rank 的条目。
-    时间复杂度 O(M * log N)，其中 M 为查询位次的个数，N 为分数段条目数。
-    """
+
+
+
+
+
+
+
+
+
     rst = []
     for record in records:
         detail = record.get("查询数据", [])
         if not detail:
             continue
 
-        # 原始顺序：高分→低分，total_num 单调递增
-        # 对每个 record，只需构建一次 total_nums 数组，避免重复计算
+        
+        
         total_nums = []
         for item in detail:
             try:
@@ -194,10 +194,10 @@ def query_by_rank(records: list, rank_list: list) -> list:
             except (KeyError, ValueError, TypeError):
                 total_nums.append(0)
 
-        # 遍历传入的多个位次进行查询
+        
         for rank in rank_list:
-            # bisect_left 找到第一个 total_num >= rank 的索引
-            # 若 rank 超出最大累计人数，fallback 到最后一行（最低分/最大位次行）
+            
+            
             idx = bisect.bisect_left(total_nums, rank)
             if idx >= len(detail):
                 idx = len(detail) - 1
@@ -307,7 +307,7 @@ def main():
         except ValueError:
             pass
 
-    # 按位次查询
+    
     if args.rank is not None:
         rank = args.rank
         if not isinstance(args.rank, list):

@@ -1,12 +1,12 @@
-"""桌面能力技能：剪贴板读写、音量、亮度、锁屏、截图。
 
-这里守两件事：
 
-1. **权限分级**（读文本 safe，其余 confirm）——分级错了用户要么被无谓打扰，
-   要么在不知情的情况下被改掉剪贴板/音量；
-2. **做不到就说做不到**：亮度不支持的机器上必须给出明确原因，
-   不能返回一个看起来成功的 `{"ok": True}`。
-"""
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ class TestPermissionLevels:
     def test_read_only_is_safe_mutating_needs_confirm(self):
         assert ClipboardReadTextSkill.meta.permission_level == "safe"
         assert BrightnessGetSkill.meta.permission_level == "safe"
-        # 读音量与静音状态也是纯读：不该为了"看一眼现在是不是静音"弹确认框
+        
         assert VolumeGetSkill.meta.permission_level == "safe"
 
         assert ClipboardReadImageSkill.meta.permission_level == "confirm"
@@ -100,7 +100,7 @@ class TestClipboardSkills:
     @on_windows
     @pytest.mark.asyncio
     async def test_read_image_saves_artifact(self, tmp_path):
-        """截图 → 放进剪贴板 → 技能读回来落成产物（端到端，不碰用户原有内容）。"""
+
         ctx = make_ctx(tmp_path)
         shot = tmp_path / "probe.png"
         original = windows_api.read_clipboard_text()
@@ -126,7 +126,7 @@ class TestSystemControlSkills:
 
     @pytest.mark.asyncio
     async def test_volume_rejects_unknown_action(self, tmp_path):
-        """参数模型先挡一道：不认识的 action 根本进不到技能体内。"""
+
         from pydantic import ValidationError
 
         with pytest.raises(ValidationError):
@@ -134,7 +134,7 @@ class TestSystemControlSkills:
 
     @pytest.mark.asyncio
     async def test_volume_get_reports_percent_and_muted(self, tmp_path, monkeypatch):
-        """读音量必须把"是不是静音"一起说出来 —— 这正是用户抱怨 AI 只能靠猜的地方。"""
+
 
         async def fake_state() -> tuple[int, bool]:
             return 42, True
@@ -149,7 +149,7 @@ class TestSystemControlSkills:
 
     @pytest.mark.asyncio
     async def test_volume_set_unmutes_and_reports_state(self, tmp_path, monkeypatch):
-        """set 要顺带解除静音，并把操作后的真实状态回给模型。"""
+
         seen: dict[str, int] = {}
 
         async def fake_set(percent: int, *, unmute: bool = True) -> tuple[int, bool]:
@@ -168,7 +168,7 @@ class TestSystemControlSkills:
 
     @pytest.mark.asyncio
     async def test_volume_mute_with_explicit_target(self, tmp_path, monkeypatch):
-        """给了 muted 就照它设 —— 不再靠"切换"碰运气。"""
+
         seen: dict[str, bool] = {}
 
         async def fake_mute(muted: bool) -> tuple[int, bool]:
@@ -185,7 +185,7 @@ class TestSystemControlSkills:
 
     @pytest.mark.asyncio
     async def test_volume_mute_without_target_flips_current_state(self, tmp_path, monkeypatch):
-        """没给 muted 时先读状态再取反 —— 盲切换会让"静音"与"取消静音"说不清。"""
+
 
         async def fake_state() -> tuple[int, bool]:
             return 50, True
@@ -203,7 +203,7 @@ class TestSystemControlSkills:
 
     @pytest.mark.asyncio
     async def test_brightness_get_reports_unsupported_as_fact(self, tmp_path, monkeypatch):
-        """不支持是**事实**，不是报错：读亮度用 supported=False 表达。"""
+
 
         async def boom() -> int:
             raise windows_api.WindowsApiError(windows_api._BRIGHTNESS_UNSUPPORTED)
@@ -217,7 +217,7 @@ class TestSystemControlSkills:
 
     @pytest.mark.asyncio
     async def test_brightness_set_raises_when_unsupported(self, tmp_path, monkeypatch):
-        """要**改**的时候必须报错：返回成功会让用户以为亮度已经变了。"""
+
 
         async def boom(_percent: int) -> int:
             raise windows_api.WindowsApiError(windows_api._BRIGHTNESS_UNSUPPORTED)
@@ -267,7 +267,7 @@ class TestSystemControlSkills:
 
     @pytest.mark.asyncio
     async def test_screenshot_failure_is_translated(self, tmp_path, monkeypatch):
-        """系统调用失败要转成**技能错误**：否则整轮对话会以一个看不懂的 400 收场。"""
+
 
         async def boom(_target, *, region=None) -> None:
             raise windows_api.WindowsApiError("截图失败")

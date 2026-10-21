@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
-"""
-知乎 AI 内容写作工具 - AI Content Writer for Zhihu
 
-功能:
-  1. 从数据库中选取话题（热榜/推荐/邀请问题）
-  2. 支持上传参考资料（URL / 文本文件 / 粘贴文本）
-  3. AI 生成符合知乎调性的内容（文章 / 回答）
-  4. 交互式预览、编辑和确认
-  5. 保存草稿到 data/drafts/
 
-用法:
-  python content_writer.py                      # 交互模式
-  python content_writer.py --topic "xxx"        # 指定话题
-  python content_writer.py --from hot           # 从热榜选话题
-  python content_writer.py --from recommend     # 从推荐问题选
-  python content_writer.py --from invited       # 从邀请问题选
-  python content_writer.py --ref url1,url2      # 参考链接
-  python content_writer.py --style professional # 写作风格
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import sys
 import os
@@ -34,7 +34,7 @@ from db import (init_database, query_articles, query_questions,
 PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
 DRAFTS_DIR = os.path.join(PROJECT_DIR, 'data', 'drafts')
 
-# 写作风格
+
 STYLES = {
     'professional': {
         'name': '专业深度',
@@ -62,7 +62,7 @@ STYLES = {
     }
 }
 
-# 内容类型
+
 CONTENT_TYPES = {
     'article': '知乎文章（独立发布，含标题和封面）',
     'answer': '问题回答（针对具体问题，直接切入）'
@@ -70,7 +70,7 @@ CONTENT_TYPES = {
 
 
 def get_topics(source='all', limit=20):
-    """从数据库获取可选话题"""
+
     init_database()
     topics = []
 
@@ -123,14 +123,14 @@ def get_topics(source='all', limit=20):
 
 
 def fetch_url_content(url):
-    """抓取 URL 内容作为参考资料"""
+
     try:
         req = urllib.request.Request(url, headers={
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         })
         with urllib.request.urlopen(req, timeout=10) as resp:
             content = resp.read().decode('utf-8', errors='replace')
-            # 简单清洗 HTML
+            
             clean = re.sub(r'<[^>]+>', ' ', content)
             clean = re.sub(r'\s+', ' ', clean)
             return clean[:5000]
@@ -139,7 +139,7 @@ def fetch_url_content(url):
 
 
 def display_topics(topics, page=0, per_page=10):
-    """显示话题列表"""
+
     start = page * per_page
     end = start + per_page
     chunk = topics[start:end]
@@ -168,7 +168,7 @@ def display_topics(topics, page=0, per_page=10):
 
 
 def select_topic_interactive(topics):
-    """交互式话题选择"""
+
     page = 0
     per_page = 5
 
@@ -193,7 +193,7 @@ def select_topic_interactive(topics):
             if 0 <= idx < len(topics):
                 return topics[idx]
         elif choice:
-            # 自定义话题
+            
             return {'type': 'custom', 'label': '✏️ 自定义', 'title': choice, 'url': ''}
 
         if not choice.isdigit() and not choice:
@@ -201,30 +201,30 @@ def select_topic_interactive(topics):
 
 
 def build_ai_prompt(topic, refs, style, content_type):
-    """构建 AI 生成提示词"""
+
     style_config = STYLES.get(style, STYLES['conversational'])
     is_answer = content_type == 'answer'
 
     prompt_parts = []
 
-    # 话题
+    
     prompt_parts.append(f"**话题/问题**: {topic['title']}")
     if topic.get('url'):
         prompt_parts.append(f"**链接**: {topic['url']}")
 
-    # 类型
+    
     if is_answer:
         prompt_parts.append(f"**内容类型**: 知乎问题回答（直接回答问题，不需要单独标题）")
     else:
         prompt_parts.append(f"**内容类型**: 知乎文章（需要吸引人的标题和完整正文）")
 
-    # 风格
+    
     prompt_parts.append(f"**写作风格**: {style_config['name']}")
     prompt_parts.append(f"**语气要求**: {style_config['tone']}")
     prompt_parts.append(f"**结构建议**: {style_config['structure']}")
     prompt_parts.append(f"**参考长度**: {style_config['length']}")
 
-    # 参考资料
+    
     if refs:
         prompt_parts.append(f"\n**参考资料**:")
         for i, ref in enumerate(refs):
@@ -244,9 +244,9 @@ def build_ai_prompt(topic, refs, style, content_type):
 
 
 def generate_content(prompt):
-    """通过 AI 生成内容 - 返回标题和正文"""
-    # 内容由调用方 AI 生成
-    # 这里返回提示词，让调用方完成实际生成
+
+    
+    
 
     system_msg = '''你是一位资深的知乎内容创作者，擅长各种写作风格。
 
@@ -268,12 +268,12 @@ def generate_content(prompt):
     return {
         'system': system_msg,
         'prompt': prompt,
-        'type': 'ai_request'  # 标记需要 AI 处理
+        'type': 'ai_request'  
     }
 
 
 def save_draft(title, body, content_type, topic_info, style, refs):
-    """保存草稿"""
+
     os.makedirs(DRAFTS_DIR, exist_ok=True)
 
     ts = datetime.now(timezone(timedelta(hours=8))).strftime('%Y%m%d_%H%M%S')
@@ -299,7 +299,7 @@ def save_draft(title, body, content_type, topic_info, style, refs):
 
 
 def list_drafts():
-    """列出所有草稿"""
+
     if not os.path.exists(DRAFTS_DIR):
         return []
 
@@ -322,7 +322,7 @@ def main():
     print("  知乎 AI 内容写作工具 v1.0")
     print("=" * 60)
 
-    # 解析参数
+    
     args = sys.argv[1:]
     topic_source = 'all'
     custom_topic = None
@@ -352,7 +352,7 @@ def main():
                 i += 1
         i += 1
 
-    # Step 1: 选择话题
+    
     print("\n[1/4] 选择写作话题")
     topic = None
 
@@ -377,10 +377,10 @@ def main():
 
     print(f"\n  已选择: {topic['title'][:60]}")
 
-    # Step 2: 选择内容类型和风格
+    
     print("\n[2/4] 设置写作参数")
 
-    # 内容类型
+    
     print(f"\n  内容类型:")
     for k, v in CONTENT_TYPES.items():
         mark = ' ◀' if k == content_type else ''
@@ -389,7 +389,7 @@ def main():
     if ct in CONTENT_TYPES:
         content_type = ct
 
-    # 风格
+    
     print(f"\n  写作风格:")
     for k, v in STYLES.items():
         mark = ' ◀' if k == style else ''
@@ -400,7 +400,7 @@ def main():
 
     print(f"\n  ✅ 类型: {CONTENT_TYPES[content_type]} | 风格: {STYLES[style]['name']}")
 
-    # Step 3: 参考资料
+    
     print("\n[3/4] 添加参考资料（可选，直接回车跳过）")
 
     refs = []
@@ -432,12 +432,12 @@ def main():
     if refs:
         print(f"  📎 共 {len(refs)} 份参考资料")
 
-    # Step 4: 生成 AI 提示词
+    
     print("\n[4/4] 准备 AI 生成...")
     prompt = build_ai_prompt(topic, refs, style, content_type)
     result = generate_content(prompt)
 
-    # 保存提示词到文件，供外部 AI 处理
+    
     prompt_file = os.path.join(DRAFTS_DIR, 'latest_prompt.json')
     os.makedirs(DRAFTS_DIR, exist_ok=True)
     with open(prompt_file, 'w', encoding='utf-8') as f:
@@ -458,7 +458,7 @@ def main():
 {'='*60}
 """)
 
-    # 返回提示词以便调用方 AI 处理
+    
     print("---PROMPT_START---")
     print(result['system'])
     print("\n---\n")

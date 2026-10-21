@@ -1,10 +1,10 @@
-"""
-条款提取脚本
-Clause Extraction Script
 
-功能：智能提取合同中的各类条款，包括标的条款、价款条款、期限条款、违约责任等
-支持多语言、多格式合同文本的条款识别与分类
-"""
+
+
+
+
+
+
 
 import re
 import json
@@ -14,90 +14,90 @@ from enum import Enum
 
 
 class ClauseType(Enum):
-    """条款类型枚举"""
-    # 基础信息条款
-    BASIC_INFO = "basic_info"           # 基本信息条款
-    PARTIES = "parties"                 # 当事人条款
+
     
-    # 核心权利义务条款
-    SUBJECT_MATTER = "subject_matter"   # 标的条款
-    PRICE_PAYMENT = "price_payment"     # 价款支付条款
-    TIME_PERIOD = "time_period"         # 期限条款
-    DELIVERY_PERFORMANCE = "delivery"   # 履行交付条款
-    QUALITY_STANDARD = "quality"        # 质量标准条款
+    BASIC_INFO = "basic_info"           
+    PARTIES = "parties"                 
     
-    # 责任条款
-    BREACH_RESPONSIBILITY = "breach"    # 违约责任条款
-    LIABILITY_EXEMPTION = "exemption"   # 免责条款
-    DAMAGES_COMPENSATION = "damages"    # 损害赔偿条款
     
-    # 限制性条款
-    CONFIDENTIALITY = "confidentiality" # 保密条款
-    NON_COMPETE = "non_compete"         # 竞业限制条款
-    NON_SOLICITATION = "non_solicit"    # 竞业禁止条款
-    INTELLECTUAL_PROPERTY = "ip"        # 知识产权条款
+    SUBJECT_MATTER = "subject_matter"   
+    PRICE_PAYMENT = "price_payment"     
+    TIME_PERIOD = "time_period"         
+    DELIVERY_PERFORMANCE = "delivery"   
+    QUALITY_STANDARD = "quality"        
     
-    # 程序性条款
-    DISPUTE_RESOLUTION = "dispute"      # 争议解决条款
-    JURISDICTION = "jurisdiction"       # 管辖条款
-    GOVERNING_LAW = "governing_law"     # 适用法律条款
-    FORCE_MAJEURE = "force_majeure"     # 不可抗力条款
     
-    # 其他条款
-    TERMINATION = "termination"         # 解除终止条款
-    ASSIGNMENT = "assignment"           # 转让条款
-    AMENDMENT = "amendment"             # 变更条款
-    MISCELLANEOUS = "miscellaneous"     # 其他条款
-    ATTACHMENTS = "attachments"         # 附件条款
+    BREACH_RESPONSIBILITY = "breach"    
+    LIABILITY_EXEMPTION = "exemption"   
+    DAMAGES_COMPENSATION = "damages"    
+    
+    
+    CONFIDENTIALITY = "confidentiality" 
+    NON_COMPETE = "non_compete"         
+    NON_SOLICITATION = "non_solicit"    
+    INTELLECTUAL_PROPERTY = "ip"        
+    
+    
+    DISPUTE_RESOLUTION = "dispute"      
+    JURISDICTION = "jurisdiction"       
+    GOVERNING_LAW = "governing_law"     
+    FORCE_MAJEURE = "force_majeure"     
+    
+    
+    TERMINATION = "termination"         
+    ASSIGNMENT = "assignment"           
+    AMENDMENT = "amendment"             
+    MISCELLANEOUS = "miscellaneous"     
+    ATTACHMENTS = "attachments"         
 
 
 @dataclass
 class ExtractedClause:
-    """提取的条款数据类"""
-    clause_type: str                    # 条款类型
-    clause_number: Optional[str]         # 条款编号
-    clause_title: Optional[str]          # 条款标题
-    clause_content: str                  # 条款内容
-    key_elements: Dict                  # 关键要素
-    raw_text: str                       # 原始文本片段
-    confidence: float                   # 提取置信度
+
+    clause_type: str                    
+    clause_number: Optional[str]         
+    clause_title: Optional[str]          
+    clause_content: str                  
+    key_elements: Dict                  
+    raw_text: str                       
+    confidence: float                   
 
 
 class ClauseExtractor:
-    """条款提取器"""
+
     
     def __init__(self):
         self.clause_patterns = self._init_clause_patterns()
         self.contract_type_patterns = self._init_contract_type_patterns()
     
     def extract(self, contract_text: str, contract_type: str = "auto") -> Dict:
-        """
-        从合同文本中提取条款
+
+
+
+
+
+
+
+
+
+
         
-        Args:
-            contract_text: 合同文本内容
-            contract_type: 合同类型
-            
-        Returns:
-            包含提取条款和元信息的字典
-        """
-        # 自动识别合同类型
         if contract_type == "auto":
             contract_type = self._identify_type(contract_text)
         
-        # 文本预处理
+        
         cleaned_text = self._preprocess_text(contract_text)
         
-        # 提取条款结构
+        
         clause_structures = self._extract_clause_structures(cleaned_text)
         
-        # 按类型分类提取
+        
         classified_clauses = self._classify_clauses(clause_structures, contract_type)
         
-        # 提取关键要素
+        
         extracted_elements = self._extract_key_elements(classified_clauses, contract_type)
         
-        # 检查条款完整性
+        
         completeness = self._check_completeness(classified_clauses, contract_type)
         
         return {
@@ -109,7 +109,7 @@ class ClauseExtractor:
         }
     
     def _init_clause_patterns(self) -> Dict:
-        """初始化条款匹配模式"""
+
         return {
             ClauseType.SUBJECT_MATTER: {
                 "patterns": [
@@ -202,7 +202,7 @@ class ClauseExtractor:
         }
     
     def _init_contract_type_patterns(self) -> Dict:
-        """初始化合同类型识别模式"""
+
         return {
             "劳动合同": {
                 "keywords": ["劳动合同", "用人单位", "劳动者", "工作岗位", "劳动报酬", "社会保险"],
@@ -242,18 +242,18 @@ class ClauseExtractor:
         }
     
     def _preprocess_text(self, text: str) -> str:
-        """预处理合同文本"""
-        # 规范化空白字符
+
+        
         text = re.sub(r'\s+', ' ', text)
-        # 规范化引号
+        
         text = text.replace('"', '"').replace('"', '"')
         text = text.replace(''', "'").replace(''', "'")
-        # 规范化破折号
+        
         text = text.replace('—', '-').replace('–', '-')
         return text
     
     def _identify_type(self, text: str) -> str:
-        """识别合同类型"""
+
         scores = {}
         for contract_type, info in self.contract_type_patterns.items():
             score = sum(1 for kw in info["keywords"] if kw in text)
@@ -263,10 +263,10 @@ class ClauseExtractor:
         return max_type if scores[max_type] > 0 else "其他合同"
     
     def _extract_clause_structures(self, text: str) -> List[Dict]:
-        """提取条款结构"""
+
         clauses = []
         
-        # 按编号提取条款
+        
         clause_pattern = r'第([零一二三四五六七八九十百\d]+)条\s*([^：:]+)?[：:]?\s*(.+?)(?=(?:第[零一二三四五六七八九十百\d]+条)|$)'
         
         matches = re.finditer(clause_pattern, text)
@@ -282,7 +282,7 @@ class ClauseExtractor:
                 "raw_match": match.group(0)
             })
         
-        # 如果没有按条款编号提取，尝试按段落提取
+        
         if not clauses:
             paragraphs = text.split('\n')
             for i, para in enumerate(paragraphs):
@@ -297,7 +297,7 @@ class ClauseExtractor:
         return clauses
     
     def _classify_clauses(self, clause_structures: List[Dict], contract_type: str) -> List[ExtractedClause]:
-        """对条款进行分类"""
+
         classified = []
         
         for clause in clause_structures:
@@ -305,14 +305,14 @@ class ClauseExtractor:
             matched_type = None
             confidence = 0.0
             
-            # 遍历所有条款类型模式
+            
             for clause_type, pattern_info in self.clause_patterns.items():
-                # 检查关键词
+                
                 keyword_count = sum(1 for kw in pattern_info["keywords"] if kw in content)
                 if keyword_count > 0:
                     pattern_score = keyword_count / len(pattern_info["keywords"])
                     
-                    # 检查正则匹配
+                    
                     pattern_match = False
                     for pattern in pattern_info["patterns"]:
                         if re.search(pattern, content):
@@ -328,7 +328,7 @@ class ClauseExtractor:
                         confidence = score
                         matched_type = clause_type
             
-            # 如果没有匹配到特定类型，归类为杂项
+            
             if matched_type is None:
                 matched_type = ClauseType.MISCELLANEOUS
                 confidence = 0.3
@@ -337,7 +337,7 @@ class ClauseExtractor:
                 clause_type=matched_type.value,
                 clause_number=clause["number"],
                 clause_title=clause["title"],
-                clause_content=content[:500],  # 限制长度
+                clause_content=content[:500],  
                 key_elements={},
                 raw_text=clause["raw_match"],
                 confidence=round(confidence, 2)
@@ -347,18 +347,18 @@ class ClauseExtractor:
     
     def _extract_key_elements(self, clauses: List[ExtractedClause], 
                               contract_type: str) -> Dict:
-        """提取关键要素"""
+
         elements = {
-            "parties": {},       # 当事人信息
-            "dates": [],         # 日期信息
-            "amounts": [],       # 金额信息
-            "periods": [],       # 期限信息
-            "locations": []      # 地点信息
+            "parties": {},       
+            "dates": [],         
+            "amounts": [],       
+            "periods": [],       
+            "locations": []      
         }
         
         full_text = " ".join([c.clause_content for c in clauses])
         
-        # 提取金额
+        
         amount_patterns = [
             r'([¥￥$])\s*(\d+(?:,\d{3})*(?:\.\d{2})?)',
             r'(?:人民币|美元|欧元)?\s*(\d+(?:,\d{3})*(?:\.\d{2})?)\s*(?:元|万|亿)',
@@ -370,7 +370,7 @@ class ClauseExtractor:
             for match in matches:
                 elements["amounts"].append(match.group(0))
         
-        # 提取日期
+        
         date_patterns = [
             r'\d{4}年\d{1,2}月\d{1,2}日',
             r'\d{4}-\d{1,2}-\d{1,2}',
@@ -382,7 +382,7 @@ class ClauseExtractor:
             for match in matches:
                 elements["dates"].append(match.group(0))
         
-        # 提取期限
+        
         period_patterns = [
             r'(\d+)\s*(?:年|个月?|日|天)',
             r'自[^\d]*(\d{4}[年/-]\d{1,2}[月/-]\d{1,2}[日]?)\s*(?:至|至|起)'
@@ -393,7 +393,7 @@ class ClauseExtractor:
             for match in matches:
                 elements["periods"].append(match.group(0))
         
-        # 提取当事人
+        
         party_patterns = [
             r'甲方[：:]\s*([^\n，,。]+)',
             r'乙方[：:]\s*([^\n，,。]+)',
@@ -410,14 +410,14 @@ class ClauseExtractor:
     
     def _check_completeness(self, clauses: List[ExtractedClause], 
                            contract_type: str) -> Dict:
-        """检查条款完整性"""
-        # 获取合同类型要求的必需条款
+
+        
         if contract_type in self.contract_type_patterns:
             required = self.contract_type_patterns[contract_type]["required_clauses"]
         else:
             required = []
         
-        # 检查实际提取的条款类型
+        
         extracted_types = set(c.clause_type for c in clauses)
         required_types = set(r.value for r in required)
         
@@ -434,10 +434,10 @@ class ClauseExtractor:
 
 
 def main():
-    """测试函数"""
+
     extractor = ClauseExtractor()
     
-    # 测试用劳动合同文本
+    
     test_contract = """
     劳动合同
     

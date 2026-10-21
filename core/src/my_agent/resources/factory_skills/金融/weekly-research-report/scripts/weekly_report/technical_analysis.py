@@ -1,7 +1,7 @@
-"""
-技术分析模块 - 计算各类技术指标并生成交易信号
-参考：日频短期股票分析框架
-"""
+
+
+
+
 import pandas as pd
 import numpy as np
 from dataclasses import dataclass, field
@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 
 @dataclass
 class TechnicalSignal:
-    """技术分析信号汇总"""
+
     symbol: str
     name: str = ""
     date: str = ""
@@ -17,23 +17,23 @@ class TechnicalSignal:
     pct_change_1d: float = 0.0
     pct_change_5d: float = 0.0
 
-    # 均线
+    
     ma5: float = 0.0
     ma10: float = 0.0
     ma20: float = 0.0
-    ma_alignment: str = ""  # 多头/空头/震荡
+    ma_alignment: str = ""  
 
-    # 成交量
-    volume_ratio: float = 0.0  # 量比
+    
+    volume_ratio: float = 0.0  
     turnover_rate: float = 0.0
-    volume_trend: str = ""  # 放量/缩量/平稳
+    volume_trend: str = ""  
 
-    # 波动率
+    
     atr: float = 0.0
     std_dev: float = 0.0
     intraday_range: float = 0.0
 
-    # 动量指标
+    
     rsi: float = 0.0
     macd: float = 0.0
     macd_signal: float = 0.0
@@ -42,14 +42,14 @@ class TechnicalSignal:
     kdj_d: float = 0.0
     kdj_j: float = 0.0
 
-    # 信号
+    
     buy_signals: list = field(default_factory=list)
     sell_signals: list = field(default_factory=list)
-    signal_strength: str = ""  # 强/中/弱
-    risk_score: float = 0.0  # 0-10
+    signal_strength: str = ""  
+    risk_score: float = 0.0  
     position_coeff: float = 0.0
 
-    # 止损止盈
+    
     stop_loss: float = 0.0
     take_profit: float = 0.0
 
@@ -68,7 +68,7 @@ def calc_rsi(series: pd.Series, period: int = 14) -> pd.Series:
     loss = (-delta).where(delta < 0, 0.0)
     avg_gain = gain.rolling(window=period, min_periods=period).mean()
     avg_loss = loss.rolling(window=period, min_periods=period).mean()
-    # 使用 EMA 方式平滑
+    
     for i in range(period, len(series)):
         avg_gain.iloc[i] = (avg_gain.iloc[i - 1] * (period - 1) + gain.iloc[i]) / period
         avg_loss.iloc[i] = (avg_loss.iloc[i - 1] * (period - 1) + loss.iloc[i]) / period
@@ -106,7 +106,7 @@ def calc_atr(df: pd.DataFrame, period: int = 14) -> pd.Series:
 
 
 def calc_volume_ratio(volume: pd.Series, period: int = 5) -> float:
-    """量比 = 当日成交量 / 过去N日平均成交量"""
+
     if len(volume) < period + 1:
         return 1.0
     avg = volume.iloc[-(period + 1):-1].mean()
@@ -143,24 +143,24 @@ def generate_buy_signals(sig: TechnicalSignal, df: pd.DataFrame) -> list[str]:
     ma5_series = calc_ma(df["close"], 5)
     ma10_series = calc_ma(df["close"], 10)
 
-    # MA5上穿MA10（金叉）
+    
     if len(ma5_series) >= 2 and len(ma10_series) >= 2:
         if ma5_series.iloc[-2] <= ma10_series.iloc[-2] and ma5_series.iloc[-1] > ma10_series.iloc[-1]:
             signals.append("MA5上穿MA10（金叉）")
 
-    # 价格突破MA10且站稳
+    
     if sig.close > sig.ma10 and df["close"].iloc[-2] <= ma10_series.iloc[-2]:
         signals.append("价格突破MA10")
 
-    # 量比>1.2且价格上涨
+    
     if sig.volume_ratio > 1.2 and sig.pct_change_1d > 0:
         signals.append(f"量价齐升（量比{sig.volume_ratio:.2f}）")
 
-    # RSI > 50 且 < 70
+    
     if 50 < sig.rsi < 70:
         signals.append(f"RSI动量良好（{sig.rsi:.1f}）")
 
-    # MACD柱状线由负转正
+    
     _, _, hist = calc_macd(df["close"])
     if len(hist) >= 2 and hist.iloc[-2] < 0 and hist.iloc[-1] > 0:
         signals.append("MACD柱状线翻红")
@@ -173,24 +173,24 @@ def generate_sell_signals(sig: TechnicalSignal, df: pd.DataFrame) -> list[str]:
     ma5_series = calc_ma(df["close"], 5)
     ma10_series = calc_ma(df["close"], 10)
 
-    # MA5下穿MA10（死叉）
+    
     if len(ma5_series) >= 2 and len(ma10_series) >= 2:
         if ma5_series.iloc[-2] >= ma10_series.iloc[-2] and ma5_series.iloc[-1] < ma10_series.iloc[-1]:
             signals.append("MA5下穿MA10（死叉）")
 
-    # 价格跌破MA5且成交量放大
+    
     if sig.close < sig.ma5 and sig.volume_ratio > 1.2 and sig.pct_change_1d < 0:
         signals.append("放量跌破MA5")
 
-    # RSI > 80（超买）
+    
     if sig.rsi > 80:
         signals.append(f"RSI超买（{sig.rsi:.1f}）")
 
-    # 5日累计涨幅 > 15%
+    
     if sig.pct_change_5d > 15:
         signals.append(f"5日累计涨幅过大（{sig.pct_change_5d:.1f}%）")
 
-    # KDJ超买
+    
     if sig.kdj_j > 100:
         signals.append(f"KDJ超买（J={sig.kdj_j:.1f}）")
 
@@ -198,10 +198,10 @@ def generate_sell_signals(sig: TechnicalSignal, df: pd.DataFrame) -> list[str]:
 
 
 def calc_risk_score(sig: TechnicalSignal) -> float:
-    """风险评分 0-10，越高风险越大"""
-    score = 5.0  # 基准分
 
-    # RSI风险
+    score = 5.0  
+
+    
     if sig.rsi > 80:
         score += 2.0
     elif sig.rsi > 70:
@@ -211,7 +211,7 @@ def calc_risk_score(sig: TechnicalSignal) -> float:
     elif sig.rsi < 20:
         score += 2.5
 
-    # 波动率风险
+    
     if sig.close > 0:
         atr_pct = sig.atr / sig.close * 100
         if atr_pct > 5:
@@ -219,17 +219,17 @@ def calc_risk_score(sig: TechnicalSignal) -> float:
         elif atr_pct > 3:
             score += 0.5
 
-    # 均线排列
+    
     if sig.ma_alignment == "空头排列":
         score += 1.0
     elif sig.ma_alignment == "多头排列":
         score -= 1.0
 
-    # 量比异常
+    
     if sig.volume_ratio > 3:
         score += 1.0
 
-    # 5日涨幅过大
+    
     if sig.pct_change_5d > 15:
         score += 1.5
     elif sig.pct_change_5d < -10:
@@ -239,7 +239,7 @@ def calc_risk_score(sig: TechnicalSignal) -> float:
 
 
 def analyze_stock(df: pd.DataFrame, symbol: str, name: str = "") -> TechnicalSignal:
-    """对单只股票进行完整技术分析"""
+
     sig = TechnicalSignal(symbol=symbol, name=name)
 
     if df.empty or len(df) < 20:
@@ -250,7 +250,7 @@ def analyze_stock(df: pd.DataFrame, symbol: str, name: str = "") -> TechnicalSig
     sig.pct_change_1d = ((df["close"].iloc[-1] / df["close"].iloc[-2]) - 1) * 100 if len(df) >= 2 else 0
     sig.pct_change_5d = ((df["close"].iloc[-1] / df["close"].iloc[-6]) - 1) * 100 if len(df) >= 6 else 0
 
-    # 均线
+    
     ma5 = calc_ma(df["close"], 5)
     ma10 = calc_ma(df["close"], 10)
     ma20 = calc_ma(df["close"], 20)
@@ -259,18 +259,18 @@ def analyze_stock(df: pd.DataFrame, symbol: str, name: str = "") -> TechnicalSig
     sig.ma20 = ma20.iloc[-1]
     sig.ma_alignment = determine_ma_alignment(sig.ma5, sig.ma10, sig.ma20)
 
-    # 成交量
+    
     sig.volume_ratio = calc_volume_ratio(df["volume"])
     sig.turnover_rate = df["turnover_rate"].iloc[-1] if "turnover_rate" in df.columns else 0.0
     sig.volume_trend = determine_volume_trend(df["volume"])
 
-    # 波动率
+    
     atr = calc_atr(df)
     sig.atr = atr.iloc[-1] if not atr.empty else 0
     sig.std_dev = df["close"].iloc[-20:].std()
     sig.intraday_range = (df["high"].iloc[-1] - df["low"].iloc[-1]) / df["close"].iloc[-1] * 100
 
-    # 动量指标
+    
     rsi = calc_rsi(df["close"])
     sig.rsi = rsi.iloc[-1] if not rsi.empty and not pd.isna(rsi.iloc[-1]) else 50
 
@@ -284,15 +284,15 @@ def analyze_stock(df: pd.DataFrame, symbol: str, name: str = "") -> TechnicalSig
     sig.kdj_d = d.iloc[-1]
     sig.kdj_j = j.iloc[-1]
 
-    # 信号判断
+    
     sig.buy_signals = generate_buy_signals(sig, df)
     sig.sell_signals = generate_sell_signals(sig, df)
 
-    # 风险评估
+    
     sig.risk_score = calc_risk_score(sig)
     sig.position_coeff = max(0, (10 - sig.risk_score)) / 10
 
-    # 信号强度
+    
     net_signal = len(sig.buy_signals) - len(sig.sell_signals)
     if abs(net_signal) >= 3:
         sig.signal_strength = "强"
@@ -301,7 +301,7 @@ def analyze_stock(df: pd.DataFrame, symbol: str, name: str = "") -> TechnicalSig
     else:
         sig.signal_strength = "弱"
 
-    # 止损止盈
+    
     prev_low = df["low"].iloc[-2] if len(df) >= 2 else sig.close
     sig.stop_loss = min(prev_low * 0.995, sig.ma10 * 0.99, sig.close * 0.95)
     sig.take_profit = sig.close + sig.atr * 2 if sig.atr > 0 else sig.close * 1.08

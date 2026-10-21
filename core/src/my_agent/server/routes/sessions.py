@@ -1,8 +1,8 @@
-﻿"""会话接口。
 
-P1 起会话与消息由 SQLite 持久化（`SessionManager` 内部完成），
-路由层只负责参数校验与错误映射。
-"""
+
+
+
+
 
 from __future__ import annotations
 
@@ -61,22 +61,22 @@ async def create_session(payload: CreateSessionRequest, request: Request) -> dic
 
 @router.get("/{session_id}/context")
 async def session_context(session_id: str, request: Request) -> dict[str, Any]:
-    """这个会话**当前**的上下文占用。
 
-    单独开一个接口而不是让前端自己加加减减，是因为"实际会发给模型的量"只有后端
-    算得准：它要算上系统提示词、已生成的历史摘要、以及图片占的 token
-    （见 ``memory/short_term.py`` 的 ``context_tokens``）。前端拿消息的
-    usage 相加会得出一个偏小的数，而用户据此以为"还很空"，正好错过压缩时机。
 
-    ``used_tokens`` 取的是 ``context_tokens()`` 而**不是** ``estimated_tokens()``：
-    压缩之后完整历史仍然很长（消息不删除），但真正发送的内容已经短了很多，
-    拿完整历史去显示会让人以为"一直快满了"。
-    """
+
+
+
+
+
+
+
+
+
     runtime: AppRuntime = get_runtime(request)
     session = await _load(runtime, session_id)
 
-    # 会话可能记着自己的模型，也可能是路由刚换过的那个 —— 与压缩判定用同一个数，
-    # 否则会出现"界面显示 5%、实际已经在 3.2 万处裁剪"的分裂行为
+    
+    
     model_id = session.model_id or runtime.registry.default_id
     limit = runtime.effective_context_tokens(model_id)
     used = session.memory.context_tokens()
@@ -87,7 +87,7 @@ async def session_context(session_id: str, request: Request) -> dict[str, Any]:
         "limit_tokens": limit,
         "remaining_tokens": max(limit - used, 0),
         "ratio": (used / limit) if limit > 0 else 0.0,
-        # 前端据此提示"接近多少会自动压缩"，而不是让用户对着一个百分比猜
+        
         "compress_threshold": threshold,
         "summary_chars": len(session.memory.summary),
     }
@@ -95,13 +95,13 @@ async def session_context(session_id: str, request: Request) -> dict[str, Any]:
 
 @router.post("/{session_id}/compress")
 async def compress_session(session_id: str, request: Request) -> dict[str, Any]:
-    """手动触发上下文压缩（输入区的 ``/compact`` 命令）。
 
-    自动压缩只在用量超过阈值时触发；用户有时想**主动**把较早的内容折叠掉
-    （比如长对话跑完一个阶段），这个接口就是那个入口。复用与自动压缩
-    **同一个** ``ContextGuard.compress``：参数、摘要合并、失败回落全部一致，
-    不另写一条压缩路径 —— 两套实现迟早长歪。
-    """
+
+
+
+
+
+
     runtime: AppRuntime = get_runtime(request)
     session = await _load(runtime, session_id)
 
@@ -131,8 +131,8 @@ async def compress_session(session_id: str, request: Request) -> dict[str, Any]:
             "message": "当前没有可压缩的内容 —— 对话还很短，或最近的消息需要保留。",
         }
 
-    # 手动压缩与自动压缩走**同一个**辅助模型设置：两处不一致的话，
-    # 用户会发现"自动压缩便宜、手点一下却按主模型计费"这种说不清的现象
+    
+    
     ok = await guard.compress(
         runtime.utility_llm(llm),
         session.memory,
@@ -141,7 +141,7 @@ async def compress_session(session_id: str, request: Request) -> dict[str, Any]:
     if not ok:
         raise HTTPException(status_code=502, detail="压缩失败（模型调用出错），上下文未改动。")
 
-    # 摘要落库：否则重启后压缩成果丢失，模型又"想起"全部历史
+    
     await runtime.sessions.persist(session)
     return {
         "ok": True,
@@ -212,7 +212,7 @@ async def session_messages(session_id: str, request: Request) -> dict[str, Any]:
 
 @router.delete("/{session_id}/messages")
 async def clear_session_messages(session_id: str, request: Request) -> dict[str, Any]:
-    """清空某会话的对话历史（保留会话本身与标题）。"""
+
     runtime: AppRuntime = get_runtime(request)
     await _load(runtime, session_id)
     runtime.cancel_session_tasks(session_id)

@@ -1,13 +1,13 @@
-"""图表渲染器。32 种图表类型的 ECharts option 生成方法。
 
-架构契约（P1 重构后）：
-- 渲染方法只接收一个 RenderContext，所有依赖（df/x/y/texts/theme/label_col/color_by）
-  显式入参，不再读写生成器实例属性（消灭 Mixin 隐式状态协议）。
-- 需要内嵌 JS 函数的图表（tooltip formatter / bubble symbolSize）把 JS 片段
-  收集到 ctx.js（占位符 → JS 代码），由 template 层统一消费。
-- 共享数值清洗与统计算法一律引用 stats_kernels（单一事实来源），
-  与 plot_stats 统计层同源。
-"""
+
+
+
+
+
+
+
+
+
 
 import json
 import math
@@ -36,12 +36,12 @@ from .template import (
 )
 
 
-# ── 地图 GeoJSON 加载与地名对齐（map/lines 共用，离线捆绑中国省级地图）──
+
 _GEO_DIR = Path(__file__).resolve().parent.parent / 'assets'
 _GEO_CACHE: Dict[str, Dict[str, Any]] = {}
 
-# 省级简称 → GeoJSON 全称（中国 34 个省级行政区，含港澳台）。表格里常见的
-# 「北京/广东/新疆」等简称与 GeoJSON 的「北京市/广东省/新疆维吾尔自治区」全称对齐。
+
+
 _REGION_ALIASES = {
     '北京': '北京市', '北京市': '北京市',
     '天津': '天津市', '天津市': '天津市',
@@ -80,16 +80,16 @@ _REGION_ALIASES = {
 }
 
 
-# 内置图名 → 别名表（简称 → GeoJSON 全称）。内置地图捆绑 china/world（assets/ 下同名
-# GeoJSON）；china 有省级简称别名，world 用英文国名精确匹配、无别名，故不在此登记。
-# 新增内置图时若需简称别名，在此登记对应别名表（无别名则不登记）。
+
+
+
 _BUILTIN_ALIASES: Dict[str, Dict[str, str]] = {
     'china': _REGION_ALIASES,
 }
 
 
 def load_builtin_geojson(name: str) -> Dict[str, Any]:
-    """加载并缓存内置 GeoJSON（assets/<name>.json，离线捆绑）。"""
+
     if name not in _GEO_CACHE:
         geo_file = _GEO_DIR / f'{name}.json'
         if not geo_file.exists():
@@ -111,27 +111,27 @@ def load_builtin_geojson(name: str) -> Dict[str, Any]:
 
 
 def load_china_geojson() -> Dict[str, Any]:
-    """加载并缓存中国省级 GeoJSON（兼容旧名，等价 load_builtin_geojson('china')）。"""
+
     return load_builtin_geojson('china')
 
 
 def geojson_region_names(geojson: Dict[str, Any]) -> set:
-    """返回任意 GeoJSON 中所有非空区域全称（地名对齐与可匹配地区提示共用）。"""
+
     return {f['properties']['name'] for f in geojson.get('features', [])
             if f.get('properties', {}).get('name')}
 
 
 def china_region_names() -> set:
-    """返回中国省级 GeoJSON 的所有非空区域全称（兼容旧名）。"""
+
     return geojson_region_names(load_china_geojson())
 
 
 def resolve_region_name(name: Any, geo_names: Optional[set] = None,
                         aliases: Optional[Dict[str, str]] = None) -> Optional[str]:
-    """表格地名 → GeoJSON 全称（精确匹配 + 简称映射）；无法匹配返回 None。
 
-    geo_names/aliases 缺省时回退到中国省级地图（向后兼容）。
-    """
+
+
+
     if name is None:
         return None
     n = str(name).strip()
@@ -148,21 +148,21 @@ def resolve_region_name(name: Any, geo_names: Optional[set] = None,
 
 @dataclass
 class GeoSource:
-    """解析后的地图来源：registerMap / series.map 用的名字 + GeoJSON + 地名别名。"""
+
     map_name: str
     geojson: Dict[str, Any]
     aliases: Dict[str, str]
-    source: str  # 'builtin:china' / 'file:/path/to/x.json'
+    source: str  
 
 
 def resolve_geo(geo: Optional[str] = None, geo_path: Optional[str] = None) -> GeoSource:
-    """解析地图来源（--geo / --geo-path），返回 registerMap 所需的三件套。
 
-    优先级：geo_path（用户自备）> geo（内置图名，默认 'china'）。
-    - 自备文件：map_name 取文件名 stem，别名表为空（仅精确匹配）。
-    - 内置图名：从 assets/<name>.json 读取，别名表按 _BUILTIN_ALIASES 登记
-      （未登记则空表，仅精确匹配）。
-    """
+
+
+
+
+
+
     if geo_path:
         p = Path(geo_path)
         if not p.exists():
@@ -188,10 +188,10 @@ def resolve_geo(geo: Optional[str] = None, geo_path: Optional[str] = None) -> Ge
 
 
 def _collect_coordinates(coords: Any) -> List[List[float]]:
-    """递归收集 GeoJSON coordinates 里所有 [lng, lat] 点（处理 Polygon/MultiPolygon 嵌套）。
 
-    用于无法从 properties 取到中心点时，从几何计算包围盒中心兜底。
-    """
+
+
+
     pts: List[List[float]] = []
 
     def _walk(x: Any) -> None:
@@ -208,13 +208,13 @@ def _collect_coordinates(coords: Any) -> List[List[float]]:
 
 
 def region_centers(geojson: Dict[str, Any]) -> Dict[str, List[float]]:
-    """返回 GeoJSON 区域名 → 中心经纬度 [lng, lat] 的映射。
 
-    中心坐标优先级：properties.cp（ECharts 约定）→ properties.center /
-    properties.centroid（DataV 格式）→ 从 geometry 计算包围盒中心（兜底）。
-    用于 lines 系列的 fromName/toName → coords 定位：ECharts lines 系列的
-    data item 只认 `coords` 字段（fromName/toName 仅作 tooltip 标签，不参与定位）。
-    """
+
+
+
+
+
+
     centers: Dict[str, List[float]] = {}
     for f in geojson.get('features', []):
         props = f.get('properties') or {}
@@ -231,7 +231,7 @@ def region_centers(geojson: Dict[str, Any]) -> Dict[str, List[float]]:
                     continue
         if name in centers:
             continue
-        # 兜底：从 geometry 计算包围盒中心
+        
         geom = f.get('geometry') or {}
         pts = _collect_coordinates(geom.get('coordinates'))
         if pts:
@@ -242,26 +242,26 @@ def region_centers(geojson: Dict[str, Any]) -> Dict[str, List[float]]:
 
 
 def _js_dumps(obj) -> str:
-    r"""序列化数据到 JS 字面量上下文，转义 </ 防 </script> 提前闭合脚本标签。
 
-    \/ 在 JS 字符串中合法且求值后还原为 /，前端拿到的值不变。
-    用于内嵌 option JSON 之外的、由 Python 直接拼接进 <script> 的数据数组
-    （tooltip JS 中的列名/行标签等）。
-    """
+
+
+
+
+
     return json.dumps(obj, ensure_ascii=False).replace('</', '<\\/')
 
 
 def _labeled_points(df, x_col, num_cols, label_col=None, numeric_color_col=None, x_is_numeric=True):
-    """生成带身份标识的点数据（scatter/bubble 共用）。
 
-    每个点为 {'value': [x, *num_cols, (color)], 'name': label}：
-    - name 来自 label_col（身份列），tooltip 中作为点的标题；
-    - numeric_color_col 存在时把其值追加到 value 末尾，供 visualMap 按维度着色。
-    x/y/color 任一为 NaN 的行被跳过（与原实现一致：无法定位的点不渲染）。
-    """
-    # 向量化 NaN 过滤：任一 x/y 列为 NaN 即整行跳过（color 列 NaN 不跳过，追加 None）
-    # pandas 3.0 CoW 下 notna().to_numpy() 返回只读数组，就地 &= 会抛
-    # "output array is read-only"，先 copy 出可写副本再累积
+
+
+
+
+
+
+    
+    
+    
     mask = df[x_col].notna().to_numpy().copy()
     for c in num_cols:
         mask &= df[c].notna().to_numpy()
@@ -286,7 +286,7 @@ def _labeled_points(df, x_col, num_cols, label_col=None, numeric_color_col=None,
 
 
 def _point_tooltip_js(dim_names, has_label):
-    """scatter/bubble 的 item tooltip JS：点标题（身份列）+ 各维度 "列名: 值"。"""
+
     label_line = "if (p.name) { s += '<b>' + esc(p.name) + '</b><br/>'; }" if has_label else ""
     return (
         "function(p) {\n"
@@ -305,18 +305,18 @@ def _point_tooltip_js(dim_names, has_label):
 
 
 def _maybe_rotate_labels(x_data):
-    """类目过多或标签过长时旋转 x 轴标签，避免长中文类目名重叠。"""
+
     if len(x_data) > 8 or (x_data and max(len(s) for s in x_data) > 6):
         return {'rotate': 30}
     return None
 
 
 def _all_nonnegative(df: pd.DataFrame, cols: List[str]) -> bool:
-    """数值列全为有限非负值时返回 True（NaN 忽略；含负值或全空返回 False）。
 
-    bar 类图表据此显式锁定 y 轴 min:0——全非负时 ECharts 默认本就含 0，
-    此处是声明性 no-op（把"碰巧含 0"变成契约），不会改变既有渲染。
-    """
+
+
+
+
     try:
         arr = df[cols].to_numpy(dtype='float64')
     except (ValueError, TypeError):
@@ -326,33 +326,33 @@ def _all_nonnegative(df: pd.DataFrame, cols: List[str]) -> bool:
 
 
 def _key_label_data(vals: List[Any], top_n: int = 3) -> List[Dict[str, Any]]:
-    """key 模式数据标签：仅 top_n 值 + 最大/最小值显示标签，其余靠 tooltip。
 
-    bar 单系列类别过多时全标数值会互相挤压；交互 HTML 有 tooltip 兜底，
-    静态导出（保存图片）保留极值与头部数值即可支撑结论。
-    """
+
+
+
+
     finite = [(i, v) for i, v in enumerate(vals) if v is not None]
     show = set()
     if finite:
         ranked = sorted(finite, key=lambda iv: iv[1], reverse=True)
         show.update(i for i, _ in ranked[:top_n])
-        show.add(ranked[0][0])   # 最大值
-        show.add(ranked[-1][0])  # 最小值
+        show.add(ranked[0][0])   
+        show.add(ranked[-1][0])  
     return [{'value': v, 'label': {'show': i in show}} for i, v in enumerate(vals)]
 
 
 def _axis_name_graphics(theme, x_name=None, y_names=(), x_bottom=None, x_data_len=0,
                         threshold=DATAZOOM_THRESHOLD):
-    """轴名称渲染为可拖拽的 graphic 文本元素。
 
-    放在轴配置里（name/nameGap）位置固定，长名称不是压刻度数字、就是压图例。
-    graphic 文本默认放在留白区（x 轴名在标签与图例之间，y 轴名在绘图区上方），
-    用户可在图上直接拖拽微调，保存图片时随画布状态生效。
-    id 以 axisName- 开头，供 chart_generator._apply_custom_names 按
-    --x-name/--y-name 覆盖轴名文字（图上拖拽仅移动位置，不改文字）。
-    x_bottom：x 轴名初始底距，显式传入时优先；未传入则按 x_data_len 是否超过
-    threshold 自动选择——启用 dataZoom 的图表用 64 避开底部滑块与上移的图例。
-    """
+
+
+
+
+
+
+
+
+
     fill = theme['graphic_text']
     if x_bottom is None:
         x_bottom = 64 if (x_data_len and x_data_len > threshold) else 42
@@ -370,27 +370,27 @@ def _axis_name_graphics(theme, x_name=None, y_names=(), x_bottom=None, x_data_le
 
 @dataclass
 class RenderContext:
-    """渲染上下文：一次图表渲染的全部显式依赖。
 
-    - df/x/y/texts/theme/lang：渲染输入；
-    - label_col/color_by：身份列与着色列（已校验存在）；
-    - y_scale：折线图 y 轴允许非零基线（opt-in，仅 _line 消费；area 由
-      _area 显式压制——面积编码量级，非零基线会扭曲面积占比）；
-    - sort：bar 类别排序（'value'=按第一个数值 Y 列降序；'none'=保持原序）；
-    - label_mode：bar 数值标签策略（'auto'/'all'/'key'，见 _bar）；
-    - subtitle：用户提供的副标题（时间范围/筛选条件/数据来源），None 时
-      template 层回退到默认副标题行；
-    - js：渲染过程中收集的 JS 函数片段（占位符常量 → JS 代码），
-      由 template._save_html 在序列化 option 后统一替换，用完即清。
-    - width/height：画布尺寸（px），venn 等 option 阶段就需要布局尺寸的图表用
-      （与 template 落盘尺寸同源，--width/--height 因此对 venn 布局生效）。
-    - x_name/y_names/series_names：独立轴名与系列名（--x-name/--y-name/
-      --series-name/--series-names）。None 时回退到列名/默认文本；
-      非 None 时由 chart_generator._apply_custom_names 在 option 生成后统一覆盖。
-    - target：gauge/liquid 的业务目标值（--target）。liquid 的归一化分母与
-      gauge 的满刻度应优先用它（达成率 = 均值 / 目标），缺省才回落 gauge_scale
-      自动量程——否则数据 max>100 时渲染口径会与 plot_stats 的 achievement 分裂。
-    """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     df: pd.DataFrame
     x: Optional[str]
     y: List[str]
@@ -410,9 +410,9 @@ class RenderContext:
     y_names: Optional[List[str]] = None
     series_names: Optional[List[str]] = None
     target: Optional[float] = None
-    # 地图来源（map/lines）：由 chart_generator 解析 GeoSource 后填充。
-    # geo_map_name 供 series.map / geo.map / registerMap 用；geo_json 供
-    # template 内联 registerMap；geo_aliases/geo_names 供地名对齐（自备图为空表）。
+    
+    
+    
     geo_map_name: str = 'china'
     geo_json: Optional[Dict[str, Any]] = None
     geo_aliases: Dict[str, str] = field(default_factory=dict)
@@ -421,22 +421,22 @@ class RenderContext:
 
 
 class ChartRenderersMixin:
-    """32 种图表的 ECharts option 生成方法，由 ChartGenerator 继承。
 
-    全部方法签名为 _xxx(self, ctx: RenderContext)，只通过 ctx 取依赖。
-    """
+
+
+
 
     def _base(self, ctx: RenderContext, x_data_len=0, y_data_len=0):
         theme = ctx.theme
         opt = {
             'title': {'text': ctx.title, 'left': 'center', 'textStyle': {'fontSize': 16}},
             'tooltip': {'trigger': 'axis', 'formatter': TOOLTIP_FORMATTER_AXIS},
-            'legend': {'top': 'bottom', 'type': 'scroll'},  # scroll 防止系列过多时图例溢出
+            'legend': {'top': 'bottom', 'type': 'scroll'},  
             'grid': {'left': '3%', 'right': '4%', 'bottom': '12%', 'containLabel': True},
-            # 系列调色板来自主题预设（default 为 Okabe-Ito 色觉安全色板）
+            
             'color': list(theme['palette']),
         }
-        # 数据点过多时启用 dataZoom，让用户可在图内拖动/缩放查看完整数据
+        
         zooms = []
         if x_data_len and x_data_len > DATAZOOM_THRESHOLD:
             zooms.append({'type': 'inside', 'start': 0, 'end': 100})
@@ -448,7 +448,7 @@ class ChartRenderersMixin:
             opt['grid']['right'] = '8%'
         if zooms:
             opt['dataZoom'] = zooms
-            # 底部滑块占 0~28px，图例上移避免与滑块重叠
+            
             opt['legend'] = {'bottom': 30, 'type': 'scroll'}
         return opt
 
@@ -461,8 +461,8 @@ class ChartRenderersMixin:
         if rot:
             opt['xAxis']['axisLabel'] = rot
         opt['yAxis'] = {'type': 'value'}
-        # opt-in 非零基线：波动幅度本身有意义时放大趋势（--y-scale）。
-        # 默认关闭保持既有渲染；area 永不启用（见 _area）。
+        
+        
         if ctx.y_scale:
             opt['yAxis']['scale'] = True
         opt['graphic'] = _axis_name_graphics(ctx.theme, x, y, x_data_len=len(x_data))
@@ -474,8 +474,8 @@ class ChartRenderersMixin:
 
     def _bar(self, ctx: RenderContext):
         df, x, y = ctx.df, ctx.x, ctx.y
-        # 类别排序（opt-in，默认 none 保持数据原序）：仅按第一个数值 Y 列降序。
-        # 中文月份/流程阶段等自然顺序不会被误动——不传 --sort 即不排序。
+        
+        
         if ctx.sort == 'value' and y and pd.api.types.is_numeric_dtype(df[y[0]]):
             df = df.sort_values(y[0], ascending=False, na_position='last')
         x_data = safe_str_list(df[x])
@@ -485,8 +485,8 @@ class ChartRenderersMixin:
         if rot:
             opt['xAxis']['axisLabel'] = rot
         opt['yAxis'] = {'type': 'value'}
-        # 零基线契约：数据全非负时显式锁定 min:0（声明性 no-op，含负值时不锁定，
-        # 负值柱照常显示）
+        
+        
         if _all_nonnegative(df, y):
             opt['yAxis']['min'] = 0
         opt['graphic'] = _axis_name_graphics(ctx.theme, x, y, x_data_len=len(x_data))
@@ -495,8 +495,8 @@ class ChartRenderersMixin:
             for col in y
         ]
         if len(y) == 1:
-            # 单系列时显示数值标签（多系列显示会互相遮挡，仍靠 tooltip 读值）。
-            # 类别过多（auto 阈值 20）或显式 key 模式时只标 top3 + 极值，防挤压
+            
+            
             key_mode = (ctx.label_mode == 'key'
                         or (ctx.label_mode == 'auto' and len(x_data) > 20))
             if key_mode:
@@ -508,17 +508,17 @@ class ChartRenderersMixin:
         df, x, y = ctx.df, ctx.x, ctx.y
         opt = self._base(ctx)
         opt['tooltip'] = {'trigger': 'item', 'formatter': '{a} <br/>{b}: {c} ({d}%)'}
-        # 图例置于底部（继承 _base 的横向 scroll），避免竖排左置图例与扇区外的长标签重叠
+        
         y_col = y[0] if y else df.columns[-1]
         if not pd.api.types.is_numeric_dtype(df[y_col]):
-            # 数值列为空或为分类列时，对 X 列做频数统计，展示各类占比
+            
             counts = df[x].astype(str).value_counts()
             data = [{'name': str(k), 'value': sanitize_value(float(v))} for k, v in counts.items()]
             y_col = ctx.texts['axis_frequency']
         else:
             data = name_value_pairs(df[x].tolist(), df[y_col].tolist())
-        # 系列名：--series-name 优先，缺省用数值列名；tooltip {a} 与前端"系列"重命名面板均读该名字，
-        # 故用户可把英文列名改成业务名（与 gauge/liquid 同源逻辑）。
+        
+        
         series_name = (ctx.series_names[0] if ctx.series_names else y_col)
         opt['series'] = [{
             'name': series_name, 'type': 'pie', 'radius': ['40%', '70%'], 'data': data,
@@ -528,12 +528,12 @@ class ChartRenderersMixin:
         return opt
 
     def _scatter(self, ctx: RenderContext):
-        """散点图：每个点携带身份（label_col），tooltip 显示 身份 + 列名: 值。
 
-        color_by（可选）：
-        - 数值列 → visualMap 连续着色（dimension=2）；
-        - 类别列 → 每类拆为一个 series，自动配色并进 legend。
-        """
+
+
+
+
+
         df, x, y = ctx.df, ctx.x, ctx.y
         label_col, color_col = ctx.label_col, ctx.color_by
         y_col = y[0] if y else df.columns[-1]
@@ -552,7 +552,7 @@ class ChartRenderersMixin:
         opt['yAxis'] = {'type': 'value', 'scale': True}
         opt['graphic'] = _axis_name_graphics(ctx.theme, x, [y_col], x_data_len=x_data_len)
 
-        # tooltip 维度名跟随 --x-name/--y-name（缺省回落列名），否则悬停仍显示英文列名
+        
         x_disp = ctx.x_name if ctx.x_name else x
         y_disp = (ctx.y_names[0] if ctx.y_names else y_col)
         dims = [x_disp, y_disp] + ([color_col] if numeric_color else [])
@@ -560,7 +560,7 @@ class ChartRenderersMixin:
         opt['tooltip'] = {'trigger': 'item', 'formatter': ITEM_TOOLTIP_PLACEHOLDER}
 
         if color_col is not None and not numeric_color:
-            # 类别列 → 按类别拆 series（NaN 归入"未分类"，不静默丢点）
+            
             color_s = df[color_col].where(df[color_col].notna(), ctx.texts['series_uncategorized']).astype(str)
             opt['series'] = [
                 {'name': cat, 'type': 'scatter', 'symbolSize': 10,
@@ -576,12 +576,12 @@ class ChartRenderersMixin:
                 if cvals:
                     opt['visualMap'] = {'min': min(cvals), 'max': max(cvals), 'dimension': 2,
                                         'calculable': True, 'orient': 'vertical', 'right': '1%', 'top': 'center'}
-                    opt['grid']['right'] = '10%'  # 为右侧 visualMap 留出空间
+                    opt['grid']['right'] = '10%'  
         return opt
 
     def _area(self, ctx: RenderContext):
-        # 面积图强制零基线：面积编码量级，非零基线会扭曲各段面积占比，
-        # 即使 --y-scale 也在此显式压制
+        
+        
         opt = self._line(replace(ctx, y_scale=False))
         for s in opt['series']:
             s['areaStyle'] = {'opacity': 0.5}
@@ -591,21 +591,21 @@ class ChartRenderersMixin:
         df, x, y = ctx.df, ctx.x, ctx.y
         opt = self._base(ctx)
         opt['tooltip'] = {'trigger': 'item'}
-        # indicator 刻度（max）计算：
-        # - 单系列（y 仅 1 列）：所有维度共用全局刻度（全局最大值 ×1.2）。
-        #   旧实现对 (N,1) 数组做 nanmax(axis=1)，等于"每个维度自身的值"，
-        #   ×1.2 后每个维度 value/max 恒为同一比例（83.3%），跨维度差异被
-        #   完全抹平（视觉上恒为正多边形）——单系列必须用全局统一刻度。
-        # - 多系列：每维度取跨系列最大值 ×1.2（同一维度内各系列可比，
-        #   维度间各自归一，适合量纲差异大的多维对比）。
+        
+        
+        
+        
+        
+        
+        
         arr = df[y].to_numpy(dtype='float64')
         with warnings.catch_warnings():
-            # 全 NaN 时 nanmax 返回 nan 并告警，交由下方 is None 兜底（0 为合法 max，不再覆盖）
+            
             warnings.simplefilter('ignore', RuntimeWarning)
             if arr.shape[1] <= 1:
                 try:
                     gm = float(np.nanmax(arr)) * 1.2
-                except ValueError:  # 空数组（y 为空列）
+                except ValueError:  
                     gm = float('nan')
                 row_max = np.full(len(df), gm if (np.isfinite(gm) and gm > 0) else 100.0)
             else:
@@ -615,11 +615,11 @@ class ChartRenderersMixin:
             mv = sanitize_value(float(m))
             indicator.append({'name': n, 'max': mv if mv is not None else 100})
         opt['radar'] = {'indicator': indicator, 'shape': 'polygon'}
-        # 每个数值列(y)是一个独立系列，共用同一套 indicator；
-        # value 与 indicator 一一对应，长度必须一致；NaN 填充为 0 以保持多边形闭合，
-        # 与上方 indicator max 计算忽略 NaN 的语义一致（缺失维度按 0 分呈现）。
-        # 系列名：--series-name(s) 优先，缺省用列名；data[0].name 与 series.name 同源，
-        # 否则 tooltip 会残留英文列名（radar 的 tooltip 显示 data.name 而非 series.name）。
+        
+        
+        
+        
+        
         opt['series'] = []
         for i, c in enumerate(y):
             sname = (ctx.series_names[i] if ctx.series_names and i < len(ctx.series_names) else str(c))
@@ -638,7 +638,7 @@ class ChartRenderersMixin:
         x_data = safe_str_list(df[x])
         y_data = y
         opt = self._base(ctx, x_data_len=len(y_data), y_data_len=len(x_data))
-        # item tooltip 显示 "行标签 × 列标签: 值"，而非默认的坐标索引数组
+        
         ctx.js[ITEM_TOOLTIP_PLACEHOLDER] = (
             "function(p) {\n"
             f"  var xs = {_js_dumps(y_data)};\n"
@@ -649,9 +649,9 @@ class ChartRenderersMixin:
             "}"
         )
         opt['tooltip'] = {'position': 'top', 'formatter': ITEM_TOOLTIP_PLACEHOLDER}
-        # 向量化取值：一次转 NumPy 数组，替代逐单元格 df.iloc[i][col]（每次都构造 Series，大矩阵慢百倍）
+        
         arr = np.round(df[y_data].to_numpy(dtype='float64'), 2)
-        # NaN/Inf → None，与 sanitize_value 语义一致
+        
         matrix = [[j, i, (float(arr[i, j]) if np.isfinite(arr[i, j]) else None)]
                   for i in range(arr.shape[0]) for j in range(arr.shape[1])]
         finite = arr[np.isfinite(arr)]
@@ -662,16 +662,16 @@ class ChartRenderersMixin:
         if rot:
             opt['xAxis']['axisLabel'] = rot
         opt['yAxis'] = {'type': 'category', 'data': x_data, 'splitArea': {'show': True}}
-        # visualMap 已承担数值图例职责，series 图例只会显示图表类型名（"热力图"），移除
+        
         opt.pop('legend', None)
-        # visualMap 放在图表左侧纵向显示，不遮挡图表正文区域。
-        # 渐变语义：全非负（顺序数据）→ 主题单色渐变浅→深；含负值（发散数据，
-        # 如相关矩阵）→ 双色渐变 + 中性中点，避免负值被默认三色渐变错误呈现
+        
+        
+        
         grad = ctx.theme['diverging'] if vmin < 0 else ctx.theme['sequential']
         opt['visualMap'] = {'min': vmin, 'max': vmax, 'calculable': True,
                             'orient': 'vertical', 'left': '1%', 'bottom': '10%',
                             'inRange': {'color': list(grad)}}
-        opt['grid']['left'] = '10%'  # 为左侧 visualMap 留出空间
+        opt['grid']['left'] = '10%'  
         opt['series'] = [{'name': ctx.texts['series_heatmap'], 'type': 'heatmap', 'data': matrix, 'label': {'show': True}}]
         return opt
 
@@ -679,7 +679,7 @@ class ChartRenderersMixin:
         df, x, y = ctx.df, ctx.x, ctx.y
         opt = self._base(ctx)
         opt['tooltip'] = {'trigger': 'item'}
-        # 区块上已有名称标签，series 图例只显示图表类型名，移除
+        
         opt.pop('legend', None)
         y_col = y[0] if y else df.columns[-1]
         data = name_value_pairs(df[x].tolist(), df[y_col].tolist())
@@ -689,8 +689,8 @@ class ChartRenderersMixin:
     def _graph(self, ctx: RenderContext):
         df, x, y = ctx.df, ctx.x, ctx.y
         opt = self._base(ctx)
-        # source/target 由 --x-axis/--y-axis 显式指定（x=source，y[0]=target，y[1]=可选权重）。
-        # 不做列名词表猜测；缺失时报错（链式流程可先 transform 成 source/target 两列）。
+        
+        
         source_col = x
         target_col = y[0] if y else None
         weight_col = y[1] if y and len(y) > 1 else None
@@ -718,7 +718,7 @@ class ChartRenderersMixin:
             links.append(link)
 
         opt['tooltip'] = {'trigger': 'item'}
-        # 节点上已有名称标签，series 图例只显示图表类型名，移除
+        
         opt.pop('legend', None)
         opt['series'] = [{'name': ctx.texts['series_graph'], 'type': 'graph', 'layout': 'force', 'data': nodes, 'links': links,
                           'roam': True, 'label': {'show': True}, 'force': {'repulsion': 200, 'edgeLength': [50, 150]}}]
@@ -730,16 +730,16 @@ class ChartRenderersMixin:
         opt['tooltip'] = {'trigger': 'item', 'axisPointer': {'type': 'shadow'}}
         cols = y if len(y) > 0 else df.select_dtypes(include=[np.number]).columns[:5].tolist()
         box_data = []
-        outlier_data = []  # 格式: [[categoryIndex, value], ...]
+        outlier_data = []  
         for cat_idx, col in enumerate(cols):
             s = df[col].dropna()
             if s.empty:
                 box_data.append([0, 0, 0, 0, 0])
                 continue
-            # IQR 须线与离群点判定引用共享计算核（与 plot_stats 同源）
+            
             st = box_stats(s)
             box_data.append([st['min'], st['q1'], st['median'], st['q3'], st['max']])
-            # ECharts scatter 在 category xAxis 下需要 [xIndex, yValue] 格式
+            
             for idx, val in st['outliers'].items():
                 pt = {'value': [cat_idx, sanitize_value(float(val))]}
                 if ctx.label_col is not None:
@@ -751,7 +751,7 @@ class ChartRenderersMixin:
         if rot:
             opt['xAxis']['axisLabel'] = rot
         opt['yAxis'] = {'type': 'value'}
-        # 离群点 tooltip：显示身份（label_col）+ 所属列名 + 值，而非默认的坐标数组
+        
         ctx.js[ITEM_TOOLTIP_PLACEHOLDER] = (
             "function(p) {\n"
             f"  var cols = {_js_dumps(cols)};\n"
@@ -768,13 +768,13 @@ class ChartRenderersMixin:
         return opt
 
     def _waterfall(self, ctx: RenderContext):
-        """瀑布图：透明垫底 series + 增量 series（stack 实现悬浮柱）。
 
-        增量值可正可负：柱高取绝对值，垫底高度取累计起点，保证柱子"悬浮"；
-        每个柱子的 label 和 tooltip 显示带符号的原始增量，避免绝对值造成误读。
-        垫底 series 透明、silent、不进 legend、tooltip 不显示。
-        累计走查引用共享计算核 waterfall_walk（与 plot_stats 同源）。
-        """
+
+
+
+
+
+
         df, x, y = ctx.df, ctx.x, ctx.y
         y_col = y[0] if y else df.columns[-1]
         x_data = safe_str_list(df[x])
@@ -787,7 +787,7 @@ class ChartRenderersMixin:
             opt['xAxis']['axisLabel'] = rot
         opt['yAxis'] = {'type': 'value'}
         opt['graphic'] = _axis_name_graphics(ctx.theme, x, [y_col], x_data_len=len(x_data))
-        # 图例只保留增量系列（垫底辅助系列不显示）
+        
         opt['legend'] = {'top': 'bottom', 'type': 'scroll', 'data': [y_col]}
         ctx.js[WATERFALL_TOOLTIP_PLACEHOLDER] = (
             "function(p) {\n"
@@ -819,9 +819,9 @@ class ChartRenderersMixin:
         value = sanitize_value(float(df[y_col].mean()))
         if value is None:
             value = 0
-        # 量程（满刻度）：业务目标 --target 优先（满刻度 = 目标值，指针位置即达成率）；
-        # 缺省回落到共享计算核 gauge_scale（≤1 比率 → 1.0；≤100 得分/百分比 → 100；
-        # 其余 ×1.05；全 NaN 列兜底 100）。与 plot_stats 的 achievement 同源。
+        
+        
+        
         if ctx.target:
             max_val = sanitize_value(float(ctx.target))
         else:
@@ -830,8 +830,8 @@ class ChartRenderersMixin:
             max_val = 100
         opt = {'title': {'text': ctx.title, 'left': 'center'}, 'color': list(ctx.theme['palette'])}
         stops = ctx.theme['gauge_stops']
-        # 系列名：--series-name 优先，缺省用列名（不再用类型名「仪表盘」）；
-        # data[0].name 与 series.name 同源，tooltip 不再残留英文列名。
+        
+        
         series_name = (ctx.series_names[0] if ctx.series_names else y_col)
         opt['series'] = [{'name': series_name, 'type': 'gauge', 'max': max_val,
                           'detail': {'formatter': '{value}'},
@@ -842,7 +842,7 @@ class ChartRenderersMixin:
     def _sankey(self, ctx: RenderContext):
         df, x, y = ctx.df, ctx.x, ctx.y
         opt = {'title': {'text': ctx.title, 'left': 'center'}, 'color': list(ctx.theme['palette'])}
-        # source/target 由 --x-axis/--y-axis 显式指定（x=source，y[0]=target，y[1]=可选值列）。
+        
         source_col = x
         target_col = y[0] if y else None
         value_col = y[1] if y and len(y) > 1 else None
@@ -906,11 +906,11 @@ class ChartRenderersMixin:
         return opt
 
     def _histogram(self, ctx: RenderContext):
-        """直方图：对连续数值列分箱后用 bar 渲染（barCategoryGap=0 消除间隙）。
 
-        与 bar 的本质区别：bar 用于离散类别比较，histogram 用于连续变量分布形状展示。
-        分箱引用共享计算核 sturges_bins（与 plot_stats 同源）。
-        """
+
+
+
+
         df, y = ctx.df, ctx.y
         num_cols = df.select_dtypes(include=[np.number]).columns
         y_col = y[0] if y else (num_cols[0] if len(num_cols) else None)
@@ -936,18 +936,18 @@ class ChartRenderersMixin:
         if rot:
             opt['xAxis']['axisLabel'] = rot
         opt['yAxis'] = {'type': 'value'}
-        # x 轴名底距由 _axis_name_graphics 按 x_data_len 是否超过 dataZoom 阈值自动选择
-        # （64 避开底部滑块 / 42 常规），不再在此复制 64/42 魔法数
+        
+        
         opt['graphic'] = _axis_name_graphics(ctx.theme, y_col, [ctx.texts['axis_frequency']], x_data_len=len(labels))
         opt['series'] = [{
             'name': y_col, 'type': 'bar', 'data': counts.tolist(),
-            'barCategoryGap': '0%',  # 直方图无间隙
+            'barCategoryGap': '0%',  
             'itemStyle': {'color': ctx.theme['primary']},
         }]
         return opt
 
     def _stacked_bar(self, ctx: RenderContext):
-        """堆叠柱状图：复用 _bar 后为每个 series 加 stack 字段。"""
+
         opt = self._bar(ctx)
         for s in opt['series']:
             s['stack'] = 'total'
@@ -955,7 +955,7 @@ class ChartRenderersMixin:
         return opt
 
     def _bubble(self, ctx: RenderContext):
-        """气泡图：3 列数值（x, y, size），symbolSize 按第三列缩放。"""
+
         df, x, y = ctx.df, ctx.x, ctx.y
         opt = self._base(ctx)
         if len(y) < 2:
@@ -979,10 +979,10 @@ class ChartRenderersMixin:
         opt['xAxis'] = {'type': 'value', 'scale': True}
         opt['yAxis'] = {'type': 'value', 'scale': True}
         opt['graphic'] = _axis_name_graphics(ctx.theme, x, [y_col])
-        # tooltip / symbolSize 是 JS 函数（ECharts 字符串模板不支持 {c[0]} 数组索引），
-        # 占位符写进 option，真正的 JS 函数收集到 ctx.js，由 template 层替换。
-        # tooltip 显示 身份（label_col）+ 各维度 "列名: 值"
-        # tooltip 维度名跟随 --x-name/--y-name（缺省回落列名），否则悬停仍显示英文列名
+        
+        
+        
+        
         x_disp = ctx.x_name if ctx.x_name else x
         y0_disp = (ctx.y_names[0] if ctx.y_names and len(ctx.y_names) > 0 else y_col)
         y1_disp = (ctx.y_names[1] if ctx.y_names and len(ctx.y_names) > 1 else size_col)
@@ -997,7 +997,7 @@ class ChartRenderersMixin:
                                             color_col if numeric_color else None, True)}
 
         if color_col is not None and not numeric_color:
-            # 类别列 → 按类别拆 series（NaN 归入"未分类"，不静默丢点）
+            
             color_s = df[color_col].where(df[color_col].notna(), ctx.texts['series_uncategorized']).astype(str)
             opt['series'] = [dict(_series(df[color_s == cat]), name=cat) for cat in color_s.unique()]
         else:
@@ -1007,14 +1007,14 @@ class ChartRenderersMixin:
                 if cvals:
                     opt['visualMap'] = {'min': min(cvals), 'max': max(cvals), 'dimension': 3,
                                         'calculable': True, 'orient': 'vertical', 'right': '1%', 'top': 'center'}
-                    opt['grid']['right'] = '10%'  # 为右侧 visualMap 留出空间
+                    opt['grid']['right'] = '10%'  
         return opt
 
     def _pareto(self, ctx: RenderContext):
-        """帕累托图：排序后的 bar + 累积百分比折线（双 yAxis）。
 
-        累计百分比引用共享计算核 pareto_stats（与 plot_stats 同源）。
-        """
+
+
+
         df, x, y = ctx.df, ctx.x, ctx.y
         num_cols = df.select_dtypes(include=[np.number]).columns
         y_col = y[0] if y else (num_cols[0] if len(num_cols) else None)
@@ -1050,7 +1050,7 @@ class ChartRenderersMixin:
         return opt
 
     def _combo(self, ctx: RenderContext):
-        """组合图（双轴）：第一个 Y 列走 bar（左轴），其余 Y 列走 line（右轴）。"""
+
         df, x, y = ctx.df, ctx.x, ctx.y
         if len(y) < 2:
             raise ChartError(
@@ -1072,7 +1072,7 @@ class ChartRenderersMixin:
             {'type': 'value', 'position': 'right',
              'axisLabel': {'formatter': '{value}'}},
         ]
-        # bar 系列零基线契约（与 _bar 一致）：bar 列全非负时左轴显式 min:0
+        
         if _all_nonnegative(df, [bar_col]):
             opt['yAxis'][0]['min'] = 0
         opt['graphic'] = _axis_name_graphics(ctx.theme, x, [bar_col, ' / '.join(line_cols)], x_data_len=len(x_data))
@@ -1090,14 +1090,14 @@ class ChartRenderersMixin:
         opt['series'] = series
         return opt
 
-    # ---- venn / mindmap / orgchart / liquid ----
+    
 
     def _venn(self, ctx: RenderContext):
-        """维恩图：2~3 个集合的交集/并集可视化（ECharts 无内建 venn 系列，用 graphic 圆绘制）。
 
-        数据契约（B 家族）：x = 集合名列，y[0] = 数值列。集合名含分隔符（∩ & + × 与）
-        的行解析为交集，如 "A∩B"；数值列为分类列时退化为 x 频数统计。
-        """
+
+
+
+
         df, x, y = ctx.df, ctx.x, ctx.y
         y_col = y[0] if y else df.columns[-1]
         if pd.api.types.is_numeric_dtype(df[y_col]):
@@ -1108,7 +1108,7 @@ class ChartRenderersMixin:
         else:
             raw = {str(k): float(c) for k, c in df[x].astype(str).value_counts().items()}
         sep_re = re.compile(r'[∩&+×]|与')
-        # 两遍解析：先收简单集合，再解析交集行（成员按名称精确或包含匹配到简单集合）
+        
         sets: Dict[str, float] = {}
         compound: List[Tuple[str, float]] = []
         for name, v in raw.items():
@@ -1129,14 +1129,14 @@ class ChartRenderersMixin:
                 details={'given_sets': list(sets), 'suggestion': '取最关注的 3 个集合，其余用 pie/treemap 呈现'},
             )
         names = list(sets)
-        # 半径 ∝ sqrt(值)（面积正比于数值），最大半径 150px
+        
         k = 150.0 / max(math.sqrt(v) for v in sets.values())
         radii = {n: k * math.sqrt(sets[n]) for n in names}
-        # 画布尺寸来自 RenderContext（与落盘尺寸同源，--width/--height 对 venn 布局生效）：
-        # 先在相对坐标系布局，再整体平移/缩放适配画布。
-        # 圆用 shape.cx/cy（px 坐标），文本用 left/top(px) + align/verticalAlign 居中锚定
+        
+        
+        
         CW, CH = float(ctx.width), float(ctx.height)
-        OVERLAP = 0.72  # 圆心距系数：0.72*(r1+r2) < r1+r2，保证任意两圆相交
+        OVERLAP = 0.72  
         centers = {}
         if len(names) == 2:
             a, b = names
@@ -1144,8 +1144,8 @@ class ChartRenderersMixin:
             centers[a] = (0.0, 0.0)
             centers[b] = (d, 0.0)
         else:
-            # 3 集合：三边定位法。A 在原点、B 在 x 轴，C 由 d_ac/d_bc 解交点；
-            # 目标距离恒满足三角不等式（r3>0），交点必有解
+            
+            
             a, b, c = names
             d_ab = OVERLAP * (radii[a] + radii[b])
             d_ac = OVERLAP * (radii[a] + radii[c])
@@ -1154,8 +1154,8 @@ class ChartRenderersMixin:
             centers[b] = (d_ab, 0.0)
             x_c = (d_ab ** 2 + d_ac ** 2 - d_bc ** 2) / (2 * d_ab)
             h2 = d_ac ** 2 - x_c ** 2
-            centers[c] = (x_c, -math.sqrt(h2) if h2 > 0 else 0.0)  # 负 y = 画布上方
-        # 包围盒适配：等比缩放 + 居中平移，保证所有圆完整显示在画布内
+            centers[c] = (x_c, -math.sqrt(h2) if h2 > 0 else 0.0)  
+        
         min_x = min(centers[n][0] - radii[n] for n in names)
         max_x = max(centers[n][0] + radii[n] for n in names)
         min_y = min(centers[n][1] - radii[n] for n in names)
@@ -1169,7 +1169,7 @@ class ChartRenderersMixin:
             centers[n] = (ox + (centers[n][0] - min_x) * scale,
                           oy + (centers[n][1] - min_y) * scale)
             radii[n] *= scale
-        # 圆心整体质心（集合标签向外偏移的基准）
+        
         gx = sum(centers[n][0] for n in names) / len(names)
         gy = sum(centers[n][1] for n in names) / len(names)
 
@@ -1182,7 +1182,7 @@ class ChartRenderersMixin:
                 'shape': {'cx': round(px, 1), 'cy': round(py, 1), 'r': round(radii[n], 1)},
                 'style': {'fill': palette[i % len(palette)], 'opacity': 0.55},
             })
-        # 集合标签：名称 + 数值，向质心反方向偏移，避免与交集标签重叠
+        
         for i, n in enumerate(names):
             dx, dy = centers[n][0] - gx, centers[n][1] - gy
             dist = math.hypot(dx, dy) or 1.0
@@ -1193,8 +1193,8 @@ class ChartRenderersMixin:
                 'style': {'text': f'{n}\n{fmt_num(sets[n])}', 'fontSize': 14, 'fontWeight': 'bold',
                           'fill': ctx.theme['graphic_text'], 'align': 'center', 'verticalAlign': 'middle'},
             })
-        # 交集标签：2 成员放两圆重叠段中点（圆心连线上、双方圆边之间），
-        # 3 成员放三圆心重心；只匹配到 1 个集合的行无法定位，跳过
+        
+        
         for name, v in compound:
             parts = [p.strip() for p in sep_re.split(name) if p.strip()]
             members = []
@@ -1210,7 +1210,7 @@ class ChartRenderersMixin:
                 x1, y1 = centers[m1]
                 x2, y2 = centers[m2]
                 d = math.hypot(x2 - x1, y2 - y1) or 1.0
-                # 重叠段自 c1 的范围 [d - r2, r1]，取中点并钳制，避免标签贴边
+                
                 t = ((d - radii[m2]) + radii[m1]) / 2 / d
                 t = max(0.2, min(0.8, t))
                 mx, my = x1 + (x2 - x1) * t, y1 + (y2 - y1) * t
@@ -1228,11 +1228,11 @@ class ChartRenderersMixin:
 
     @staticmethod
     def _build_tree(edges):
-        """由 (父, 子) 边列表构建树森林，返回根节点列表（ECharts tree data 格式）。
 
-        环状脏数据防御：递归构建时跳回已访问节点（等价剪掉回边）；
-        无根（全循环）时抛错。
-        """
+
+
+
+
         child_map: Dict[str, List[str]] = {}
         children_set = set()
         for p, c in edges:
@@ -1250,7 +1250,7 @@ class ChartRenderersMixin:
             node = {'name': name}
             kids = []
             for c in child_map.get(name, []):
-                if c in seen:  # 环防御：跳过回边
+                if c in seen:  
                     continue
                 kids.append(build(c, seen | {c}))
             if kids:
@@ -1260,7 +1260,7 @@ class ChartRenderersMixin:
         return [build(r, {r}) for r in roots]
 
     def _mindmap(self, ctx: RenderContext):
-        """思维导图：LR 布局的 tree 系列，按顶级分支着色（调色板），根节点强调。"""
+
         df, x, y = ctx.df, ctx.x, ctx.y
         parent_col, child_col = x, y[0]
         edges = [(p, c) for p, c in zip(safe_str_list(df[parent_col]), safe_str_list(df[child_col]))
@@ -1274,7 +1274,7 @@ class ChartRenderersMixin:
         roots = self._build_tree(edges)
         theme = ctx.theme
         palette = theme['palette']
-        # 多根时挂虚拟根（隐藏标签与连线），保证单棵树渲染
+        
         if len(roots) == 1:
             tree_data = roots[0]
         else:
@@ -1289,7 +1289,7 @@ class ChartRenderersMixin:
             node['symbolSize'] = 16 if is_root else 9
             for c in node.get('children', []):
                 paint(c, color)
-        # 顶级分支各分配一个调色板色，整支同色（思维导图的分支色语义）
+        
         top = tree_data.get('children', [])
         if tree_data.get('name') != '':
             paint(tree_data, theme['primary'], is_root=True)
@@ -1315,7 +1315,7 @@ class ChartRenderersMixin:
         return opt
 
     def _orgchart(self, ctx: RenderContext):
-        """组织架构图：TB 布局的 tree 系列，矩形节点 + 折线连线，统一主色。"""
+
         df, x, y = ctx.df, ctx.x, ctx.y
         parent_col, child_col = x, y[0]
         edges = [(p, c) for p, c in zip(safe_str_list(df[parent_col]), safe_str_list(df[child_col]))
@@ -1344,7 +1344,7 @@ class ChartRenderersMixin:
             for c in node.get('children', []):
                 paint(c)
         paint(tree_data)
-        # 虚拟根不渲染盒子
+        
         if tree_data.get('name') == '':
             tree_data['symbolSize'] = [0, 0]
         opt = {'title': {'text': ctx.title, 'left': 'center', 'textStyle': {'fontSize': 16}},
@@ -1359,13 +1359,13 @@ class ChartRenderersMixin:
         return opt
 
     def _liquid(self, ctx: RenderContext):
-        """水波图（echarts-liquidfill）：单数值列均值 → 百分比进度，主色波浪。
 
-        归一化分母：业务目标 --target 优先（达成率 = 均值 / 目标），缺省回落
-        共享计算核 gauge_scale 自动量程（与 plot_stats 的 achievement 同源）。
-        系列名：--series-name 优先，缺省用列名；label 第二行跟随系列名，
-        使图中文字可自定义（不再写死列名，修复英文列名无法修改）。
-        """
+
+
+
+
+
+
         df, y = ctx.df, ctx.y
         num_cols = df.select_dtypes(include=[np.number]).columns
         y_col = y[0] if y else (num_cols[0] if len(num_cols) else None)
@@ -1376,18 +1376,18 @@ class ChartRenderersMixin:
                 details={'suggestion': '提供数值类型的列（如完成率），或用 transform_code 生成数值列'},
             )
         value = float(df[y_col].mean())
-        # 分母：--target 优先；否则数据 max>100 时 gauge_scale 会走 ×1.05 分支，
-        # 导致图内百分比（value/gauge_scale）与标题/解读（value/target）分裂。
+        
+        
         denom = float(ctx.target) if ctx.target else gauge_scale(float(df[y_col].max()))
         frac = max(0.0, min(1.0, value / denom if denom else 0.0))
         pct = round(frac * 100, 1)
         waves = [round(frac, 4), round(frac * 0.9, 4), round(frac * 0.78, 4)]
         primary = ctx.theme['primary']
-        # 系列名：--series-name 优先，缺省用列名（不再用类型名「水波图」）；
-        # label 第二行跟随系列名，图中文字可自定义。
+        
+        
         series_name = (ctx.series_names[0] if ctx.series_names else y_col)
-        # label 用函数 formatter（占位符 → JS 函数）运行时读 chartOption.series[0].name，
-        # 使 --series-name 与前端重命名面板改名后，图内第二行文字自动跟随，不再写死列名。
+        
+        
         ctx.js[LIQUID_LABEL_PLACEHOLDER] = (
             f"function() {{ return '{pct}%' + '\\n' + chartOption.series[0].name; }}"
         )
@@ -1404,21 +1404,21 @@ class ChartRenderersMixin:
                            'rippleEffect': {'period': 3000}}]}
         return opt
 
-    # ---- P0/P1 新增：map / lines / effect_scatter / calendar / pictorial_bar / theme_river ----
+    
 
     def _map(self, ctx: RenderContext):
-        """地图：地区列 → 数值列的分级着色地图（离线 GeoJSON，默认中国省级）。
 
-        数据契约：x = 地区名列（支持「北京/广东」等简称，china 内置图专用），
-        y[0] = 数值列。地图来源由 ctx（--geo 内置图名 / --geo-path 自备文件）决定。
-        同地区多行自动求和聚合；无法对齐到 GeoJSON 全称的地区被跳过（全名见
-        geojson_region_names），避免静默丢弃——未匹配数量经 plot_stats 披露。
-        """
+
+
+
+
+
+
         df, x, y = ctx.df, ctx.x, ctx.y
         y_col = y[0] if y else df.columns[-1]
         geo_names = ctx.geo_names if ctx.geo_names is not None else geojson_region_names(ctx.geo_json or {})
         aliases = ctx.geo_aliases
-        # 聚合：地区名 → 值求和（同地区多行合并，口径与 B 家族 name×value 一致）
+        
         agg: Dict[str, float] = {}
         for n, v in zip(df[x].tolist(), df[y_col].tolist()):
             if pd.isna(v):
@@ -1442,7 +1442,7 @@ class ChartRenderersMixin:
         vals = [d['value'] for d in data if d['value'] is not None]
         vmin = min(vals) if vals else 0
         vmax = max(vals) if vals else 100
-        if vmin == vmax:  # 单一值时分段图例退化为单色，上浮上限避免 visualMap 报错
+        if vmin == vmax:  
             vmax = vmin + 1 if vmin is not None else 100
         opt = {
             'title': {'text': ctx.title, 'left': 'center', 'textStyle': {'fontSize': 16}},
@@ -1461,12 +1461,12 @@ class ChartRenderersMixin:
         return opt
 
     def _lines(self, ctx: RenderContext):
-        """航线/迁徙图：source/target/value 关系列 → 地图上的流动线条。
 
-        数据契约：source/target 由 --x-axis/--y-axis 显式指定（x=source，y[0]=target，
-        y[1]=可选值列）。地图来源由 ctx（--geo / --geo-path）决定。两端地名均需对齐到
-        区域全称；无法对齐的边被跳过（全名见 geojson_region_names）。
-        """
+
+
+
+
+
         df = ctx.df
         source_col = ctx.x
         target_col = ctx.y[0] if ctx.y else None
@@ -1480,8 +1480,8 @@ class ChartRenderersMixin:
             )
         geo_names = ctx.geo_names if ctx.geo_names is not None else geojson_region_names(ctx.geo_json or {})
         aliases = ctx.geo_aliases
-        # ECharts lines 系列的 data item 只认 `coords` 字段定位（fromName/toName 仅作
-        # tooltip 标签），故从 GeoJSON 提取区域中心点，把 fromName/toName 转成 coords。
+        
+        
         centers = region_centers(ctx.geo_json or {})
         data = []
         src_list = df[source_col].tolist()
@@ -1496,7 +1496,7 @@ class ChartRenderersMixin:
             c1 = centers.get(fs)
             c2 = centers.get(ft)
             if c1 is None or c2 is None:
-                # 区域存在但无法定位中心点（自备 GeoJSON 缺 cp/center/centroid 且几何异常）
+                
                 continue
             item = {'coords': [c1, c2], 'fromName': fs, 'toName': ft}
             if has_value:
@@ -1532,7 +1532,7 @@ class ChartRenderersMixin:
         return opt
 
     def _effect_scatter(self, ctx: RenderContext):
-        """涟漪散点图：复用 scatter 的数据契约与 tooltip，叠加涟漪动画强调点位。"""
+
         opt = self._scatter(ctx)
         for s in opt.get('series', []):
             if s.get('type') == 'scatter':
@@ -1542,10 +1542,10 @@ class ChartRenderersMixin:
         return opt
 
     def _calendar(self, ctx: RenderContext):
-        """日历热力图：日期列 + 数值列 → 日历坐标系上的每日强度块（GitHub 贡献图式）。
 
-        数据契约：x = 日期列（可被 to_datetime 解析），y[0] = 数值列。
-        """
+
+
+
         df, x, y = ctx.df, ctx.x, ctx.y
         y_col = y[0] if y else df.columns[-1]
         dates = pd.to_datetime(df[x], errors='coerce')
@@ -1581,7 +1581,7 @@ class ChartRenderersMixin:
         return opt
 
     def _pictorial_bar(self, ctx: RenderContext):
-        """象形柱图：复用 bar 数据契约，柱子由重复的小箭头符号堆叠而成（象征增长）。"""
+
         opt = self._bar(ctx)
         for s in opt.get('series', []):
             if s.get('type') == 'bar':
@@ -1595,10 +1595,10 @@ class ChartRenderersMixin:
         return opt
 
     def _theme_river(self, ctx: RenderContext):
-        """主题河流图：时间列 + 多数值列 → 平滑堆叠的河流流（各系列随时间体量变化）。
 
-        数据契约：x = 时间列（可被 to_datetime 解析），y = 1~N 数值列。
-        """
+
+
+
         df, x, y = ctx.df, ctx.x, ctx.y
         if len(y) < 1:
             raise ChartError(

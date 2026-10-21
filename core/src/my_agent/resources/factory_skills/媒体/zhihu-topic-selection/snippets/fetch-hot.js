@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-/**
- * 知乎热榜获取 - Zhihu Hot List Fetcher
- * 三级认证降级机制: Browser Profile → File Cookie → Fallback Source
- *
- * 用法:
- *   node fetch-hot.js [limit] [--json] [--output file.json]
- *   RATE_LIMIT=5000 node fetch-hot.js 50
- */
+
+
+
+
+
+
+
+
 
 const fs = require('fs');
 const path = require('path');
@@ -14,14 +14,14 @@ const RateLimiter = require('./rate-limiter');
 const CookieManager = require('./cookie-manager');
 const FallbackFetcher = require('./fallback');
 
-// ---------- 配置 ----------
+
 
 const ZHIHU_HOT_API = 'https://www.zhihu.com/api/v3/feed/topstory/hot-lists/total?limit=50&desktop=true';
 const ZHIHU_HOT_PAGE = 'https://www.zhihu.com/hot';
 const RATE_LIMIT_MS = parseInt(process.env.RATE_LIMIT || '2000', 10);
 const DEFAULT_LIMIT = 50;
 
-// ---------- 工具函数 ----------
+
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -46,14 +46,14 @@ function parseArgs() {
   return { limit, outputFile, jsonMode };
 }
 
-// ---------- Level 1: Browser Profile (Puppeteer) ----------
+
 
 async function fetchViaBrowserProfile(limit) {
   let puppeteer;
   try {
     puppeteer = require('puppeteer');
   } catch {
-    return null; // puppeteer 未安装
+    return null; 
   }
 
   try {
@@ -67,25 +67,25 @@ async function fetchViaBrowserProfile(limit) {
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     );
 
-    // 尝试加载保存的浏览器状态
+    
     const userDataDir = path.join(__dirname, '..', 'data', 'browser-profile');
     if (fs.existsSync(userDataDir)) {
-      // 已有登录态
+      
     }
 
     await page.goto(ZHIHU_HOT_PAGE, { waitUntil: 'networkidle2', timeout: 30000 });
 
-    // 检查是否已登录
+    
     const isLoggedIn = await page.evaluate(() => {
       return !!document.querySelector('.AppHeader-profile, [data-za-detail-view-path-module="UserItem"]');
     });
 
     if (!isLoggedIn) {
       await browser.close();
-      return null; // 未登录，降级
+      return null; 
     }
 
-    // 通过页面API获取热榜数据
+    
     const hotData = await page.evaluate(async (limit) => {
       try {
         const response = await fetch(
@@ -131,7 +131,7 @@ async function fetchViaBrowserProfile(limit) {
   }
 }
 
-// ---------- Level 2: File Cookie ----------
+
 
 async function fetchViaFileCookie(limit) {
   const cookieManager = new CookieManager();
@@ -189,19 +189,19 @@ async function fetchViaFileCookie(limit) {
   }
 }
 
-// ---------- Level 3: Fallback Source ----------
+
 
 async function fetchViaFallback() {
   const fallback = new FallbackFetcher();
   return fallback.fetch();
 }
 
-// ---------- 主入口: 三级认证降级 ----------
+
 
 async function fetchWithFallback(options = {}) {
   const { limit = DEFAULT_LIMIT, authPriority = null } = options;
 
-  // 确定认证优先级
+  
   const cookieManager = new CookieManager();
   const priority = authPriority || cookieManager.getAuthPriority() ||
     ['browser_profile', 'file_cookie', 'fallback_source'];
@@ -211,7 +211,7 @@ async function fetchWithFallback(options = {}) {
 
     if (method === 'browser_profile') {
       console.error('[AUTH] 尝试 Browser Profile: 从 Edge 自动获取 Cookie...');
-      // 尝试从 Edge 浏览器刷新 Cookie
+      
       const fresh = await cookieManager.refreshFromBrowser();
       if (fresh) {
         console.error('[AUTH] Cookie 已从浏览器刷新，使用 file_cookie 模式');
@@ -238,7 +238,7 @@ async function fetchWithFallback(options = {}) {
     console.error(`[AUTH] ${method} 失败，降级...`);
   }
 
-  // 所有方式都失败
+  
   console.error('[AUTH] 所有认证方式均失败');
   return {
     meta: {
@@ -254,7 +254,7 @@ async function fetchWithFallback(options = {}) {
   };
 }
 
-// ---------- CLI ----------
+
 
 async function main() {
   const { limit, outputFile, jsonMode } = parseArgs();
@@ -274,7 +274,7 @@ async function main() {
     fs.mkdirSync(path.dirname(outPath), { recursive: true });
     fs.writeFileSync(outPath, output, 'utf-8');
     console.error(`已保存到: ${outPath}`);
-    // 只输出JSON（供 save_to_db.py 解析）
+    
     console.log(output);
     return;
   }
@@ -284,11 +284,11 @@ async function main() {
     return;
   }
 
-  // 人性化输出
+  
   console.log(output);
 }
 
-// 导出供模块使用
+
 fetchWithFallback.fetchViaBrowserProfile = fetchViaBrowserProfile;
 fetchWithFallback.fetchViaFileCookie = fetchViaFileCookie;
 fetchWithFallback.fetchViaFallback = fetchViaFallback;

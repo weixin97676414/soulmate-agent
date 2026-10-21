@@ -1,7 +1,7 @@
-"""
-图表生成模块 - 使用 matplotlib 生成 K线/均线、指标、对比柱状图
-所有图表返回 base64 编码的 PNG，可直接嵌入 HTML <img> 标签。
-"""
+
+
+
+
 import io
 import base64
 import pandas as pd
@@ -11,7 +11,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 
-# 中文字体
+
 rcParams["font.sans-serif"] = ["PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "SimHei", "sans-serif"]
 rcParams["axes.unicode_minus"] = False
 
@@ -25,7 +25,7 @@ def _fig_to_base64(fig, dpi=150) -> str:
 
 
 def chart_stock_price_ma(df: pd.DataFrame, name: str, symbol: str) -> str:
-    """生成价格+均线+成交量图（上下双轴）"""
+
     df = df.tail(40).copy()
     df["ma5"] = df["close"].rolling(5).mean()
     df["ma10"] = df["close"].rolling(10).mean()
@@ -37,7 +37,7 @@ def chart_stock_price_ma(df: pd.DataFrame, name: str, symbol: str) -> str:
     x = range(len(df))
     dates = df["date"].dt.strftime("%m-%d")
 
-    # 价格
+    
     ax1.plot(x, df["close"], color="#333", linewidth=1.2, label="收盘价")
     ax1.plot(x, df["ma5"], color="#e6a817", linewidth=0.8, label="MA5", alpha=0.9)
     ax1.plot(x, df["ma10"], color="#1e88e5", linewidth=0.8, label="MA10", alpha=0.9)
@@ -49,14 +49,14 @@ def chart_stock_price_ma(df: pd.DataFrame, name: str, symbol: str) -> str:
     ax1.tick_params(labelsize=7)
     ax1.grid(axis="y", alpha=0.3)
 
-    # 成交量
+    
     colors = ["#c00" if df["close"].iloc[i] >= df["open"].iloc[i] else "#00a86b" for i in range(len(df))]
     ax2.bar(x, df["volume"] / 1e4, color=colors, alpha=0.7, width=0.6)
     ax2.set_ylabel("成交量(万)", fontsize=7)
     ax2.tick_params(labelsize=7)
     ax2.grid(axis="y", alpha=0.3)
 
-    # X 轴标签
+    
     step = max(1, len(df) // 8)
     ax2.set_xticks(range(0, len(df), step))
     ax2.set_xticklabels([dates.iloc[i] for i in range(0, len(df), step)], fontsize=7, rotation=30)
@@ -65,17 +65,17 @@ def chart_stock_price_ma(df: pd.DataFrame, name: str, symbol: str) -> str:
 
 
 def chart_macd_rsi(df: pd.DataFrame, name: str, symbol: str) -> str:
-    """生成 MACD + RSI 双指标图"""
+
     df = df.tail(40).copy()
 
-    # MACD
+    
     ema12 = df["close"].ewm(span=12, adjust=False).mean()
     ema26 = df["close"].ewm(span=26, adjust=False).mean()
     macd = ema12 - ema26
     signal = macd.ewm(span=9, adjust=False).mean()
     hist = macd - signal
 
-    # RSI
+    
     delta = df["close"].diff()
     gain = delta.where(delta > 0, 0.0).rolling(14).mean()
     loss = (-delta).where(delta < 0, 0.0).rolling(14).mean()
@@ -87,7 +87,7 @@ def chart_macd_rsi(df: pd.DataFrame, name: str, symbol: str) -> str:
     x = range(len(df))
     dates = df["date"].dt.strftime("%m-%d")
 
-    # MACD
+    
     bar_colors = ["#c00" if h >= 0 else "#00a86b" for h in hist]
     ax1.bar(x, hist, color=bar_colors, alpha=0.6, width=0.6)
     ax1.plot(x, macd, color="#1e88e5", linewidth=0.9, label="MACD")
@@ -99,7 +99,7 @@ def chart_macd_rsi(df: pd.DataFrame, name: str, symbol: str) -> str:
     ax1.tick_params(labelsize=7)
     ax1.grid(axis="y", alpha=0.3)
 
-    # RSI
+    
     ax2.plot(x, rsi, color="#7b1fa2", linewidth=1)
     ax2.axhline(y=70, color="#c00", linewidth=0.6, linestyle="--", alpha=0.7)
     ax2.axhline(y=30, color="#00a86b", linewidth=0.6, linestyle="--", alpha=0.7)
@@ -119,7 +119,7 @@ def chart_macd_rsi(df: pd.DataFrame, name: str, symbol: str) -> str:
 
 
 def chart_index_comparison(index_data: dict) -> str:
-    """生成主要指数涨跌幅对比柱状图"""
+
     names = []
     pcts = []
     for name, data in index_data.items():
@@ -150,7 +150,7 @@ def chart_index_comparison(index_data: dict) -> str:
 
 
 def chart_signal_summary(signals) -> str:
-    """生成信号强度雷达图 / 风险仪表盘"""
+
     if not signals:
         return ""
 
@@ -161,7 +161,7 @@ def chart_signal_summary(signals) -> str:
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.5, 2.5))
 
-    # 左：买卖信号对比
+    
     x = np.arange(len(names))
     w = 0.3
     ax1.bar(x - w / 2, buy_counts, w, color="#c00", alpha=0.7, label="买入信号")
@@ -174,7 +174,7 @@ def chart_signal_summary(signals) -> str:
     ax1.tick_params(labelsize=7)
     ax1.grid(axis="y", alpha=0.3)
 
-    # 右：风险评分
+    
     colors = ["#00a86b" if r <= 4 else "#e6a817" if r <= 6 else "#c00" for r in risk_scores]
     bars = ax2.barh(names, risk_scores, color=colors, height=0.4, alpha=0.8)
     ax2.set_xlim(0, 10)

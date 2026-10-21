@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""
-douyin-video-transcribe 环境自动配置
 
-首次使用前运行此脚本，自动完成：
-  1. 检测兼容的 Python 版本（需要 3.10~3.12，不兼容 3.13）
-  2. 创建独立 venv
-  3. 按正确顺序安装所有依赖（numpy<2 优先）
-  4. 安装 Chromium 浏览器
-  5. 验证所有包可正常 import
-  6. 保存配置供后续使用
 
-用法：
-    python setup_env.py [--force] [--mirror {aliyun|pypi|tsinghua}]
-"""
+
+
+
+
+
+
+
+
+
+
+
+
 
 import os
 import sys
@@ -23,15 +23,15 @@ import json
 import re
 from pathlib import Path
 
-# ── 配置 ──────────────────────────────────────────────────────────────────────
 
-SKILL_DIR = Path(__file__).resolve().parent.parent  # douyin-video-transcribe/
+
+SKILL_DIR = Path(__file__).resolve().parent.parent  
 VENV_DIR = SKILL_DIR / "venv"
 CONFIG_FILE = SKILL_DIR / ".env_config.json"
 
 PYTHON_MIN = (3, 10)
 PYTHON_RECOMMENDED = (3, 12)
-PYTHON_INCOMPATIBLE = (3, 13)  # greenlet DLL 在 3.13 下加载失败
+PYTHON_INCOMPATIBLE = (3, 13)  
 
 MIRRORS = {
     "aliyun": {"url": "https://mirrors.aliyun.com/pypi/simple/", "trusted": True},
@@ -39,7 +39,7 @@ MIRRORS = {
     "tsinghua": {"url": "https://pypi.tuna.tsinghua.edu.cn/simple/", "trusted": True},
 }
 
-# ── 工具函数 ──────────────────────────────────────────────────────────────────
+
 
 def info(msg: str):
     print(f"\033[36m[INFO]\033[0m {msg}")
@@ -55,7 +55,7 @@ def error(msg: str):
 
 
 def run_cmd(cmd: list, **kwargs) -> subprocess.CompletedProcess:
-    """运行命令，捕获输出，失败时打印诊断信息。"""
+
     try:
         return subprocess.run(cmd, capture_output=True, text=True, **kwargs)
     except FileNotFoundError:
@@ -64,17 +64,17 @@ def run_cmd(cmd: list, **kwargs) -> subprocess.CompletedProcess:
 
 
 def find_python() -> str | None:
-    """在 PATH 中查找兼容的 Python 解释器。"""
+
     candidates = []
 
-    # Windows 常见路径
+    
     if sys.platform == "win32":
         candidates = [
             "python3.12", "python3.11", "python3.10",
             "python312", "python311", "python310",
             "python3", "python",
         ]
-        # 也尝试 Program Files 下的常见路径
+        
         program_files = [
             os.environ.get("ProgramFiles", "C:\\Program Files"),
             os.environ.get("LOCALAPPDATA", ""),
@@ -91,13 +91,13 @@ def find_python() -> str | None:
             "python3.12", "python3.11", "python3.10",
             "python3", "python",
         ]
-        # macOS: Homebrew (Intel + Apple Silicon)
+        
         for ver in ["3.12", "3.11", "3.10"]:
             for prefix in ["/usr/local/bin", "/opt/homebrew/bin"]:
                 path = os.path.join(prefix, f"python{ver}")
                 if os.path.exists(path):
                     candidates.insert(0, path)
-        # Linux: common alt-install paths
+        
         for ver in ["3.12", "3.11", "3.10"]:
             path = f"/usr/bin/python{ver}"
             if os.path.exists(path):
@@ -117,7 +117,7 @@ def find_python() -> str | None:
 
 
 def check_python_version(python_path: str) -> tuple[bool, str]:
-    """检查 Python 版本兼容性。返回 (是否兼容, 版本描述)。"""
+
     try:
         result = subprocess.run(
             [python_path, "-c", "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')"],
@@ -137,7 +137,7 @@ def check_python_version(python_path: str) -> tuple[bool, str]:
 
 
 def get_pip_install_cmd(python_path: str, mirror: str) -> list:
-    """构造 pip install 命令，选择合适的镜像源。"""
+
     mirror_cfg = MIRRORS.get(mirror, MIRRORS["aliyun"])
     cmd = [python_path, "-m", "pip", "install", "-i", mirror_cfg["url"]]
     if mirror_cfg["trusted"]:
@@ -147,7 +147,7 @@ def get_pip_install_cmd(python_path: str, mirror: str) -> list:
 
 
 def save_config(python_path: str, mirror: str):
-    """保存环境配置到 JSON 文件。"""
+
     config = {
         "venv_python": python_path,
         "venv_dir": str(VENV_DIR.resolve()),
@@ -162,7 +162,7 @@ def save_config(python_path: str, mirror: str):
 
 
 def load_config() -> dict | None:
-    """读取保存的环境配置。"""
+
     if not CONFIG_FILE.exists():
         return None
     try:
@@ -172,7 +172,7 @@ def load_config() -> dict | None:
         return None
 
 
-# ── 主流程 ────────────────────────────────────────────────────────────────────
+
 
 def main():
     force = "--force" in sys.argv
@@ -186,10 +186,10 @@ def main():
     print("=" * 60)
     print()
 
-    # 1. 查找兼容的 Python
+    
     info("检测 Python 环境...")
 
-    # 检查是否已有保存的配置
+    
     existing = load_config()
     if existing and not force:
         venv_python = existing.get("venv_python", "")
@@ -198,7 +198,7 @@ def main():
             info("如需重建，请使用 --force 参数")
             return
 
-    # 优先使用当前运行的 Python（如果兼容）
+    
     current_ver = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     info(f"当前执行 Python: {sys.executable} ({current_ver})")
 
@@ -214,14 +214,14 @@ def main():
         base_python = sys.executable
         info(f"使用当前 Python: {base_python}")
 
-    # 验证版本
+    
     compat, ver_info = check_python_version(base_python)
     if not compat:
         error(f"Python 版本不兼容: {ver_info}")
         sys.exit(1)
     success(f"Python 版本兼容: {ver_info}")
 
-    # 2. 创建 venv
+    
     print()
     info("创建虚拟环境...")
     if VENV_DIR.exists() and not force:
@@ -241,17 +241,17 @@ def main():
             sys.exit(1)
         success(f"venv 已创建: {VENV_DIR}")
 
-    # 确定 venv 内 Python 路径
+    
     if sys.platform == "win32":
         venv_python = str(VENV_DIR / "Scripts" / "python.exe")
     else:
         venv_python = str(VENV_DIR / "bin" / "python")
 
-    # 3. 安装依赖（按正确顺序）
+    
     print()
     info(f"安装依赖包 (镜像: {mirror})...")
 
-    # 先升级 pip + setuptools
+    
     info("升级 pip 和 setuptools...")
     subprocess.run(
         venv_python.split() + ["-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel",
@@ -263,15 +263,15 @@ def main():
 
     install_base = get_pip_install_cmd(venv_python, mirror)
 
-    # 顺序安装，每步检查
+    
     packages_ordered = [
-        # Step A: numpy < 2 必须先装（numpy>=2 在 Python 3.12 下会崩溃）
+        
         ("numpy (锁定版本 < 2)", ['numpy<2']),
-        # Step B: 基础工具
+        
         ("requests, imageio[ffmpeg]", ["requests", 'imageio[ffmpeg]']),
-        # Step C: Playwright 浏览器控制
+        
         ("playwright", ["playwright"]),
-        # Step D: Whisper + torch（最大，最后装）
+        
         ("openai-whisper (含 torch ~800MB)", ["openai-whisper"]),
     ]
 
@@ -282,14 +282,14 @@ def main():
         result = subprocess.run(cmd, capture_output=True, text=True)
 
         if result.returncode != 0:
-            # 提取关键错误信息
+            
             err_lines = result.stderr.strip().split("\n")
             err_summary = "\n".join(err_lines[-5:]) if err_lines else "Unknown error"
             error(f"{step_name} 安装失败:\n{err_summary}")
             all_ok = False
             break
         else:
-            # 验证是否真的装上了
+            
             success(f"{step_name} 安装完成")
 
     if not all_ok:
@@ -300,7 +300,7 @@ def main():
     print()
     success("所有依赖包安装完成")
 
-    # 4. 安装 Chromium
+    
     print()
     info("安装 Chromium 浏览器...")
     chromium_result = subprocess.run(
@@ -313,7 +313,7 @@ def main():
     else:
         success("Chromium 安装完成")
 
-    # 5. 验证所有包
+    
     print()
     info("验证所有包是否可正常导入...")
     verify_script = """
@@ -373,11 +373,11 @@ else:
     print(verify_result.stdout)
     success("所有依赖验证通过！")
 
-    # 6. 保存配置
+    
     print()
     save_config(venv_python, mirror)
 
-    # 7. 打印使用说明
+    
     print()
     print("=" * 60)
     print("  [OK] 环境配置完成!")

@@ -1,8 +1,8 @@
-"""API 嵌入（用厂商 /embeddings 接口做向量化）。
 
-全部离线（httpx.MockTransport）。重点覆盖三类**不会报错、但结果静默错乱**的坑：
-返回顺序不保证、数量对不上、批量拆分。
-"""
+
+
+
+
 
 from __future__ import annotations
 
@@ -55,11 +55,11 @@ def test_basic_embedding():
 
 
 def test_reordered_response_is_normalized():
-    """有些网关**不保证返回顺序**。
 
-    顺序错位不会报错，但会让向量和文本对不上 —— 检索结果整体错乱，
-    用户只会觉得"这个功能不准"，根本查不到原因。所以必须按 index 排一次。
-    """
+
+
+
+
     embedder = build(lambda _: reply([[1.0, 0.0], [0.0, 1.0]], reverse=True))
     vectors = embedder(["第一条", "第二条"])
     assert vectors == [[1.0, 0.0], [0.0, 1.0]]
@@ -67,7 +67,7 @@ def test_reordered_response_is_normalized():
 
 
 def test_count_mismatch_raises():
-    """返回数量与输入不一致时必须报错，而不是把错位的向量交出去。"""
+
     embedder = build(lambda _: reply([[1.0, 0.0], [0.0, 1.0]], drop=1))
     with pytest.raises(RuntimeError, match="数量"):
         embedder(["a", "b"])
@@ -83,7 +83,7 @@ def test_http_error_is_reported_with_redaction():
         embedder(["a"])
     message = str(exc.value)
     assert "401" in message
-    # 厂商回显的响应体是不可信文本，可能带 Key，必须先脱敏
+    
     assert "sk-abcdefghijklmnopqrst" not in message
     embedder.close()
 
@@ -102,7 +102,7 @@ def test_empty_input_makes_no_request():
 
 
 def test_batches_large_inputs():
-    """超过 batch_size 时要拆成多次请求，且顺序不能乱。"""
+
     seen: list[int] = []
 
     def handler(request: httpx.Request) -> httpx.Response:

@@ -1,8 +1,8 @@
-"""图表生成技能：把数据渲染成 SVG 文件并归档为产物。
 
-图表本身由 ``utils/chart.py`` 用纯 Python 生成，不依赖 matplotlib，
-因此安装包不会因为"想要个柱状图"就膨胀几十 MB。
-"""
+
+
+
+
 
 from __future__ import annotations
 

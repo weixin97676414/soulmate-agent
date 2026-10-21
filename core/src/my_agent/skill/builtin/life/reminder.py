@@ -1,9 +1,9 @@
-"""提醒技能：创建、查询、取消提醒。
 
-时间解析做得比一般工具**宽松**：用户会说「明天早上 8 点」「9:30」「2026-09-20 14:00」，
-模型转述时格式也不统一。这里统一收敛成时间戳，解析不了就给出可用格式提示，
-而不是抛一个格式错误让模型反复试。
-"""
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from ....errors import SkillExecutionError
 from ....skill.base import BaseSkill, SkillContext
 from ....skill.decorator import skill
 
-# 完整日期时间格式，按常见程度排序
+
 _DATETIME_FORMATS = (
     "%Y-%m-%d %H:%M:%S",
     "%Y-%m-%d %H:%M",
@@ -42,23 +42,23 @@ _DAY_PREFIXES = (
 
 
 def parse_when(text: str, *, now: datetime | None = None) -> datetime:
-    """把各种写法的时间字符串解析成 ``datetime``。"""
+
     moment = now or datetime.now()
     raw = (text or "").strip()
     if not raw:
         raise SkillExecutionError("请提供提醒时间。")
 
-    # 1) 完整日期时间
+    
     for fmt in _DATETIME_FORMATS:
         try:
             return datetime.strptime(raw, fmt)
         except ValueError:
             continue
 
-    # 2) 「明天 8:00」这类：先取日期偏移，再解析时间部分
+    
     day_offset = 0
-    # 用户是否**明确说了**哪一天。它和"没说日期"在下面必须分开处理 ——
-    # 两者原先共用 ``day_offset == 0`` 这一条分支，于是「今天」被当成了「没写日期」。
+    
+    
     explicit_day = False
     remainder = raw
     for prefix, offset in _DAY_PREFIXES:
@@ -77,11 +77,11 @@ def parse_when(text: str, *, now: datetime | None = None) -> datetime:
             hour=parsed.hour, minute=parsed.minute, second=0, microsecond=0
         )
         if base <= moment:
-            # 只说时间、今天已经过了 → 顺延到明天，符合直觉。
-            #
-            # 但**明确说了「今天」**时绝不能这么干：用户说"今天 18:00"而现在是 19 点，
-            # 悄悄挪到明天会让他晚整整一天才收到提醒，而界面上看不出任何异常。
-            # 这种情况只能如实告诉他时间已过，让他决定是明天还是立刻。
+            
+            
+            
+            
+            
             if explicit_day:
                 raise SkillExecutionError(
                     f"「{text}」对应的时间 {base:%Y-%m-%d %H:%M} 已经过去了。"
@@ -90,7 +90,7 @@ def parse_when(text: str, *, now: datetime | None = None) -> datetime:
             base += timedelta(days=1)
         return base
 
-    # 3) 只有日期没有时间 → 默认当天 09:00
+    
     for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%Y年%m月%d日"):
         try:
             parsed_date = datetime.strptime(raw, fmt)
@@ -156,7 +156,7 @@ class ReminderCreateSkill(BaseSkill):
         remind_ts = base_ts - args.advance_minutes * 60
         now = time.time()
         if remind_ts <= now:
-            # 提前量导致时间已过：退化成"立即提醒"，而不是静默创建一个永远不会触发的提醒
+            
             remind_ts = now + 5
 
         record = await repository.create(

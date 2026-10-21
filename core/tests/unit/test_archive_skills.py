@@ -1,13 +1,13 @@
-"""压缩包技能：**只看内容，不解压**。
 
-的选择是"先只做看内容，不做解压"，所以这组用例的核心不是"能不能读"，
-而是两件事：
 
-1. **绝不写盘**：读完一个压缩包之后，磁盘上的文件树必须与读之前**逐项一致**
-   （这条是那个产品取舍的全部意义，一旦哪天有人顺手加了"解压到工作区"，这里会红）；
-2. 失败给人话：不支持的格式（7z/rar）、包里没有的文件、二进制成员，
-   都要给出**可操作的说明**，而不是抛一个模块导入错误或者吐一堆乱码。
-"""
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -21,12 +21,12 @@ from my_agent.skill.builtin.archive import ArchiveListSkill, ArchiveReadSkill
 
 
 def _snapshot(root) -> set[str]:
-    """目录树快照（相对路径）——用来证明"没有偷偷写盘"。"""
+
     return {str(path.relative_to(root)) for path in root.rglob("*")}
 
 
 def _make_zip(tmp_path, name: str = "资料.zip"):
-    """造一个含文本、子目录、二进制成员的压缩包。"""
+
     target = tmp_path / name
     with zipfile.ZipFile(target, "w") as archive:
         archive.writestr("说明.txt", "这是一份说明。\n第二行。\n")
@@ -55,11 +55,11 @@ async def test_list_and_read_zip(skill_env, tmp_path):
 
 @pytest.mark.asyncio
 async def test_reading_never_writes_to_disk(skill_env, tmp_path):
-    """**只看不解压**：读完之后目录树必须一模一样。
 
-    这条用例是那个产品取舍的守门人：压缩包是"解压炸弹"最常见的载体，
-    也最容易在用户目录里留下一堆他自己都没意识到的文件。
-    """
+
+
+
+
     archive = _make_zip(tmp_path)
     before = _snapshot(tmp_path)
 

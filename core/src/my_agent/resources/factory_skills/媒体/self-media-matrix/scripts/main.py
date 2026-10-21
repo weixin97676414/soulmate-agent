@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Omni Content Matrix — 一人公司/个人创作者全平台内容矩阵
-把有限时间转成一周可执行的内容计划：定位、选题、拆解、排期、对标、合规、复盘、变现。
 
-Run:
-  python scripts/main.py
-  python scripts/main.py --json
-  python scripts/main.py --with-metrics
-"""
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from enum import Enum
 from typing import Any, Dict, Iterable, List, Optional
 
 
-# 解决 Windows 控制台中文/emoji 乱码（非 Windows 上 reconfigure 不存在，忽略）
+
 try:
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
@@ -116,7 +116,7 @@ PLATFORM_KNOWLEDGE: Dict[Platform, Dict[str, Any]] = {
         "prime_time": "热点发生时即时",
         "solo_score": 3,
         "coldstart": 2,
-        # 微博无稳定完播/互动基准，不硬设 → 复盘时标注「暂无基准」
+        
         "metrics": {},
         "monetization": "微任务、品牌曝光",
         "ad_threshold": 1000,
@@ -167,7 +167,7 @@ PLATFORM_KNOWLEDGE: Dict[Platform, Dict[str, Any]] = {
         "prime_time": "20:00-23:00",
         "solo_score": 3,
         "coldstart": 2,
-        # 豆瓣无稳定完播/互动基准，不硬设 → 复盘时标注「暂无基准」
+        
         "metrics": {},
         "monetization": "品牌口碑、周边/课程导流（弱变现）",
         "ad_threshold": 0,
@@ -175,7 +175,7 @@ PLATFORM_KNOWLEDGE: Dict[Platform, Dict[str, Any]] = {
 }
 
 
-# 领域适配矩阵：覆盖更多行业，可按需增改
+
 FIELD_MATRIX: Dict[str, Dict[str, Any]] = {
     "编程技术": {
         "primary": [Platform.BILIBILI, Platform.ZHIHU],
@@ -464,7 +464,7 @@ class MatrixPlanner:
 
     @staticmethod
     def _generic_matrix() -> Dict[str, Any]:
-        # 未知领域：按内容形态通用推荐
+        
         return {
             "primary": [Platform.XIAOHONGSHU, Platform.ZHIHU],
             "secondary": [Platform.WECHAT, Platform.SHIPINHAO],
@@ -499,7 +499,7 @@ class MatrixPlanner:
         budget: Dict[str, str] = {}
         for name, ratio in ratios.items():
             hours = weekly_hours * ratio
-            # 兜底：即便总时间短，关键动作也至少给 0.5h，避免 0h 显得不合理
+            
             budget[name] = f"{max(0.5, round(hours, 1))}h" if weekly_hours > 0 else "0h"
         budget["active_mix"] = f"{primary_count}个主平台 + {secondary_count}个辅助平台"
         return budget
@@ -509,7 +509,7 @@ class TopicScheduler:
     @staticmethod
     def score_topic(search_heat: int, interaction_potential: int, creation_difficulty: int) -> Dict[str, Any]:
         notes: List[str] = []
-        # 容错：超出 1-5 范围时按 5 封顶并提示，而不是抛异常中断
+        
         heat = max(1, min(5, int(round(search_heat))))
         potential = max(1, min(5, int(round(interaction_potential))))
         difficulty = max(1, min(5, int(round(creation_difficulty))))
@@ -517,7 +517,7 @@ class TopicScheduler:
             notes.append("部分维度超出 1-5，已按 5 封顶处理")
 
         difficulty_bonus = 6 - difficulty
-        # 上限恰好 100：5*5*5/125*100 = 100
+        
         score = heat * potential * difficulty_bonus / 125 * 100
         if score >= 80:
             level = "优先创作"
@@ -599,7 +599,7 @@ class ContentKitchen:
             output.append(ContentKitchen._adapt(content, platform))
         return output
 
-    # 每个平台的「内容简报」模板：标题、Hook、封面思路、结构大纲、交付物、CTA、目标
+    
     _BRIEF_TEMPLATES = {
         Platform.BILIBILI: {
             "title": "{t}：从入门到实战",
@@ -731,7 +731,7 @@ class ContentKitchen:
 
 
 class AnalyticsBoard:
-    # 互动率正确公式应包含收藏与分享；缺字段自动按 0 处理
+    
     NUMERIC_FIELDS = ["播放量", "点赞数", "评论数", "收藏数", "分享数", "粉丝增长", "完播率"]
 
     @staticmethod
@@ -739,7 +739,7 @@ class AnalyticsBoard:
         rows: List[Dict[str, Any]] = []
         reader = csv.DictReader(io.StringIO(csv_content.strip()))
         for raw in reader:
-            # 字段名容错：去掉可能存在的 BOM 与首尾空格
+            
             row = {(k.strip().lstrip("\ufeff")): v for k, v in raw.items() if k is not None}
             for field in AnalyticsBoard.NUMERIC_FIELDS:
                 row[field] = safe_float(row.get(field, 0))
@@ -759,7 +759,7 @@ class AnalyticsBoard:
         if not rows:
             return {"summary": "没有可分析的数据", "platforms": [], "insights": [], "has_baseline": {}}
 
-        # 按平台汇总（支持多行同类数据）
+        
         agg = defaultdict(lambda: {"plays": 0, "likes": 0, "comments": 0, "favorites": 0, "shares": 0, "followers": 0, "completion_sum": 0.0, "completion_n": 0, "titles": []})
         for row in rows:
             platform = row.get("平台", "")
@@ -812,7 +812,7 @@ class AnalyticsBoard:
                 "判断": decision,
             })
 
-        # 「最该加码」只从有基准且达标的平台中选
+        
         scaled = [p for p in platforms if p["判断"] == "加码"]
         if scaled:
             best = sorted(scaled, key=lambda item: (item["互动率"], item["涨粉"]), reverse=True)[0]
@@ -862,7 +862,7 @@ class MonetizationPlanner:
 
 
 class PlatformRadar:
-    # 扩展敏感词库（金融/健康/教育等高风险领域尤其注意）
+    
     SENSITIVE_PATTERNS = ["最", "第一", "100%", "稳赚", "包过", "加微信", "私加", "绝对", "国家级", "万能", "根治", "零风险"]
 
     @staticmethod
@@ -882,7 +882,7 @@ class PlatformRadar:
 
 
 class CompetitorAnalyzer:
-    """竞品对标：基于用户提供的对标信息做结构化差距分析。"""
+
 
     @staticmethod
     def analyze(rival_info: Dict[str, Any]) -> Dict[str, Any]:
@@ -900,7 +900,7 @@ class CompetitorAnalyzer:
 
 
 class TitleGenerator:
-    """按平台风格生成标题/Hook 候选（模板见 references/title-hook-library.md）。"""
+
 
     STYLE_TEMPLATES = {
         "B站": ["{t}：从入门到实战", "{t}保姆级教程", "用{t}解决一个真实问题"],
@@ -927,13 +927,13 @@ class TitleGenerator:
 
 
 class GoalTracker:
-    """目标追踪：对比历史与本周数据，判断是否跑在「达成目标」的节奏上。
 
-    输入任意两期数据（上期 vs 本期，或首期 vs 当前），给出趋势与目标达成进度。
-    不依赖 API，全部来自用户提供的 CSV 或手动输入。
-    """
 
-    # 常见目标类型 → 用来衡量进度的核心指标
+
+
+
+
+    
     GOAL_METRIC = {
         "涨粉": "粉丝增长",
         "播放": "播放量",
@@ -973,7 +973,7 @@ class GoalTracker:
         per_day_needed = (remaining / days_left) if days_left > 0 else float("inf")
         actual_per_day = gained / days_elapsed
 
-        # 进度节奏：以「当前日均所需」是否小于等于「实际日均」判断
+        
         on_track = (per_day_needed <= actual_per_day) if days_left > 0 else (gained >= target_value)
         pace = "达标中" if on_track else "偏慢"
         if days_left == 0:
@@ -1003,9 +1003,9 @@ class GoalTracker:
 
 
 class ContentBank:
-    """常青内容库：按「支柱主题 × 内容形式」给可持续复用的选题骨架，缓解选题枯竭。"""
 
-    # 每个领域 3-4 个支柱主题，可长期围绕它们做系列化内容
+
+    
     PILLARS: Dict[str, List[str]] = {
         "编程技术": ["效率工具实操", "踩坑与排错", "从0到1做项目", "行业认知/AI 趋势"],
         "知识付费": ["方法论", "案例拆解", "学员/用户故事", "认知升级"],
@@ -1030,7 +1030,7 @@ class ContentBank:
         "法律普法": ["必备法条", "合同陷阱", "维权指南", "案例分析"],
     }
 
-    # 可套用的内容形式骨架
+    
     FORMAT_SKELETONS = [
         "清单体：N 个 xxx 你一定要知道",
         "对比体：A vs B，到底怎么选",
@@ -1133,7 +1133,7 @@ class WeeklyPlanOperator:
                 f"| {item['platform']} | {item['content_form']} | {item['title']} / {item['hook']} | "
                 f"{item['deliverable']} | {item['production_minutes']}分钟 | {item['publish_goal']} |"
             )
-        # 每个平台的「内容简报」：封面 + 大纲 + CTA，省去另查
+        
         for item in plan["content_versions"]:
             lines.extend([
                 "",

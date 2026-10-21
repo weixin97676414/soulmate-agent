@@ -1,12 +1,12 @@
-"""Excel 相关技能：读取、写入、聚合分析。
 
-**为什么只用 openpyxl 不用 pandas**：pandas 会连带 numpy，是打包体积与
-首次启动时间的大头（见开发计划风险表）。本技能需要的读取与聚合用标准库
-加 openpyxl 就能完成，代价是代码稍多，但换来的是安装包小、启动快。
 
-所有路径都经过 ``ctx.resolve_input_file`` / ``ctx.artifact_output``，
-保证不会越出白名单目录。
-"""
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -19,30 +19,30 @@ from ....skill.base import BaseSkill, SkillContext
 from ....skill.decorator import skill
 from .._deps import require
 
-# Excel 自身的列上限。这里把"最多读多少列"的天花板对齐**事实上限**，
-# 而不是自己拍一个 40 —— 那个数会让"把整张表读出来"变成做不到的事。
+
+
 MAX_COLS = 16_384
 
 
-# --------------------------------------------------------------------------- #
-# 公共工具
-# --------------------------------------------------------------------------- #
+
+
+
 def _stringify(value: Any) -> Any:
     if value is None:
         return None
     if isinstance(value, (int, float, bool, str)):
         return value
-    # ⚠️ **不做字符截断**：这里以前是 ``text[:500]``，一个长公式或长文本会被
-    # 静默砍掉一半，而表格内容恰恰是用户最需要看全的东西。
+    
+    
     return str(value)
 
 
 def _dedupe_headers(raw: list[Any], width: int) -> list[str]:
-    """把表头行整理成唯一、非空的列名。
 
-    真实表格里经常出现空表头或重复列名，直接当字典键会导致数据互相覆盖，
-    这里统一补成「列N」并加后缀去重。
-    """
+
+
+
+
     headers: list[str] = []
     seen: dict[str, int] = {}
     for index in range(width):
@@ -66,15 +66,15 @@ def _read_table(
     max_rows: int,
     max_cols: int = MAX_COLS,
 ) -> dict[str, Any]:
-    """读取表格为 ``{columns, rows, total_rows, sheet}``。
 
-    用 ``read_only=True`` 流式读取，几十万行的文件也不会把内存吃满。
-    """
+
+
+
     openpyxl = require("openpyxl")
 
     try:
         workbook = openpyxl.load_workbook(path, read_only=True, data_only=True)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  
         raise SkillExecutionError(f"无法打开 Excel 文件：{exc}") from exc
 
     try:
@@ -101,19 +101,19 @@ def _read_table(
             if row is None:
                 continue
             if all(cell is None for cell in row[:width]):
-                continue  # 跳过整行为空的填充行
+                continue  
             total += 1
             if len(records) >= max_rows:
-                continue  # 继续计数但不入结果，这样 total_rows 是准确的
+                continue  
             records.append(
                 {columns[i]: _stringify(row[i] if i < len(row) else None) for i in range(width)}
             )
 
-        # openpyxl 的 ``data_only=True`` 读的是单元格的**缓存值**。公式若从未
-        # 在 Excel 里打开计算并保存过（脚本生成的文件很常见），读出来就是 None ——
-        # 在结果里看起来和"这一列本来是空的"完全一样。
-        # 不二次加载整个工作簿就无法区分这两种情况，所以只给一句提示，
-        # 免得模型把公式列当成空值直接参与统计，并据此得出错误结论。
+        
+        
+        
+        
+        
         has_empty = any(cell is None for record in records for cell in record.values())
 
         return {
@@ -140,22 +140,22 @@ def _load_writable(path: Any, *, create_if_missing: bool) -> Any:
     if path.exists():
         try:
             return openpyxl.load_workbook(path)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  
             raise SkillExecutionError(f"无法打开 Excel 文件进行写入：{exc}") from exc
     if not create_if_missing:
         raise SkillExecutionError(f"文件不存在：{path}")
     return openpyxl.Workbook()
 
 
-# --------------------------------------------------------------------------- #
-# excel_read
-# --------------------------------------------------------------------------- #
+
+
+
 class ExcelReadParams(BaseModel):
     file_path: str = Field(..., description="Excel 文件的绝对路径（.xlsx / .xlsm）")
     sheet_name: str | None = Field(None, description="工作表名；留空则读取第一个工作表")
-    # 上限对齐 Excel 的事实上限（1048576 行 × 16384 列）。
-    # 这里刻意不设"人为"的天花板：想读全表就把 max_rows 填够，
-    # 内容装不下模型的一次上下文时由 memory/spill.py 无损外置。
+    
+    
+    
     max_rows: int = Field(50, ge=1, le=1_048_576, description="最多返回多少行数据")
     max_cols: int = Field(20, ge=1, le=MAX_COLS, description="最多读取多少列")
 
@@ -187,9 +187,9 @@ class ExcelReadSkill(BaseSkill):
         return {"file": str(path), **table}
 
 
-# --------------------------------------------------------------------------- #
-# excel_analyze
-# --------------------------------------------------------------------------- #
+
+
+
 class ExcelAnalyzeParams(BaseModel):
     file_path: str = Field(..., description="Excel 文件的绝对路径")
     group_by: str = Field(..., description="用于分组的列名（例如「月份」「部门」「产品」）")
@@ -222,7 +222,7 @@ class ExcelAnalyzeSkill(BaseSkill):
         args = ExcelAnalyzeParams(**params)
         path = ctx.resolve_input_file(args.file_path)
 
-        # 需要完整数据才能聚合，这里放宽行数上限；列数保持收敛
+        
         table = _read_table(path, sheet_name=args.sheet_name, max_rows=200_000)
         columns: list[str] = table["columns"]
         rows: list[dict[str, Any]] = table["rows"]
@@ -255,7 +255,7 @@ class ExcelAnalyzeSkill(BaseSkill):
                 continue
             raw = row.get(args.value_column or "")
             try:
-                value = float(raw)  # type: ignore[arg-type]
+                value = float(raw)  
             except (TypeError, ValueError):
                 skipped += 1
                 continue
@@ -301,9 +301,9 @@ class ExcelAnalyzeSkill(BaseSkill):
         }
 
 
-# --------------------------------------------------------------------------- #
-# excel_write
-# --------------------------------------------------------------------------- #
+
+
+
 class ExcelWriteParams(BaseModel):
     file_path: str = Field(..., description="目标 Excel 文件路径，不存在时按 create_if_missing 决定")
     rows: list[dict[str, Any]] = Field(
@@ -334,7 +334,7 @@ class ExcelWriteParams(BaseModel):
 class ExcelWriteSkill(BaseSkill):
     async def run(self, ctx: SkillContext, **params: Any) -> dict[str, Any]:
         args = ExcelWriteParams(**params)
-        # 写入目标可能是新文件，因此只校验目录白名单（由 artifact_output 与 policy 共同保证）
+        
         path = ctx.resolve_path(args.file_path, mode="write")
         path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -350,7 +350,7 @@ class ExcelWriteSkill(BaseSkill):
                     headers = self._existing_headers(sheet)
             else:
                 sheet = workbook.create_sheet(args.sheet_name)
-                # openpyxl 新建工作簿自带一个空 Sheet，避免留下无用页
+                
                 if "Sheet" in workbook.sheetnames and len(workbook.sheetnames) > 1:
                     default = workbook["Sheet"]
                     if default.max_row == 1 and default.max_column == 1:
@@ -362,7 +362,7 @@ class ExcelWriteSkill(BaseSkill):
                 headers = incoming
                 sheet.append(headers)
             else:
-                # 追加时保留原表头结构，新出现的键补到末尾
+                
                 extra = [key for key in incoming if key not in headers]
                 if extra:
                     headers = headers + extra
@@ -388,18 +388,18 @@ class ExcelWriteSkill(BaseSkill):
 
     @staticmethod
     def _existing_headers(sheet: Any) -> list[str]:
-        """取出已有表头。
 
-        **必须按列位保留空列**，不能把空表头"过滤掉"。
-        过滤之后返回的列名比表格实际列数少，而下面 ``sheet.append([...])``
-        是从第 1 列开始依次写入的 —— 于是已有表头是 ``["名称", None, "金额"]``
-        时，「金额」的数据会落到第 2 列，**数据与表头整体错位**，
-        而且表格打开来一切正常，只有对照表头才能看出问题。
 
-        空列名补成「列N」并复用 ``_dedupe_headers``，是为了让这里的命名
-        与读取路径（``_read_table``）完全一致：读写用两套列名的话，
-        读回来的列名和写进去的对不上，append 一次就多出一堆``列N``。
-        """
+
+
+
+
+
+
+
+
+
+
         if sheet.max_row < 1:
             return []
         row = next(sheet.iter_rows(min_row=1, max_row=1, values_only=True), None)
@@ -409,7 +409,7 @@ class ExcelWriteSkill(BaseSkill):
 
     @staticmethod
     def _cell(value: Any) -> Any:
-        """把无法直接写入单元格的类型转成字符串。"""
+
         if value is None or isinstance(value, (int, float, bool, str)):
             return value
         if isinstance(value, (list, tuple, dict)):

@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""
-data-cleaner.py - 销售数据清洗脚本
 
-功能:
-  clean          - 清洗原始销售数据（去重、填补缺失、格式统一）
-  detect-outliers - 检测异常值（促销峰值、录入错误等）
 
-依赖: pandas, numpy
 
-用法:
-  python3 data-cleaner.py clean --input raw_sales.csv --output clean_sales.csv
-  python3 data-cleaner.py detect-outliers --input sales.csv
-"""
+
+
+
+
+
+
+
+
+
+
 
 import argparse
 import sys
@@ -49,19 +49,19 @@ def cmd_clean(args):
     df = load_data(args.input)
     original_rows = len(df)
 
-    # 1. 解析日期
+    
     df['date'] = pd.to_datetime(df['date'], errors='coerce')
     invalid_dates = df['date'].isna().sum()
     df = df.dropna(subset=['date'])
 
-    # 2. 数值清洗
+    
     df['quantity'] = pd.to_numeric(df['quantity'], errors='coerce').fillna(0)
-    df['quantity'] = df['quantity'].clip(lower=0)  # 去除负值
+    df['quantity'] = df['quantity'].clip(lower=0)  
 
-    # 3. 去重（同一天同一SKU保留最大值）
+    
     df = df.sort_values('quantity', ascending=False).drop_duplicates(subset=['date', 'sku'], keep='first')
 
-    # 4. 填补缺失日期（每个SKU的日期序列补0）
+    
     if args.fill_missing:
         filled_rows = 0
         all_dates = pd.date_range(df['date'].min(), df['date'].max(), freq='D')
@@ -74,7 +74,7 @@ def cmd_clean(args):
             filled_rows += len(all_dates) - len(group)
         df = pd.concat(filled_dfs, ignore_index=True)
 
-    # 5. 排序
+    
     df = df.sort_values(['sku', 'date']).reset_index(drop=True)
 
     output_path = args.output or 'clean_sales.csv'
@@ -99,7 +99,7 @@ def cmd_detect_outliers(args):
         q = group['quantity']
         mean = q.mean()
         std = q.std()
-        threshold = args.threshold  # 默认 3 倍标准差
+        threshold = args.threshold  
 
         anomalies = group[np.abs(q - mean) > threshold * std]
         for _, row in anomalies.iterrows():

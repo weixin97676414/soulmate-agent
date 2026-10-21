@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""
-知乎内容生成与发布统一工作流 - Unified Publish Workflow
 
-完整流程:
-  1. 选择话题（从热榜/推荐/邀请/自定义）
-  2. 添加参考资料
-  3. AI 生成内容（文章或回答）
-  4. 预览和编辑
-  5. 自动发布到知乎（模拟人工操作）
 
-用法:
-  python publish.py                    # 完整交互流程
-  python publish.py --quick            # 快速模式（从热榜选话题直接生成发布）
-  python publish.py --draft latest     # 从已保存的草稿直接发布
-  python publish.py --list-drafts      # 列出所有草稿
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import sys
 import os
@@ -41,7 +41,7 @@ from content_writer import (
 
 
 def get_node():
-    """获取 Node.js 路径"""
+
     import shutil
     home = os.path.expanduser('~')
     for ver in ['22.12.0', '22.22.2']:
@@ -53,7 +53,7 @@ def get_node():
 
 
 def check_cookie():
-    """检查 Cookie 配置是否可用"""
+
     try:
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             config = json.load(f)
@@ -66,7 +66,7 @@ def check_cookie():
 
 
 def refresh_cookie():
-    """尝试从浏览器刷新 Cookie"""
+
     print("\n📡 尝试从 Edge 浏览器自动获取 Cookie...")
     node = get_node()
     script = os.path.join(SCRIPTS_DIR, 'auto_cookie.js')
@@ -85,25 +85,25 @@ def refresh_cookie():
 
 
 def ai_generate(prompt_data):
-    """
-    AI 生成内容 —— 由调用方 AI 引擎处理
-    返回 (title, body) 元组
-    """
+
+
+
+
     print("\n" + "=" * 60)
     print("  🤖 AI 正在生成内容...")
 
     system = prompt_data['system']
     prompt = prompt_data['prompt']
 
-    # 打印提示词供外部 AI 使用
+    
     print("  (提示词已准备，等待 AI 生成...)")
     print("=" * 60)
 
-    return None, None  # 实际生成由调用方 AI 完成
+    return None, None  
 
 
 def interactive_edit(title, body, content_type):
-    """交互式编辑确认"""
+
     while True:
         print(f"\n{'='*60}")
         print(f"  📝 内容预览")
@@ -113,7 +113,7 @@ def interactive_edit(title, body, content_type):
             print(f"\n  标题: {title}")
             print(f"  {'─'*50}")
 
-        # 预览前300字
+        
         preview = (body or '')[:300]
         print(f"  {preview}")
         if len(body or '') > 300:
@@ -142,7 +142,7 @@ def interactive_edit(title, body, content_type):
             if lines:
                 body = '\n'.join(lines)
 
-            # 重新保存
+            
             save_draft(title, body, content_type,
                       {'title': title, 'type': 'edited'},
                       'custom', [])
@@ -160,7 +160,7 @@ def interactive_edit(title, body, content_type):
 
 
 def launch_publisher(mode, draft_path, question_urls=None):
-    """启动浏览器发布工具"""
+
     node = get_node()
     script = os.path.join(SCRIPTS_DIR, 'publisher.js')
 
@@ -170,7 +170,7 @@ def launch_publisher(mode, draft_path, question_urls=None):
 
     print(f"\n  启动发布工具: {' '.join(cmd[:5])}...")
 
-    # publisher.js 会打开 Edge 窗口进行可视化操作
+    
     result = subprocess.run(cmd, cwd=PROJECT_DIR, timeout=300)
 
     return result.returncode == 0
@@ -181,7 +181,7 @@ def main():
     print("  知乎 AI 内容生成与发布工具 v1.0")
     print("=" * 60)
 
-    # 解析参数
+    
     args = sys.argv[1:]
 
     if '--list-drafts' in args:
@@ -198,7 +198,7 @@ def main():
         return
 
     if '--draft' in args and len(args) > args.index('--draft') + 1:
-        # 直接发布已有草稿
+        
         draft_name = args[args.index('--draft') + 1]
         draft_path = None
 
@@ -226,18 +226,18 @@ def main():
 
         print(f"\n  ✅ 已加载草稿: {(title or '无标题')[:50]}")
 
-        # 交互编辑
+        
         title, body = interactive_edit(title, body, content_type)
         if not body:
             print("  已取消")
             return
 
-        # 更新草稿
+        
         save_draft(title, body, content_type,
                   draft.get('topic', {}), draft.get('style', 'professional'),
                   draft.get('references', []))
 
-        # 发布
+        
         question_urls = None
         if content_type == 'answer' and '--urls' in args:
             idx = args.index('--urls')
@@ -247,9 +247,9 @@ def main():
         launch_publisher(content_type, draft_path, question_urls)
         return
 
-    # === 完整交互流程 ===
+    
 
-    # 检查 Cookie
+    
     print("\n[前置] 检查认证状态")
     if not check_cookie():
         print("  ⚠️  Cookie 未配置或已过期")
@@ -261,7 +261,7 @@ def main():
     else:
         print("  ✅ Cookie 可用")
 
-    # Step 1: 选择发布模式
+    
     quick = '--quick' in args
 
     print(f"\n{'='*60}")
@@ -282,7 +282,7 @@ def main():
         content_type = 'article'
         publish_mode = 'article'
 
-    # Step 2: 选择话题
+    
     print(f"\n[1/5] 选择写作话题")
     topic_source = 'all' if not quick else 'recommend'
     topics = get_topics(topic_source, limit=30)
@@ -294,7 +294,7 @@ def main():
 
     print(f"\n  ✅ 话题: {topic['title'][:60]}")
 
-    # Step 3: 选择风格
+    
     print(f"\n[2/5] 选择写作风格")
     style_map = {'1': 'professional', '2': 'conversational', '3': 'storytelling', '4': 'data_driven'}
     for k, v in STYLES.items():
@@ -304,7 +304,7 @@ def main():
     style = style_map.get(style_choice, 'professional')
     print(f"  ✅ 风格: {STYLES[style]['name']}")
 
-    # Step 4: 参考资料
+    
     print(f"\n[3/5] 添加参考资料（回车跳过）")
     refs = []
     while True:
@@ -325,11 +325,11 @@ def main():
     if refs:
         print(f"  📎 已添加 {len(refs)} 份参考资料")
 
-    # Step 5: AI 生成
+    
     print(f"\n[4/5] AI 生成内容")
     prompt_text = build_ai_prompt(topic, refs, style, content_type)
 
-    # 保存提示词
+    
     prompt_file = os.path.join(DRAFTS_DIR, 'latest_prompt.json')
     os.makedirs(DRAFTS_DIR, exist_ok=True)
     prompt_data = {
@@ -349,7 +349,7 @@ def main():
     with open(prompt_file, 'w', encoding='utf-8') as f:
         json.dump(prompt_data, f, ensure_ascii=False, indent=2)
 
-    # 输出提示词，由调用方 AI 引擎生成
+    
     print(f"\n  {'='*60}")
     print(f"  📋 AI 生成提示词")
     print(f"  {'='*60}")
@@ -365,7 +365,7 @@ def main():
     print(f"  你的正文")
     print(f"  ---BODY---")
 
-    # 等待用户提供 AI 生成的内容
+    
     print(f"\n[5/5] 等待内容输入...")
     print(f"  粘贴 AI 生成的内容（含 ---TITLE--- 和 ---BODY--- 标记）:")
 
@@ -381,7 +381,7 @@ def main():
 
     full = '\n'.join(lines)
 
-    # 解析
+    
     title_match = re.search(r'---TITLE---\s*\n(.*?)\n\s*---TITLE---', full, re.DOTALL)
     body_match = re.search(r'---BODY---\s*\n(.*?)\n\s*(?:---BODY---|$)', full, re.DOTALL)
 
@@ -392,23 +392,23 @@ def main():
         print("\n  ❌ 未检测到正文内容")
         return
 
-    # 交互编辑
+    
     title, body = interactive_edit(title, body, content_type)
     if not body:
         print("  已取消")
         return
 
-    # 保存草稿
+    
     draft_path = save_draft(title, body, content_type, topic, style, refs)
     print(f"\n  ✅ 草稿已保存: {draft_path}")
 
-    # Step 6: 发布
+    
     if publish_mode:
         print(f"\n[发布] 准备发布到知乎...")
 
         question_urls = None
         if publish_mode == 'answer':
-            # 询问问题URL
+            
             print("  请输入要回答的问题URL（多个用逗号分隔）:")
             print("  或直接回车使用话题链接:")
             urls_input = input("  > ").strip()

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""
-Stock market data fetcher for Chinese A-shares.
-Uses AkShare (free, no API key required) with Sina Finance as fallback.
 
-Usage:
-    python stock_data.py 600519 [--days 30]
-    python stock_data.py --market-overview
-    python stock_data.py --sectors [--top 5]
-    python stock_data.py --valuation 600519,000001,000858
-"""
+
+
+
+
+
+
+
+
+
 
 import argparse
 import json
@@ -20,14 +20,14 @@ from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Global caches
-# ---------------------------------------------------------------------------
+
+
+
 _spot_em_cache = None
 
 
 def _fetch_spot_em(max_retries=3):
-    """Fetch all A-share realtime data from EastMoney via AkShare (cached)."""
+
     global _spot_em_cache
     if _spot_em_cache is not None:
         return _spot_em_cache
@@ -50,12 +50,12 @@ def _fetch_spot_em(max_retries=3):
     return None
 
 
-# ---------------------------------------------------------------------------
-# Stock name resolution
-# ---------------------------------------------------------------------------
+
+
+
 
 def resolve_stock_name(code):
-    """Resolve a stock code to its name."""
+
     code = str(code).zfill(6)
     df = _fetch_spot_em()
     if df is not None and not df.empty:
@@ -65,25 +65,25 @@ def resolve_stock_name(code):
             if str(row[code_col]).zfill(6) == code:
                 return str(row[name_col])
 
-    # Fallback: Sina Finance
+    
     snapshot = get_realtime_snapshot([code])
     info = snapshot.get(code, {})
     return info.get("name", code)
 
 
-# ---------------------------------------------------------------------------
-# Historical data
-# ---------------------------------------------------------------------------
+
+
+
 
 def get_stock_history(symbol, days_back=30):
-    """Fetch stock OHLCV history with dual-source fallback."""
+
     import akshare as ak
 
     symbol = str(symbol).zfill(6)
     end_date = datetime.now().strftime("%Y%m%d")
     start_date = (datetime.now() - timedelta(days=days_back + 15)).strftime("%Y%m%d")
 
-    # Source 1: Sina via AkShare
+    
     try:
         prefix = "sh" if symbol.startswith("6") else "sz"
         with _cf.ThreadPoolExecutor(max_workers=1) as ex:
@@ -98,7 +98,7 @@ def get_stock_history(symbol, days_back=30):
     except Exception as e:
         logger.warning("Sina history failed for %s: %s", symbol, e)
 
-    # Source 2: EastMoney via AkShare
+    
     try:
         with _cf.ThreadPoolExecutor(max_workers=1) as ex:
             df = ex.submit(
@@ -122,12 +122,12 @@ def get_stock_history(symbol, days_back=30):
         return None
 
 
-# ---------------------------------------------------------------------------
-# Realtime snapshot (Sina Finance)
-# ---------------------------------------------------------------------------
+
+
+
 
 def get_realtime_snapshot(symbols):
-    """Batch fetch realtime quotes from Sina Finance."""
+
     import urllib.request
     import re
 
@@ -170,12 +170,12 @@ def get_realtime_snapshot(symbols):
         return {}
 
 
-# ---------------------------------------------------------------------------
-# Technical indicators
-# ---------------------------------------------------------------------------
+
+
+
 
 def calculate_technical_indicators(df):
-    """Calculate MA, RSI-14, and volume trend from OHLCV data."""
+
     if df is None or df.empty or len(df) < 5:
         return {}
 
@@ -190,12 +190,12 @@ def calculate_technical_indicators(df):
     result = {}
     latest = closes[-1]
 
-    # Moving averages
+    
     for n, key in [(5, "ma5"), (10, "ma10"), (20, "ma20")]:
         if len(closes) >= n:
             result[key] = round(sum(closes[-n:]) / n, 2)
 
-    # Price deviation from MA
+    
     parts = []
     for key, label in [("ma5", "MA5"), ("ma10", "MA10"), ("ma20", "MA20")]:
         if key in result and result[key] > 0:
@@ -204,7 +204,7 @@ def calculate_technical_indicators(df):
             parts.append(f"{label}{sign}{pct:.1f}%")
     result["ma_status"] = " | ".join(parts) if parts else ""
 
-    # RSI-14
+    
     if len(closes) >= 15:
         changes = [closes[i] - closes[i - 1] for i in range(len(closes) - 14, len(closes))]
         gains = sum(c for c in changes if c > 0)
@@ -217,7 +217,7 @@ def calculate_technical_indicators(df):
             rs = avg_gain / avg_loss
             result["rsi14"] = round(100 - 100 / (1 + rs), 1)
 
-    # Volume trend
+    
     if "volume" in df.columns:
         try:
             vols = [float(v) for v in df["volume"].tolist()
@@ -240,12 +240,12 @@ def calculate_technical_indicators(df):
     return result
 
 
-# ---------------------------------------------------------------------------
-# Market overview
-# ---------------------------------------------------------------------------
+
+
+
 
 def get_market_overview():
-    """Fetch major index performance."""
+
     import akshare as ak
 
     indices = {
@@ -273,7 +273,7 @@ def get_market_overview():
 
 
 def get_northbound_flow():
-    """Fetch northbound capital flow summary."""
+
     import akshare as ak
 
     try:
@@ -292,7 +292,7 @@ def get_northbound_flow():
 
 
 def get_sector_movers(n=5):
-    """Fetch top/bottom industry sectors by change percentage."""
+
     import akshare as ak
 
     try:
@@ -314,12 +314,12 @@ def get_sector_movers(n=5):
         return None
 
 
-# ---------------------------------------------------------------------------
-# Valuation
-# ---------------------------------------------------------------------------
+
+
+
 
 def get_valuation_batch(codes):
-    """Batch fetch PE/PB from cached EastMoney data."""
+
     if not codes:
         return {}
     code_set = set(str(c).zfill(6) for c in codes)
@@ -356,12 +356,12 @@ def get_valuation_batch(codes):
     return result
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
+
+
+
 
 def _format_history_json(df):
-    """Convert DataFrame to list of dicts for JSON output."""
+
     records = []
     for _, row in df.iterrows():
         rec = {}
@@ -414,15 +414,15 @@ def main():
     stock_name = resolve_stock_name(code)
     output["stock"] = {"code": code, "name": stock_name}
 
-    # History
+    
     df = get_stock_history(code, days_back=args.days)
     if df is not None and not df.empty:
         output["history"] = _format_history_json(df)
 
-        # Technicals
+        
         output["technicals"] = calculate_technical_indicators(df)
 
-        # Price changes
+        
         closes = [float(r["close"]) for r in output["history"] if "close" in r]
         if closes:
             latest = closes[-1]
@@ -436,7 +436,7 @@ def main():
         output["history"] = []
         output["error"] = "Failed to fetch historical data"
 
-    # Valuation
+    
     val = get_valuation_batch([code])
     if code in val:
         output["valuation"] = val[code]

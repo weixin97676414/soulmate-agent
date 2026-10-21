@@ -1,30 +1,30 @@
-"""让用户做选择：AI 不确定用户意图时，把自己的几种理解摆出来让用户点一个。
 
-## 为什么需要它（而不是让模型直接开口问）
 
-模型遇到模糊需求有几条路，都有毛病：
 
-- **猜**：猜错了整轮白做，用户还得从头纠正；
-- **在正文里问**：用户得打字回答，而且模型常常"问完就自己往下做了" ——
-  它没法真的**停下来**；
-- **`grill_me`（苏格拉底式追问）**：那是一段提示词，让模型在**下一轮**追问，
-  同样停不下来，也无法保证用户真的回答。
 
-这个技能把"问"变成一个**有返回值**的动作：调用它，整轮任务就停在这里，
-直到用户在弹窗里点一个选项（或不选、关掉）。模型拿到明确答复再继续。
 
-## 产品约定
 
-1. **允许自定义输入**：AI 没想到的第 N+1 种，用户能自己写；
-2. **可取消**：关掉弹窗 = "你的理解都不对，重新想"；
-3. **不超时**：问了就一直等 —— 用户可能刚离开电脑。
 
-## ⚠️ `timeout=86400` 不是业务超时
 
-技能内挂起**会**被 ``manager._run_with_timeout`` 的 ``asyncio.wait_for`` 掐掉
-（默认 30 秒）。24 小时只是"兜底别让它永远占着"（见 ``SkillContext.ask_interaction``
-的说明，以及实证脚本 ``core/_chk_timeout.py``）。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ from ..decorator import skill
 
 
 class _Option(BaseModel):
-    """一个候选理解。"""
+
 
     label: str = Field(..., description="选项文字，一句话说清这种理解是什么（尽量短，用户要一眼扫过）")
     description: str = Field("", description="可选的补充说明，帮用户区分相近的选项")
@@ -81,7 +81,7 @@ class _Input(BaseModel):
     params_model=_Input,
     category="general",
     permission_level="safe",
-    # 见模块顶部说明：24 小时只是兜底，真正等多久由用户决定。
+    
     timeout=86400,
     tags=["交互", "澄清", "意图"],
 )
@@ -109,12 +109,12 @@ class AskChoiceSkill(BaseSkill):
 
 
 def _describe(answer: dict[str, Any]) -> str:
-    """把用户的答复整理成**给模型看的一句话**。
 
-    ⚠️ 这里返回的字符串会作为工具结果回填给模型，**也会进消息表与上下文** ——
-    所以它只该包含用户的选择本身，不该包含任何我们自己的推测
-    （"用户可能还想..."这种）。模型需要知道的是**用户说了什么**，不是我们怎么理解。
-    """
+
+
+
+
+
     if answer.get("cancelled"):
         if answer.get("interrupted"):
             return "用户没有作答（这次任务被停止或会话被关闭了）。如需继续，请重新问一次。"
@@ -136,7 +136,7 @@ def _describe(answer: dict[str, Any]) -> str:
 
     chosen = str(answer.get("value") or "").strip()
     if not chosen:
-        # 理论上不该发生（前端保证要么给 value 要么给 custom 要么 cancelled）。
-        # 如实说明而不是编一个选项，否则模型会拿一个不存在的答案往下做。
+        
+        
         return "用户提交了选择，但没有带回具体内容。请再问一次，或直接问他。"
     return f"用户选择了：{chosen}"

@@ -1,11 +1,11 @@
-"""自我成长：把踩坑 / 被纠正 / 新认知沉淀为可复用常识。
 
-来源是用户桌面「通用skills/self-growth」。每个搭子必装（见 orchestrator.create_assistant）。
-纯提示词技能：run 返回几条硬规则，让模型在"失败 / 被纠正 / 学到更优做法"时
-**先记录再继续**，而不是重复踩同一个坑。记录落到搭子自己的 MEMORY.md
-（配合 self_persona_update 追加，见 self_persona.py —— 两条技能一起，人格记忆
-与经验教训就都有了，互不打架）。
-"""
+
+
+
+
+
+
+
 
 from __future__ import annotations
 

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-build_action_tracker.py — 生成本周追踪事项 Excel。
 
-与 weekly_minutes_docx.py（或 meeting_docx.py）共用 content JSON，仅读取 action_items。
-状态列支持下拉；选“完成”时，该条整行自动填充浅绿色。
 
-用法：
-  python build_action_tracker.py --content content.json --out 甲方A-本周追踪事项-20260801.xlsx
-"""
+
+
+
+
+
+
+
 
 import argparse
 import json
@@ -33,7 +33,7 @@ COMPLETED_FILL = "FFE2F0D9"
 
 
 def responsible(item):
-    """优先读取“负责人”，兼容旧 JSON 的“责任人”键。"""
+
     return str(item.get("负责人", item.get("责任人", ""))).strip()
 
 
@@ -173,7 +173,7 @@ def build_tracker(content, output_path):
 
 
 def validate_workbook(path, expected_rows):
-    """重新打开输出并检查结构，避免交互规则在保存后丢失。"""
+
     wb = load_workbook(path)
     if SHEET_NAME not in wb.sheetnames:
         raise ValueError(f"缺少工作表：{SHEET_NAME}")

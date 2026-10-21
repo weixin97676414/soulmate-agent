@@ -10,26 +10,26 @@ import { useNotificationStore } from '@/stores/notificationStore'
 import { useClosableDialog } from '@/stores/transientDialogs'
 import type { SkillImportOutcome } from '@/types'
 
-/*
-  「添加技能」弹窗 —— 挂在应用顶层，**任何页面**都能唤起。
 
-  ⚠️ 它原先只是技能页里某个组件内部的 state（`CustomSkillsSection` 的 `adding`）。
-  那样的问题是：语音里"添加技能"这条命令只有**停在技能页时**才有效 ——
-  `useVoiceCommand` 的实现由渲染它的组件提供，组件没挂载，说了就没反应。
-  产品要求"在任何页面都可以有效打开"，所以整块提到了顶层。
 
-  这里顺带带上"导入结果"那个弹窗：导入是异步的、可能跑好几秒，用户往往会先
-  把选项弹层关掉；结果必须**自己冒出来**，而不是塞进一个已经关掉的窗里。
-*/
+
+
+
+
+
+
+
+
+
 
 interface AddSkillState {
   open: boolean
-  /**
-   * 技能列表的"版本号"：每次导入成功就 +1。
-   *
-   * 技能页订阅它来重新拉列表 —— 否则从别的页面用语音导入完，切回技能页看到的
-   * 还是那份旧列表（"我明明添加了，怎么没有"）。
-   */
+  
+
+
+
+
+
   revision: number
   setOpen: (value: boolean) => void
   bump: () => void
@@ -42,12 +42,12 @@ const useAddSkillStore = create<AddSkillState>((set) => ({
   bump: () => set((state) => ({ revision: state.revision + 1 })),
 }))
 
-/** 打开「添加技能」弹窗（任何地方都能调，含语音） */
+
 export function openAddSkill(): void {
   useAddSkillStore.getState().setOpen(true)
 }
 
-/** 技能列表的版本号，技能页用它触发刷新 */
+
 export function useSkillRevision(): number {
   return useAddSkillStore((state) => state.revision)
 }
@@ -63,9 +63,9 @@ export function AddSkillDialog() {
   const [result, setResult] = useState<SkillImportOutcome | null>(null)
   const packageInputRef = useRef<HTMLInputElement>(null)
 
-  // 登记给「关闭弹窗」那条语音命令（见 stores/transientDialogs.ts）。
-  // ⚠️ 两个弹层都要登记：结果弹层也是"因按钮或语音跳出来的浮层"，
-  // 只登记选项层的话，用户说完"关闭弹窗"结果它还杵在那儿。
+  
+  
+  
   useClosableDialog('AddSkillDialog', open, () => setOpen(false))
   useClosableDialog('AddSkillResult', result !== null, () => setResult(null))
 
@@ -74,7 +74,7 @@ export function AddSkillDialog() {
     bump()
   }
 
-  /** 失败要看得见：走 toast 而不是弹层里的红条 —— 这时候选项弹层多半已经关了 */
+  
   const fail = (exc: unknown) => {
     push({
       level: 'error',
@@ -95,12 +95,12 @@ export function AddSkillDialog() {
     }
   }
 
-  /**
-   * 导入本机文件夹：多层目录原样导入，不用先压缩。
-   *
-   * 遍历在**核心侧**做（路径直接交给它），所以没有浏览器文件数限制，
-   * 也不会把几万个小文件塞进一个 multipart 请求里。
-   */
+  
+
+
+
+
+
   const importFolder = async () => {
     if (!api) return
     const picked = await window.agentBridge.pickDirectory()
@@ -117,8 +117,8 @@ export function AddSkillDialog() {
 
   return (
     <>
-      {/* 容器类型由**后端按内容**识别（用户常把包改名、或拖来没有后缀的文件），
-          所以这里只给一个合理的后缀过滤，不做拦截 */}
+      {
+}
       <input
         ref={packageInputRef}
         type="file"
@@ -145,8 +145,8 @@ export function AddSkillDialog() {
             className={OPTION_BUTTON_CLASS}
             onClick={() => {
               setOpen(false)
-              // 等弹层关掉再唤起文件选择框：同一帧里 click 会被弹层的焦点回收吃掉，
-              // 表现为"点了没反应"（用户看到的最恼人的失败方式）
+              
+              
               window.setTimeout(() => packageInputRef.current?.click(), 0)
             }}
           >
@@ -184,7 +184,7 @@ export function AddSkillDialog() {
         </div>
       </Modal>
 
-      {/* 导入结果：逐条列出成功/失败，坏在哪一条一目了然 */}
+      {}
       <Modal
         open={result !== null}
         onClose={() => setResult(null)}

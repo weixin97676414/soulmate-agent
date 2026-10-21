@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-/**
- * Probe both recommend and invited APIs via puppeteer (click tabs)
- */
+
+
+
 const path = require('path');
 const CookieManager = require('./cookie-manager.js');
 const cm = new CookieManager();
@@ -36,13 +36,13 @@ async function main() {
     } catch {}
   });
 
-  // Navigate to recommend page
+  
   await page.goto('https://www.zhihu.com/creator/featured-question/recommend', {
     waitUntil: 'networkidle0', timeout: 30000
   });
   await new Promise(r => setTimeout(r, 5000));
 
-  // Click the "邀请" tab
+  
   try {
     const tabs = await page.$$('a[href*="invited"], div[class*="tab"], span[class*="tab"]');
     for (const tab of tabs) {
@@ -63,7 +63,7 @@ async function main() {
   if (apis.length === 0) {
     console.log('(no question_route APIs found)');
   } else {
-    // Also try the found API with different params
+    
     console.log('\nTrying direct API calls...');
   }
 

@@ -1,7 +1,7 @@
-"""API Test Automation Package
 
-A comprehensive API testing automation tool supporting REST/GraphQL.
-"""
+
+
+
 
 __version__ = "1.0.0"
 __author__ = "Soulmate Agent团队成员：岸"

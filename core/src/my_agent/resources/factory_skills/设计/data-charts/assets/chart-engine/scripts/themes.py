@@ -1,22 +1,22 @@
-"""图表主题预设。统一系列配色与页面配色，保证批量出图的视觉一致性。
 
-ChartGenerator 构造时按名称解析主题（--theme default|classic|dark），渲染器与
-HTML 模板统一从 self._theme 取色，不再散落硬编码颜色。
-"""
+
+
+
+
 
 from typing import Dict, Any
 
-# 主题字段说明：
-# palette       系列调色板（option['color']，按序取用）
-# primary       单系列主色（waterfall/histogram/pareto/combo 的 bar、liquid 波浪）
-# secondary     对比强调色（pareto 累计折线）
-# gauge_stops   gauge 轴线三段渐变色
-# sequential    顺序数据单色渐变（浅→深；heatmap 等全非负数据用）
-# diverging     发散数据双色渐变 + 中性中点（heatmap 等含负值数据用，中点≈页面底色）
-# echarts_text  ECharts 内部文字颜色（浅色主题用 None 走默认；深色主题必须给亮色）
-# 其余为 HTML 页面配色（背景/卡片/标题/按钮/注释块/表格等）
+
+
+
+
+
+
+
+
+
 THEMES: Dict[str, Dict[str, Any]] = {
-    # 默认主题：沿用既有页面观感；系列色统一为 Okabe-Ito 色觉安全色板（红绿色弱可区分）
+    
     'default': {
         'palette': ['#0072B2', '#E69F00', '#009E73', '#D55E00', '#CC79A7', '#56B4E9', '#F0E442', '#999999'],
         'primary': '#0072B2',
@@ -44,7 +44,7 @@ THEMES: Dict[str, Dict[str, Any]] = {
         'table_row_border': '#eeeeee',
         'chart_bg': '#ffffff',
     },
-    # 经典主题：ECharts 原生调色板，蓝色系页面点缀
+    
     'classic': {
         'palette': ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4'],
         'primary': '#5470c6',
@@ -72,7 +72,7 @@ THEMES: Dict[str, Dict[str, Any]] = {
         'table_row_border': '#eeeeee',
         'chart_bg': '#ffffff',
     },
-    # 深色主题：深底亮字，适合暗色环境与截图嵌入
+    
     'dark': {
         'palette': ['#5B8FF9', '#61DDAA', '#F6BD16', '#F08BB4', '#7666F9', '#78D3F8', '#9270CA', '#FF9D4D'],
         'primary': '#5B8FF9',

@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-"""
-素材解析：把零散素材整理成带编号的素材库 materials.json（S-x）
 
-支持四种来源：
-  1) Markdown / 文本目录     python parse_materials.py 素材目录 -o materials.json
-  2) 单个长文本或粘贴内容     python parse_materials.py 单文件.md
-                             python parse_materials.py --text "粘贴的内容"
-                             cat x.txt | python parse_materials.py --stdin
-  3) Word 文档               目录或文件中含 .docx 时自动按标题切片
-  4) 结构化 JSON 清单        python parse_materials.py --json-list list.json
-"""
+
+
+
+
+
+
+
+
+
+
 import argparse
 import datetime
 import io
@@ -18,7 +18,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from lib_outline import (  # noqa: E402
+from lib_outline import (  
     build_materials, make_materials, save_json, die, norm, split_long,
 )
 
@@ -75,7 +75,7 @@ def main():
 
     raw = split_long(raw, args.max_chars)
 
-    # 去重（完全相同的正文只保留一条）
+    
     seen = {}
     uniq = []
     for r in raw:

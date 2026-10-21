@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Simple long-only backtester for daily OHLCV CSV data.
 
-Signals are generated on bar t close and executed on bar t+1 open to avoid look-ahead.
-"""
+
+
+
 
 from __future__ import annotations
 

@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
-"""
-academic-figures: Publication-quality academic figure generator.
 
-Generates charts from JSON/CSV data with:
-- Publication-grade aesthetics (Nature/Science/Lancet style)
-- Okabe-Ito colorblind-safe palette (Nature Methods gold standard)
-- CJK (Chinese/Japanese/Korean) auto-detection, zero garbled text
-- Bilingual labels (Chinese + English)
-- Statistical annotations (error bars, significance markers)
-- High-DPI output (600dpi default for line art, PDF/SVG/EPS/TIFF support)
-- Enhanced forest plot (weights, heterogeneity I², events/total)
 
-Usage:
-  python gen_figure.py -t bar -d data.json -o figure.png
-  python gen_figure.py -t heatmap -d data.json -o figure.png --cjk
-  python gen_figure.py -t scatter -d data.csv -o figure.svg
-  python gen_figure.py -t forest -d data.json -o figure.pdf --theme okabe-ito
-  python gen_figure.py -t bar -d data.json -o figure.tiff --dpi 300
 
-Data formats: JSON or CSV (first column = labels, rest = series)
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import argparse, json, csv, subprocess, sys, os, time, threading
 
 import matplotlib
@@ -29,7 +29,7 @@ import matplotlib.font_manager as fm
 from matplotlib.transforms import BboxBase
 import numpy as np
 
-# v3.0.0 模块化：wizard 与异常诊断系统拆至独立模块（原名在此命名空间可用）
+
 from af_wizard import _run_wizard
 from af_diagnostics import (_EXIT_DATA_CLASSES, _EXIT_ENV_CLASSES,
                             _classify_exit_code, _diagnose_exception,
@@ -39,11 +39,11 @@ from af_diagnostics import (_EXIT_DATA_CLASSES, _EXIT_ENV_CLASSES,
 try:
     import af_v23_stats as _afstats
     import af_v23_charts as _afcharts
-except ImportError:  # v2.3 新图型/统计模块不在同目录时降级
+except ImportError:  
     _afstats = None
     _afcharts = None
 
-# ── v4.0.0 模块化第四刀：绘制层拆至 af_draw（生成器）/af_shared（叶工具）──
+
 from af_shared import has_cjk, HATCH_PATTERNS, _STYLE_NO_GRID, _ensure_ylabel_clear
 from af_draw import (GENERATORS, apply_base_style, _darken_color, _sig_stars,
                      pairwise_vs_first, draw_bootstrap_brackets,
@@ -56,10 +56,10 @@ from af_draw import (GENERATORS, apply_base_style, _darken_color, _sig_stars,
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DETECT_SCRIPT = os.path.join(SCRIPT_DIR, "detect_cjk_font.py")
 
-# ── Style presets ──────────────────────────────────────────────────────
+
 THEMES = {
-    # Default theme is "glm" (elegant muted palette, colorblind-safe).
-    # The old matplotlib-default palette is preserved as "classic".
+    
+    
     "classic": {
         "figsize": (10, 6),
         "dpi": 600,
@@ -67,11 +67,11 @@ THEMES = {
         "colors": ["#4C72B0", "#DD8452", "#55A868", "#C44E52", "#8172B3", "#937860",
                    "#DA8BC3", "#8C8C8C", "#CCB974", "#64B5CD"],
         "grid_alpha": 0.3,
-        "spines": ["top", "right"],  # spines to hide
+        "spines": ["top", "right"],  
         "colorblind_safe": False,
     },
-    # Okabe-Ito: Nature Methods recommended gold-standard colorblind-safe palette
-    # Ref: Wong (2011) Nature Methods 8:441; Wilke "Fundamentals of Data Visualization"
+    
+    
     "okabe-ito": {
         "figsize": (8, 5.5),
         "dpi": 600,
@@ -102,7 +102,7 @@ THEMES = {
         "spines": ["top", "right"],
         "colorblind_safe": False,
     },
-    # NEJM 官方风配色（ggsci nejm 色板，8 色）
+    
     "nejm": {
         "figsize": (9, 6),
         "dpi": 600,
@@ -113,7 +113,7 @@ THEMES = {
         "spines": ["top", "right"],
         "colorblind_safe": False,
     },
-    # Science（AAAS）官方风配色（ggsci aaas 色板，10 色）
+    
     "science": {
         "figsize": (8, 5.5),
         "dpi": 600,
@@ -134,24 +134,24 @@ THEMES = {
         "spines": ["top", "right"],
         "colorblind_safe": False,
     },
-    # GLM theme: elegant muted palette inspired by GLM-5.2 blog
-    # Medium saturation — visible but not garish (素雅但不淡).
-    # Darker than the raw blog pixels (#70A0D0 etc were too pale to read).
-    # Verified: each color passes 4.5:1 contrast against white background.
+    
+    
+    
+    
     "glm": {
         "figsize": (10, 6),
         "dpi": 600,
         "font_size": 11,
-        "colors": ["#5B8DBE",  # steel blue (比#70A0D0深一档，清晰可辨)
-                   "#D79D55",  # warm yellow (GLM-5.2原图黄色像素均值，比#D09050亮一档)
-                   "#6BA776",  # sage green
-                   "#9B7BB8",  # dusty purple
-                   "#C9694E",  # muted coral
-                   "#5BA0A0",  # teal
-                   "#B47A8E",  # mauve
-                   "#7A7A7A",  # warm gray
-                   "#C4A44A",  # mustard gold
-                   "#7AAF42"],  # olive
+        "colors": ["#5B8DBE",  
+                   "#D79D55",  
+                   "#6BA776",  
+                   "#9B7BB8",  
+                   "#C9694E",  
+                   "#5BA0A0",  
+                   "#B47A8E",  
+                   "#7A7A7A",  
+                   "#C4A44A",  
+                   "#7AAF42"],  
         "grid_alpha": 0.15,
         "spines": ["top", "right"],
         "colorblind_safe": True,
@@ -160,35 +160,35 @@ THEMES = {
         "figsize": (10, 6),
         "dpi": 600,
         "font_size": 11,
-        "colors": ["#2E5E8F",  # 深钢蓝（墨蓝方向一档，黑纹对比安全）
-                   "#FFB627",  # 信号黄（品牌 token，蓝黄轴色盲安全）
-                   "#6BA776",  # sage green
-                   "#9B7BB8",  # dusty purple
-                   "#C9694E",  # muted coral
-                   "#5BA0A0",  # teal
-                   "#B47A8E",  # mauve
-                   "#7A7A7A",  # warm gray
-                   "#C4A44A",  # mustard gold
-                   "#8A9BA8"],  # blue gray
+        "colors": ["#2E5E8F",  
+                   "#FFB627",  
+                   "#6BA776",  
+                   "#9B7BB8",  
+                   "#C9694E",  
+                   "#5BA0A0",  
+                   "#B47A8E",  
+                   "#7A7A7A",  
+                   "#C4A44A",  
+                   "#8A9BA8"],  
         "spines": ["top", "right"],
-        "grid_alpha": 0.0,  # 品牌风格：无网格（Nature 版式语言）
-        "hatch_edge": "auto",  # 斜纹色=填充同系深色（品牌精修）
+        "grid_alpha": 0.0,  
+        "hatch_edge": "auto",  
     },
-    # Cool theme: elegant muted cool-toned palette (blues, teals, slate)
-    # All colors in 190-260° hue range, low-medium saturation
-    # Inspired by editorial design (FT/Economist) cool palettes
+    
+    
+    
     "cool": {
         "figsize": (9, 5.5),
         "dpi": 600,
         "font_size": 8,
-        "colors": ["#1B4965",  # deep navy
-                   "#2E6F9E",  # ocean blue
-                   "#4FA3C5",  # sky blue
-                   "#3D8080",  # dark teal
-                   "#62A0A8",  # medium teal
-                   "#5B7BA0",  # steel blue-gray
-                   "#7B9AB5",  # slate blue
-                   "#9DB5CC"],  # pale steel
+        "colors": ["#1B4965",  
+                   "#2E6F9E",  
+                   "#4FA3C5",  
+                   "#3D8080",  
+                   "#62A0A8",  
+                   "#5B7BA0",  
+                   "#7B9AB5",  
+                   "#9DB5CC"],  
         "grid_alpha": 0.15,
         "spines": ["top", "right"],
         "colorblind_safe": True,
@@ -226,8 +226,8 @@ THEME_ORDER = ["glm", "classic", "okabe-ito", "nature", "lancet", "nejm", "scien
 
 
 def resolve_theme(name):
-    """Resolve a --theme value to a canonical THEMES key (alias + lenient matching).
-    Returns the canonical key, or None if no match."""
+
+
     if not name:
         return "glm"
     key = name.strip().lower()
@@ -277,7 +277,7 @@ CHART_NOTES = {
 
 
 def cmd_list_themes():
-    """Print all themes with ANSI color swatches."""
+
     for t in THEME_ORDER:
         desc = THEME_SWATCH_DESCRIPTIONS.get(t, "")
         colors = THEMES[t]["colors"]
@@ -289,7 +289,7 @@ def cmd_list_themes():
 
 
 def cmd_theme_swatch(theme_key, out):
-    """Render a swatch preview PNG for a theme."""
+
     t = THEMES[theme_key]
     colors = t["colors"]
     n = len(colors)
@@ -363,7 +363,7 @@ DEMO_DATA = {
 
 
 def cmd_demo(args):
-    """Interactive demo: menu of chart types, renders with sample data, prints the command used."""
+
     print("Academic Figures 交互演示 (v2.0+)\n选择图表类型:")
     types = [k for k in DEMO_DATA.keys() if k in GENERATORS]
     for i, t in enumerate(types, 1):
@@ -388,7 +388,7 @@ def cmd_demo(args):
 
 
 def cmd_explain(chart_type):
-    """Print usage notes for a chart type."""
+
     if chart_type not in GENERATORS:
         print(f"未知图表类型: {chart_type}", file=sys.stderr)
         print(f"可用: {', '.join(GENERATORS.keys())}", file=sys.stderr)
@@ -397,14 +397,14 @@ def cmd_explain(chart_type):
     print(CHART_NOTES.get(chart_type, "参考文档相应章节。"))
 
 
-# ── Chart-type suggestion (v2.1) ──────────────────────────────────────
+
 
 def suggest_chart_type(data):
-    """Heuristic chart-type recommendation from a loaded data dict.
 
-    Returns [(score, chart_type, reason)] sorted best-first. Purely
-    structural (no rendering) so it is safe to call on any input.
-    """
+
+
+
+
     if not isinstance(data, dict):
         return []
     recs = []
@@ -448,7 +448,7 @@ def suggest_chart_type(data):
 
 
 def cmd_suggest(data_path):
-    """Analyze a data file and print recommended chart types + a ready-to-run command."""
+
     try:
         data = load_data(data_path)
     except Exception as e:
@@ -465,16 +465,16 @@ def cmd_suggest(data_path):
     print(f"\nRun: python3 scripts/gen_figure.py -t {best} -d '{data_path}' -o out.pdf "
           f"--theme okabe-ito --verify")
 
-# ── Journal presets (v2.0) ─────────────────────────────────────────────
-# Column widths from Nature/Lancet author guidelines: single 89/85mm, double 183mm.
+
+
 JOURNAL_PRESETS = {
     "nature": {"widths_mm": {"single": 89, "double": 183},
                "font_size": 7, "min_text_size": 5, "font_family": "Helvetica", "dpi": 600},
     "lancet": {"widths_mm": {"single": 85, "double": 183},
                "font_size": 8, "min_text_size": 6, "font_family": "Arial", "dpi": 600},
-    # v2.2 international expansion — widths/min sizes follow each journal's
-    # published author guidelines (commonly cited values); re-check the latest
-    # guide before submission.
+    
+    
+    
     "science": {"widths_mm": {"single": 55, "double": 120},
                 "font_size": 7, "min_text_size": 5, "font_family": "Helvetica", "dpi": 600},
     "cell": {"widths_mm": {"single": 85, "double": 176},
@@ -485,7 +485,7 @@ JOURNAL_PRESETS = {
              "font_size": 8, "min_text_size": 6, "font_family": "Arial", "dpi": 600},
     "ieee": {"widths_mm": {"single": 89, "double": 181},
              "font_size": 8, "min_text_size": 6, "font_family": "Times New Roman", "dpi": 600},
-    # Chinese presets — CJK font auto-enabled (cjk_default)
+    
     "cma": {"widths_mm": {"single": 80, "double": 170},
             "font_size": 8, "min_text_size": 6, "font_family": "Arial", "dpi": 600,
             "cjk_default": True},
@@ -495,7 +495,7 @@ JOURNAL_PRESETS = {
 }
 
 def _memory_hint(data, chart_type):
-    """A3(v2.7)：渲染前对超大数据规模给中文提示（防内存型失败；只提醒不拦截）。"""
+
     try:
         n = 0
         if isinstance(data, dict):
@@ -518,8 +518,8 @@ def _memory_hint(data, chart_type):
 
 
 def _load_journal_presets(base_dir=None):
-    """A4(v2.7)：scripts/journal/*.json 为期刊预设唯一权威源（免费版=拍板基准）。
-    目录缺失/单文件损坏时按刊回退内置值（离线与旧包永不受损）。"""
+
+
     import glob as _glob
     d = os.path.join(base_dir or os.path.dirname(os.path.abspath(__file__)), "journal")
     out = {}
@@ -544,14 +544,14 @@ def _load_journal_presets(base_dir=None):
 _JOURNAL_BUILTIN = {k: dict(v) for k, v in JOURNAL_PRESETS.items()}
 JOURNAL_PRESETS = _load_journal_presets()
 
-# v2.5：期刊预设 → 配色主题联动（用户显式给 --theme 时不覆盖）
+
 JOURNAL_THEME = {"nature": "nature", "lancet": "lancet",
                  "nejm": "nejm", "science": "science"}
 
-# Hatching patterns for bar charts (print-friendly + accessibility)
-# ALL series get hatching when --hatch is enabled (including the first).
-# Each series cycles through a different pattern so they're distinguishable
-# even in black-and-white print. Hatch line color = black (edgecolor='black').
+
+
+
+
 def _alt_num(x):
     try:
         return float(x)
@@ -560,8 +560,8 @@ def _alt_num(x):
 
 
 def generate_alt_text(chart_type, data, title=""):
-    """One-paragraph accessibility description derived from the data dict.
-    Written to <output>.alt.txt with --alt."""
+
+
     if _afcharts is not None and chart_type in _afcharts.EXTRA_GENERATORS:
         return _afcharts.alt_extra(chart_type, data, title)
     t = f"{title}。" if title else ""
@@ -629,12 +629,12 @@ def generate_alt_text(chart_type, data, title=""):
         return f"流程图。{t}"
     return f"{chart_type} 图。{t}"
 
-# ── Font helpers ───────────────────────────────────────────────────────
+
 
 def load_cjk_font(font_path=None):
-    """Load CJK font. Returns (FontProperties, font_name) or (None, None)."""
+
     if font_path is None:
-        # Auto-detect
+        
         import subprocess
         try:
             result = subprocess.run(
@@ -648,26 +648,26 @@ def load_cjk_font(font_path=None):
     if font_path and os.path.exists(font_path):
         fm.fontManager.addfont(font_path)
         fp = fm.FontProperties(fname=font_path)
-        # Extract family name for rcParams
+        
         return fp, fp.get_name()
     return None, None
 
 
 
 def safe_text(ax, text, fontprop=None, **kwargs):
-    """Set text with CJK font if needed."""
+
     if fontprop and has_cjk(str(text)):
         return ax.set_text(text) if hasattr(ax, 'set_text') else ax.text(text, fontproperties=fontprop, **kwargs)
     return ax.set_text(text) if hasattr(ax, 'set_text') else ax.text(text, **kwargs)
 
 
-# ── Overlap prevention (mechanism-level) ───────────────────────────────
+
 
 MIN_TICK_GAP = 6.0
 
 
 def _boxes_overlap(b1, b2, ratio=0.04):
-    """True if intersection area exceeds `ratio` of the smaller box."""
+
     inter = BboxBase.intersection(b1, b2)
     if inter is None or inter.width <= 0 or inter.height <= 0:
         return False
@@ -676,13 +676,13 @@ def _boxes_overlap(b1, b2, ratio=0.04):
 
 
 def _adjacent_too_close(b1, b2, axis, min_gap=MIN_TICK_GAP):
-    """True if two same-axis neighbor boxes touch or leave < min_gap px.
 
-    Order-agnostic: tick-label order follows axis direction, which is
-    inverted (top-to-bottom) on heatmap/forest/km axes. The gap is computed
-    as the distance between the two boxes along the axis regardless of
-    which one comes first in the list.
-    """
+
+
+
+
+
+
     inter = BboxBase.intersection(b1, b2)
     if inter is not None and inter.width > 0 and inter.height > 0:
         return True
@@ -694,7 +694,7 @@ def _adjacent_too_close(b1, b2, axis, min_gap=MIN_TICK_GAP):
 
 
 def _tick_boxes(ax, renderer):
-    """Return (x_labels, y_labels, x_boxes, y_boxes) for visible tick labels."""
+
     xl, yl, xb, yb = [], [], [], []
     for lab in ax.get_xticklabels():
         if lab.get_text().strip() and lab.get_visible():
@@ -709,7 +709,7 @@ def _tick_boxes(ax, renderer):
 
 
 def _axis_has_overlap(xb, yb):
-    """Check adjacent x-x, adjacent y-y (with min-gap), and x-y collisions."""
+
     for i in range(len(xb) - 1):
         if _boxes_overlap(xb[i], xb[i + 1]) or _adjacent_too_close(xb[i], xb[i + 1], 'x'):
             return True
@@ -724,13 +724,13 @@ def _axis_has_overlap(xb, yb):
 
 
 def _degrade_axis(ax, axis, level):
-    """Apply one degradation step to tick labels. Returns True if applied.
 
-    Ladder: 1 rotate 45° → 2 word-wrap → 3 shrink font → 4 rotate 90° →
-    ≥5 stride-thinning. Labels are data: 90° rotation is always tried
-    before any label is hidden, and every hidden label is reported by
-    fix_tick_overlaps() so the data loss is never silent.
-    """
+
+
+
+
+
+
     labels = ax.get_xticklabels() if axis == 'x' else ax.get_yticklabels()
     labels = [l for l in labels if l.get_text().strip()]
     if not labels:
@@ -775,21 +775,21 @@ def _degrade_axis(ax, axis, level):
 
 
 def fix_tick_overlaps(fig):
-    """Post-render collision detection + auto-degradation ladder.
 
-    Draws the figure, measures real tick-label bounding boxes, and applies
-    rotation 45° → word-wrap → font-shrink → rotation 90° → stride-thinning
-    until no axis (including composite panels) has overlapping labels.
-    Stride-thinning hides labels (data loss) only after geometric fixes are
-    exhausted, and prints a stderr warning whenever it fires.
-    """
+
+
+
+
+
+
+
     fig.canvas.draw()
     renderer = fig.canvas.get_renderer()
     for _pass in range(8):
         fixed_any = False
         for ax in fig.axes:
             if getattr(ax, "_af_category_axis", False):
-                continue  # 热图家族：行列标签即数据，禁止降级抽稀（机制豁免）
+                continue  
             xl, yl, xb, yb = _tick_boxes(ax, renderer)
             if not _axis_has_overlap(xb, yb):
                 continue
@@ -819,8 +819,8 @@ def fix_tick_overlaps(fig):
 
 
 def place_annotation(ax, text, xy, fontsize=9.5, fontweight='bold', color='black', ha='center'):
-    """Place an annotation, testing candidate offsets against existing text
-    boxes (greedy collision avoidance). Returns the placed Text artist."""
+
+
     fig = ax.figure
     candidates = [(0, 14), (0, -24), (16, 0), (-16, 0), (0, 32), (0, -42),
                   (30, 14), (-30, 14), (30, -24), (-30, -24), (30, 32), (-30, -42)]
@@ -839,10 +839,10 @@ def place_annotation(ax, text, xy, fontsize=9.5, fontweight='bold', color='black
                        ha=ha, va='center', fontsize=fontsize, fontweight=fontweight, color=color)
 
 
-# ── Data loading ───────────────────────────────────────────────────────
+
 
 def _is_number(s):
-    """Check if string represents a number."""
+
     try:
         float(s)
         return True
@@ -851,8 +851,8 @@ def _is_number(s):
 
 
 def _read_excel(path, sheet=None):
-    """Read an Excel sheet into (headers, rows-of-str) — the same shape the
-    CSV branch of load_data() consumes. First non-empty row is the header."""
+
+
     try:
         import openpyxl
     except ImportError:
@@ -884,13 +884,13 @@ def _read_excel(path, sheet=None):
 
 
 def load_data(path, chart_type=None, sheet=None):
-    """Load data from JSON, CSV or Excel (.xlsx/.xls). Returns dict with structure info.
 
-    For CSV/Excel, chart_type is used to auto-convert long-format data:
-    - scatter: first two numeric cols → {x, y}, third col → groups
-    - box/violin: first col as groups, second numeric col as values → {series: {group: [values]}}
-    - sheet: Excel only — sheet name (default: first/active sheet)
-    """
+
+
+
+
+
+
     ext = os.path.splitext(path)[1].lower()
     if ext == '.json':
         with open(path, 'r', encoding='utf-8') as f:
@@ -904,8 +904,8 @@ def load_data(path, chart_type=None, sheet=None):
                 rows = list(reader)
         else:
             headers, rows = _read_excel(path, sheet)
-        # Build series, skipping non-numeric columns (C1 fix)
-        # Identify numeric columns: >50% of values must be parseable as numbers
+        
+        
         numeric_col_indices = []
         for i, h in enumerate(headers):
             if i == 0:
@@ -914,14 +914,14 @@ def load_data(path, chart_type=None, sheet=None):
             if num_count > len(rows) * 0.5:
                 numeric_col_indices.append(i)
 
-        # Collect all rows with non-numeric values across numeric columns (union)
+        
         bad_rows = set()
         for i in numeric_col_indices:
             for ri, r in enumerate(rows):
                 if ri < len(r) and not _is_number(r[i]):
                     bad_rows.add(ri)
 
-        # Build series using only valid rows
+        
         good_rows = [ri for ri in range(len(rows)) if ri not in bad_rows]
         series = {}
         for i in numeric_col_indices:
@@ -929,13 +929,13 @@ def load_data(path, chart_type=None, sheet=None):
             if vals:
                 series[headers[i]] = vals
 
-        # Sync labels with valid rows
+        
         labels = [rows[ri][0] for ri in good_rows if ri < len(rows)]
         result = {"labels": labels, "series": series}
 
-        # Long-format conversion for scatter (C1 real fix)
+        
         if chart_type == 'scatter' and series:
-            # Collect ALL numeric columns including index 0 if numeric header
+            
             all_numeric = []
             for i, h in enumerate(headers):
                 num_count = sum(1 for ri in good_rows if ri < len(rows) and _is_number(rows[ri][i]))
@@ -949,11 +949,11 @@ def load_data(path, chart_type=None, sheet=None):
                 y_vals = [float(rows[ri][col_j]) for ri in good_rows if ri < len(rows) and col_j < len(rows[ri])]
 
                 groups = None
-                # Check remaining columns for groups (non-numeric with multiple unique values)
+                
                 if len(all_numeric) >= 3:
-                    # Use third numeric column's position to find non-numeric columns
-                    pass  # groups will be below
-                # Try non-numeric columns for groups — prefer name hint, then fewest unique vals
+                    
+                    pass  
+                
                 _group_hints = {'group', 'groups', 'category', 'categories', 'class', 'label', 'labels', 'type'}
                 candidates = []
                 for i, h in enumerate(headers):
@@ -962,7 +962,7 @@ def load_data(path, chart_type=None, sheet=None):
                     vals = [rows[ri][i] for ri in good_rows if ri < len(rows)]
                     unique = set(vals)
                     if len(unique) > 1 and len(unique) <= 20:
-                        score = (0, len(unique), i)  # (hint_match, unique_count, col_index)
+                        score = (0, len(unique), i)  
                         if h.lower().strip() in _group_hints:
                             score = (-1, len(unique), i)
                         candidates.append((score, vals, h))
@@ -974,22 +974,22 @@ def load_data(path, chart_type=None, sheet=None):
                 if groups:
                     result["groups"] = groups
             elif len(all_numeric) == 1:
-                # Only one numeric series from wide format, try using it as y with row index as x
+                
                 col_i, col_name = all_numeric[0]
                 y_vals = [float(rows[ri][col_i]) for ri in good_rows if ri < len(rows) and col_i < len(rows[ri])]
-                # Check if labels (first col) are numeric → use as x
+                
                 if labels and all(_is_number(l) for l in labels):
                     result = {"x": [float(l) for l in labels], "y": y_vals}
                 else:
                     result = {"x": list(range(len(y_vals))), "y": y_vals, "groups": labels}
 
-        # Long-format conversion for box/violin (C4 real fix)
+        
         if chart_type in ('box', 'boxplot', 'violin') and series:
             first_col_vals = [rows[ri][0] for ri in good_rows if ri < len(rows)]
-            unique_groups = list(dict.fromkeys(first_col_vals))  # preserve order
-            # Check if first column looks like group labels (many repeats)
+            unique_groups = list(dict.fromkeys(first_col_vals))  
+            
             if len(unique_groups) < len(first_col_vals) * 0.8 and len(unique_groups) >= 2:
-                # Long format: group column + value column
+                
                 num_col_idx = numeric_col_indices[0] if numeric_col_indices else None
                 if num_col_idx is not None:
                     grouped = {}
@@ -1001,7 +1001,7 @@ def load_data(path, chart_type=None, sheet=None):
                             v = rows[ri][num_col_idx]
                             if _is_number(v):
                                 grouped[g].append(float(v))
-                    # Only use if groups have multiple values
+                    
                     if any(len(v) >= 2 for v in grouped.values()):
                         result = {"labels": unique_groups, "series": grouped}
 
@@ -1010,10 +1010,10 @@ def load_data(path, chart_type=None, sheet=None):
         raise ValueError(f"不支持的数据格式: {ext}。请改用 .json / .csv / .tsv / .xlsx")
 
 
-# ── Data validation layer (v2.0) ───────────────────────────────────────
+
 
 def _preflight_advisories(data, chart_type, downsample=None):
-    """v2.9：渲染前预判式提示（纯函数，返回中文提示列表）。提前预判，不等硬限报错。"""
+
     msgs = []
     try:
         if (chart_type == "cluster_heatmap" and isinstance(data, dict)
@@ -1030,7 +1030,7 @@ def _preflight_advisories(data, chart_type, downsample=None):
 
 
 def _field_nearmiss_warnings(data):
-    """v2.9：dict 数据中出现"形似已知字段"的未知键时给中文纠错告警（非致命）。"""
+
     msgs = []
     try:
         if isinstance(data, dict):
@@ -1050,17 +1050,17 @@ def _field_nearmiss_warnings(data):
     return msgs
 
 
-# ── v3.9：--order 类别顺序 / --normalize 归一化 / --doctor 体检 ──────────
+
 _ORDER_CHARTS = ("bar", "grouped_bar", "hbar", "horizontal_bar", "stacked_bar",
                  "box", "violin", "line")
 _NORM_CHARTS = ("bar", "grouped_bar", "hbar", "horizontal_bar", "stacked_bar", "line")
 
 
 def apply_series_order(data, order, chart_type):
-    """v3.9 --order：重排类别（bar 系/line 重排 labels 并同位列数组；
-    box/violin 重排系列键）。显式列表须恰好覆盖全部标签；
-    auto=按第一系列值降序（box/violin 按各组中位数降序）。
-    significance 的 "系列:列索引" 键随重排改写。"""
+
+
+
+
     if chart_type in ("box", "violin"):
         series = data.get("series", data.get("datasets"))
         if not isinstance(series, dict) or not series:
@@ -1140,9 +1140,9 @@ def apply_series_order(data, order, chart_type):
 
 
 def apply_normalize(data, mode, chart_type):
-    """v3.9 --normalize：baseline=各系列÷第一系列均值（对照=1）；
-    pct100=各系列÷自身首点×100（T0=100）。误差数组同步缩放。
-    分布类（box/violin）不适用（flag 门 [ignored] 拦截）。"""
+
+
+
     series = data.get("series", data.get("datasets"))
     if not isinstance(series, dict) or not series:
         print("WARNING: --normalize 需要 series 数据，未找到——跳过", file=sys.stderr)
@@ -1192,7 +1192,7 @@ def apply_normalize(data, mode, chart_type):
 
 
 def _auto_summary(data, chart_type):
-    """v4.1 --summary：从数据派生纯计数事实摘要（零推断）。派生不了的图型返回 None。"""
+
     def _num_list(v):
         return [float(x) for x in v if isinstance(x, (int, float))]
 
@@ -1220,8 +1220,8 @@ def _auto_summary(data, chart_type):
 
 
 def _doctor_report(args, data):
-    """v3.9 --doctor：渲染前参数/环境体检。返回需注意项数（0=全绿）。
-    只报告不改退出码（带 -o 时继续渲染）；省略 -o 时 exit 1=有问题。"""
+
+
     import importlib
     issues = 0
     print("── doctor 参数/环境体检（v3.9）──", file=sys.stderr)
@@ -1295,15 +1295,15 @@ def _doctor_report(args, data):
 
 
 def validate_data(data, chart_type):
-    """Unified data validation: fatal errors + degradation warnings.
 
-    Returns (fatal_msgs, warning_msgs).
-    - fatal: figure CANNOT be drawn correctly -> caller must abort (exit code 1)
-    - warning: figure can be drawn but data looks suspicious -> caller prints WARNING
 
-    Covers per-type required fields, numeric types, length matching, and
-    degenerate-data detection (all-equal series, non-finite values, ragged rows).
-    """
+
+
+
+
+
+
+
     fatal, warns = [], []
 
     if not isinstance(data, dict):
@@ -1317,7 +1317,7 @@ def validate_data(data, chart_type):
         return len(v) if isinstance(v, (list, tuple)) else 0
 
     def _warn_flat(name, vals):
-        """Detect all-equal series -> flat chart, usually a data bug."""
+
         fvals = [float(v) for v in vals if _is_number(v)]
         if len(fvals) >= 2 and max(fvals) == min(fvals):
             warns.append(
@@ -1332,7 +1332,7 @@ def validate_data(data, chart_type):
                 f"请检查源数据里是否混入了 'NA'、'—' 或文字")
 
     def _check_series_dict(series, err_key, req_nonempty=True):
-        """Validate a {name: [values]} dict. Returns fatal messages list."""
+
         msgs = []
         if not isinstance(series, dict):
             msgs.append(f"'{err_key}' 必须是 JSON 对象（形如 {{\"系列名\": [数值, ...]}}）— 当前类型不符")
@@ -1350,7 +1350,7 @@ def validate_data(data, chart_type):
                 _warn_flat(n, v)
         return msgs
 
-    # ── bar family: labels + series (+ errors / significance) ──
+    
     if chart_type in ("bar", "grouped_bar", "hbar", "horizontal_bar", "line",
                       "stacked_bar", "box", "boxplot", "violin"):
         series = data.get("series", data.get("datasets", {}))
@@ -1359,8 +1359,8 @@ def validate_data(data, chart_type):
         is_boxlike = chart_type in ("box", "boxplot", "violin")
         if _nonempty_list(labels) and series:
             if is_boxlike:
-                # box/violin: labels are GROUP names — compare to series count,
-                # not to values-per-series (each group holds its own array)
+                
+                
                 n_labels, n_groups = _len(labels), len(series)
                 if n_labels != n_groups:
                     fatal.append(
@@ -1374,7 +1374,7 @@ def validate_data(data, chart_type):
                         f"长度不齐会导致图内容被静默截断，请修正 CSV/JSON 对齐。")
         elif not is_boxlike and not _nonempty_list(labels):
             warns.append("未提供 labels：x 轴将使用序号 0..n-1")
-        # errors must reference existing series (silent KeyError risk)
+        
         errs = data.get("errors", {})
         if isinstance(errs, dict) and errs:
             unknown = [k for k in errs if k not in series]
@@ -1383,14 +1383,14 @@ def validate_data(data, chart_type):
             for n, v in errs.items():
                 if n in series and _nonempty_list(v) and _len(v) != _len(series[n]):
                     warns.append(f"errors['{n}'] 有 {_len(v)} 个值但系列 '{n}' 有 {_len(series[n])} 个 — 数量应一一对应，误差棒可能错位")
-        # significance keys must reference existing series
+        
         sig = data.get("significance", {})
         if isinstance(sig, dict) and sig:
             unknown = [k for k in sig if k not in series]
             if unknown:
                 warns.append(f"significance 引用了数据里不存在的系列: {unknown[:3]}")
 
-    # ── heatmap: matrix ──
+    
     elif chart_type == "heatmap":
         matrix = data.get("matrix", data.get("data", data.get("values")))
         if matrix is None:
@@ -1407,7 +1407,7 @@ def validate_data(data, chart_type):
             if flat and max(flat) == min(flat):
                 warns.append(f"heatmap: 全部 {len(flat)} 个单元格值相同（{flat[0]:g}）— 热图将是单一颜色，请核对数据")
 
-    # ── scatter: x / y (+ groups) ──
+    
     elif chart_type == "scatter":
         x = data.get("x", data.get("xs", []))
         y = data.get("y", data.get("ys", []))
@@ -1428,7 +1428,7 @@ def validate_data(data, chart_type):
         elif groups is not None and _len(groups) != _len(x) and _len(groups) > 0:
             warns.append(f"scatter: 'groups' 有 {_len(groups)} 项但共 {_len(x)} 个点 — 分组可能错位")
 
-    # ── forest: estimates + ci_low + ci_high ──
+    
     elif chart_type == "forest":
         estimates = data.get("estimates", data.get("values", []))
         ci_low = data.get("ci_low", data.get("lower", []))
@@ -1457,7 +1457,7 @@ def validate_data(data, chart_type):
         if isinstance(events, list) and events and _len(events) != _len(estimates):
             warns.append(f"forest: {_len(events)} 行事件数据但 {_len(estimates)} 个效应值 — events/total 可能错位")
 
-    # ── KM: groups (list of [t, s] pairs) OR time + survival ──
+    
     elif chart_type in ("km", "survival"):
         groups = data.get("groups", data.get("series", {}))
         has_time = _nonempty_list(data.get("time", []))
@@ -1473,9 +1473,9 @@ def validate_data(data, chart_type):
                 if _nonempty_list(s) and _len(s) != _len(data["time"]):
                     fatal.append(f"km: survival['{gname}'] 有 {_len(s)} 个值但 'time' 有 {_len(data['time'])} 个 — 长度必须一致")
         elif isinstance(groups, dict) and groups:
-            # v2.6 A1: dict 有内容但值不是 [t, e] 成对列表。最常见是 CSV/Excel 长表
-            # （time/event/group 各一列、一行一名患者）被通用转换装进 series——
-            # 此前静默通过并渲染出无意义单曲线，必须拦截并给转换指引。
+            
+            
+            
             _long_keys = {"time", "event", "status", "group", "groups"}
             _keys_l = {str(k).strip().lower() for k in groups}
             if _keys_l & _long_keys:
@@ -1491,7 +1491,7 @@ def validate_data(data, chart_type):
         elif not isinstance(groups, dict) or not groups:
             fatal.append("km 需要 'groups'（{组名: [[t, s], ...]}）或 'time'+'survival' 数组 — 都没找到")
 
-    # ── ROC: curves OR fpr + tpr ──
+    
     elif chart_type == "roc":
         curves = data.get("curves", [])
         fpr = data.get("fpr", data.get("x", []))
@@ -1502,7 +1502,7 @@ def validate_data(data, chart_type):
             for i, c in enumerate(curves):
                 if not isinstance(c, dict) or not (_nonempty_list(c.get("fpr")) and _nonempty_list(c.get("tpr"))):
                     if has_scores_mode:
-                        continue  # --compare 模式：原始分数曲线（labels+scores），无需 fpr/tpr
+                        continue  
                     fatal.append(f"roc: curves[{i}] 必须有 'fpr' 和 'tpr' 数组（--compare 模式可用 labels+scores）")
                 elif _len(c["fpr"]) != _len(c["tpr"]):
                     fatal.append(f"roc: curves[{i}] fpr/tpr 长度不一致（{_len(c['fpr'])}/{_len(c['tpr'])}）")
@@ -1524,7 +1524,7 @@ def validate_data(data, chart_type):
         if isinstance(auc, (int, float)) and not (0.0 <= float(auc) <= 1.0):
             warns.append(f"roc: auc={auc:g} 超出 [0, 1] — 请核对该值")
 
-    # ── dual_axis: labels + left + right ──
+    
     elif chart_type == "dual_axis":
         labels = data.get("labels", data.get("x", []))
         left = data.get("left", data.get("y1", {}))
@@ -1536,7 +1536,7 @@ def validate_data(data, chart_type):
             if _len(labels) != n_first:
                 fatal.append(f"dual_axis: labels 有 {_len(labels)} 项但 left/right 系列有 {n_first} 个 — 长度必须一致")
 
-    # ── slope: items 两时点 ──
+    
     elif chart_type == "slope":
         items = data.get("items")
         if not isinstance(items, dict) or len(items) < 2:
@@ -1548,7 +1548,7 @@ def validate_data(data, chart_type):
                                 for x in v)):
                     fatal.append(f"slope: items['{n}'] 必须是恰好 2 个数值 [左值, 右值]")
 
-    # ── volcano: 组学差异表达 ──
+    
     elif chart_type == "volcano":
         l2 = data.get("log2fc")
         pv = data.get("pvalue")
@@ -1566,7 +1566,7 @@ def validate_data(data, chart_type):
         if names is not None and (not isinstance(names, list) or len(names) != len(l2 or [])):
             fatal.append("volcano: 'names' 长度必须与 log2fc 一致")
 
-    # ── composite: panels ──
+    
     elif chart_type == "composite":
         panels = data.get("panels", [])
         if not isinstance(panels, list) or not panels:
@@ -1575,7 +1575,7 @@ def validate_data(data, chart_type):
             bad = [i for i, p in enumerate(panels) if not isinstance(p, dict) or not p.get("type")]
             if bad:
                 fatal.append(f"composite: 面板 {bad[:5]} 缺少 'type' 字段 — 每个面板都要有 type（如 'bar'）")
-            # v4.3 span 跨行跨列：合法性 + 占位重叠检测（GridSpec 重叠静默，必须前置拦）
+            
             lay = data.get("layout", [1, 2])
             _nr, _nc = int(lay[0]), int(lay[1])
             occ = {}
@@ -1583,7 +1583,7 @@ def validate_data(data, chart_type):
                 if not isinstance(p, dict):
                     continue
                 if "pos" not in p:
-                    continue  # v4.3 兼容：未显式写 pos 的面板保持旧宽容行为（不参与占位检查）
+                    continue  
                 pos = p.get("pos")
                 if not (isinstance(pos, list) and len(pos) == 2
                         and all(isinstance(x, int) for x in pos)):
@@ -1609,13 +1609,13 @@ def validate_data(data, chart_type):
                     if (r, c) in occ and len(fatal) and "占位重叠" in fatal[-1]:
                         break
 
-    # ── diagram: blocks ──
+    
     elif chart_type == "diagram":
         blocks = data.get("blocks", [])
         if not isinstance(blocks, list) or not blocks:
             fatal.append("diagram 需要 'blocks'（非空块对象列表）")
 
-    # ── prisma: PRISMA 2020 flow, counts + arithmetic consistency gates ──
+    
     elif chart_type == "prisma":
         req_ints = ["records_identified", "studies_included"]
         opt_ints = ["duplicates_removed", "records_screened", "records_excluded",
@@ -1632,8 +1632,8 @@ def validate_data(data, chart_type):
         for k in req_ints:
             if k not in vals:
                 fatal.append(f"prisma 缺少 '{k}'（非负整数）")
-        # Derive the pipeline the same way gen_prisma will, so gates hold
-        # even for omitted intermediate fields (a review's numbers must ADD UP).
+        
+        
         ident = vals.get("records_identified")
         dup = vals.get("duplicates_removed", 0)
         screened = vals.get("records_screened")
@@ -1689,14 +1689,14 @@ def validate_data(data, chart_type):
 
 
 def legend_audit(ax, chart_type, no_legend, n_series):
-    """Detect silently-empty legends: >= 2 series drawn, none labeled.
 
-    n_series comes from the DATA (not artist count — matplotlib's
-    get_legend_handles_labels only returns labeled artists, so an all-
-    unlabeled multi-series figure reports 0 handles). Types that use
-    x-axis labels (box/violin/forest), a colorbar (heatmap), or their
-    own legend (dual_axis, composite, diagram) are exempt.
-    """
+
+
+
+
+
+
+
     if no_legend or chart_type in ("box", "boxplot", "violin", "heatmap", "forest",
                                    "composite", "diagram", "dual_axis"):
         return None
@@ -1709,7 +1709,7 @@ def legend_audit(ax, chart_type, no_legend, n_series):
     return None
 
 
-# ── Figure generators ──────────────────────────────────────────────────
+
 
 
 if _afcharts is not None:
@@ -1726,7 +1726,7 @@ _EXC_ZH = {
     "UnicodeDecodeError": "文件编码不是 UTF-8/ASCII（请转存为 UTF-8）",
     "TypeError": "数据类型不匹配",
     "IndexError": "数据行/列数量不足",
-    # v2.5 扩充：底层库常见异常中文化（评估 R 处方——英文异常名仍保留在括号内可搜索）
+    
     "MemoryError": "数据规模超出可用内存（请减小数据量或分批处理）",
     "OverflowError": "数值溢出（数据量级过大或含极端值）",
     "ZeroDivisionError": "出现除零（数据退化：全为常数或完全相同）",
@@ -1740,13 +1740,13 @@ _EXC_ZH = {
 
 
 def _zh_exception(e: BaseException) -> str:
-    """异常消息中文化：类名映射 + 底层消息保留（便于搜索）。"""
+
     name = type(e).__name__
     head = _EXC_ZH.get(name, f"{name}")
     return f"{head}（{name}: {e}）"
 
 
-# ── 投稿精修（v2.5 --annotate / --legend-loc / --legend-outside）──────
+
 
 _LEGEND_LOCS = {"best", "upper right", "upper left", "lower left", "lower right",
                 "right", "center left", "center right", "lower center",
@@ -1754,7 +1754,7 @@ _LEGEND_LOCS = {"best", "upper right", "upper left", "lower left", "lower right"
 
 
 def _parse_annotations(items):
-    """解析 --annotate "x,y:文字" 列表 → [(x, y, 文字, 原串)]；语法错误即报 ValueError。"""
+
     out = []
     for raw in items or []:
         s = str(raw)
@@ -1772,7 +1772,7 @@ def _parse_annotations(items):
 
 
 def _resolve_coord(axes, value, which):
-    """注释坐标解析：数字直接用；非数字在类别轴刻度标签里查（返回刻度位置）。失败 None。"""
+
     s = str(value).strip()
     try:
         return float(s)
@@ -1792,13 +1792,13 @@ def _resolve_coord(axes, value, which):
 
 
 def _apply_annotations(fig, anns, theme, cjk_fp):
-    """在主数据轴上放置箭头注释（审稿改稿刚需）。返回（可能新启用的）cjk_fp。
 
-    - 目标轴选择：取"能解析全部注释坐标且坐标在轴范围内"的轴中数据元素最多者
-      （km 双轴自动优先主图而非风险表；组合图自动选中对应面板）
-    - 文字初始位：锚点黄金角环绕；复用 _declutter_texts 防重叠（引导线关闭，
-      对应关系由 FancyArrowPatch 箭头承担，文字移动后箭头起点跟随重设）
-    """
+
+
+
+
+
+
     if not anns:
         return cjk_fp
     import math as _m
@@ -1806,7 +1806,7 @@ def _apply_annotations(fig, anns, theme, cjk_fp):
 
     def _try_axes(a):
         resolved = []
-        # 排序后比较：兼容倒置轴（forest 的 y 轴自上而下，get_ylim() 返回 (大, 小)）
+        
         xa, xb = sorted(a.get_xlim())
         ya, yb = sorted(a.get_ylim())
         for xs, ys, _t, _raw in anns:
@@ -1822,7 +1822,7 @@ def _apply_annotations(fig, anns, theme, cjk_fp):
         return resolved
 
     def _data_score(a):
-        # 曲线/散点/图像是主图特征；纯矩形（km 风险表条块）权重压低
+        
         return (len(a.lines) * 10 + len(a.collections) * 10 + len(a.images) * 10
                 + len(a.containers) * 5 + len(a.patches))
 
@@ -1846,7 +1846,7 @@ def _apply_annotations(fig, anns, theme, cjk_fp):
               file=sys.stderr)
         sys.exit(1)
 
-    # 注释含中文但 cjk_fp 未启用：提前补字体（declutter 中途 draw 不能出现度量失真）
+    
     if cjk_fp is None and any(has_cjk(t) for _x, _y, t, _r in anns):
         try:
             cjk_fp, cjk_name = load_cjk_font(None)
@@ -1877,7 +1877,7 @@ def _apply_annotations(fig, anns, theme, cjk_fp):
         texts.append(t)
         arrows.append(arr)
         anchors.append((px, py))
-    # 复用散点标签防重叠（引导线阈值放大→不画，箭头已承担对应关系）
+    
     if _afcharts is not None and len(texts) >= 2:
         _afcharts._declutter_texts(target, texts, anchors, leader_min_frac=10.0)
     for arr, t, (ax_, ay_) in zip(arrows, texts, anchors):
@@ -1887,11 +1887,11 @@ def _apply_annotations(fig, anns, theme, cjk_fp):
 
 
 def _apply_legend_control(fig, loc=None, outside=False, theme=None, cjk_fp=None):
-    """--legend-loc / --legend-outside：重定位既有图例（原位重建，保留标题/列数）。
 
-    - ≥2 个轴带图例 + outside：合并为全图共享图例（右侧，同名图例项去重）
-    - 单图例：outside 移到轴右侧；否则按 loc 九宫格重摆
-    """
+
+
+
+
     if not loc and not outside:
         return
     entries = []
@@ -1935,10 +1935,10 @@ def _apply_legend_control(fig, loc=None, outside=False, theme=None, cjk_fp=None)
                      prop=cjk_fp if cjk_fp else None, **kw)
 
 
-# ── Batch（v2.3 --batch）───────────────────────────────────────────────
+
 
 def _run_batch_items(items, manifest_path):
-    """逐项独立进程渲染批量/流水线条目，完成后写汇总报告（--batch 与 --pipeline 共用）。"""
+
     results = []
     for i, item in enumerate(items):
         if not isinstance(item, dict) or not all(k in item for k in ("type", "data", "out")):
@@ -1999,20 +1999,20 @@ def _run_batch_items(items, manifest_path):
 
 
 def cmd_pipeline(pipeline_path):
-    """--pipeline：YAML/JSON 多图流水线（--batch 升级版，支持 defaults 全局默认）。
 
-    结构（YAML 示例）：
-        defaults:
-          theme: glm
-          dpi: 600
-        figures:
-          - type: km
-            data: survival.json
-            out: fig1_km
-            title: 总生存曲线
-    顶层直接写列表 = 无全局默认的精简写法。相对路径（data/out）相对
-    流水线文件所在目录解析；条目键与 --batch 单项一致（另支持 multi_format）。
-    """
+
+
+
+
+
+
+
+
+
+
+
+
+
     ext = os.path.splitext(str(pipeline_path))[1].lower()
     if ext in (".yaml", ".yml"):
         try:
@@ -2071,7 +2071,7 @@ def cmd_pipeline(pipeline_path):
 
 
 def cmd_batch(manifest_path):
-    """--batch：JSON 清单批量出图（逐项独立进程，互不干扰），完成后写汇总报告。"""
+
     try:
         with open(manifest_path, encoding="utf-8") as f:
             items = json.load(f)
@@ -2084,15 +2084,15 @@ def cmd_batch(manifest_path):
     _run_batch_items(items, manifest_path)
 
 
-# ── Main ───────────────────────────────────────────────────────────────
+
 
 def _run_cox_forest(args):
-    """B1(v2.7)：--stats cox —— 原始逐例生存数据自动拟合多因素 Cox 比例风险模型，
-    以 HR[95%CI] 森林图输出（无效线 1.0 自动）。数据格式：
-    JSON: {"time":[...], "event":[...], 其余顶层键=协变量}，或
-          {"time":[...], "event":[...], "covariates": {"名": [...]}}
-    CSV : 表头含时间/事件列（--cox-time/--cox-event 改名），其余数值列=协变量；
-          二分类文本列自动 0/1 编码（stderr 注明参照组）；>2 类目请先数值化。"""
+
+
+
+
+
+
     import csv as _csv
 
     path = args.data
@@ -2167,7 +2167,7 @@ def _run_cox_forest(args):
         _fatal("--stats cox 支持 .json / .csv / .tsv 原始逐例数据；"
                "效应量森林图（已有 HR/OR 点估计）不要加 --stats cox")
 
-    # 统一转数值
+    
     if ext == ".json":
         if not _is_num_list(d["time"]) or not _is_num_list(d["event"]):
             _fatal("time/event 必须是数值数组（event 用 0/1）")
@@ -2402,7 +2402,7 @@ def main():
 
     args = parser.parse_args()
 
-    # ── v4.3 --profile 分层配置文件（呈现参数预设；CLI 显式参数优先）──
+    
     if getattr(args, "profile", None):
         _PALLOW = {"theme", "style", "journal", "column", "dpi", "width", "height",
                    "title", "subtitle", "source", "xlabel", "ylabel", "cjk", "verify",
@@ -2487,18 +2487,18 @@ def main():
         _run_wizard()
         sys.exit(0)
 
-    # ── v3.8：--pub-ready 一键投稿包（语义糖：展开为四件套显式参数）──
+    
     if getattr(args, "pub_ready", False):
         args.verify = True
         if not args.multi_format:
-            args.multi_format = ["pdf", "png"]  # 列表形式（与主解析块输出一致）
+            args.multi_format = ["pdf", "png"]  
         if not args.theme:
             args.theme = "okabe-ito"
         args.pub_ready_applied = True
         print("[pub-ready] 已应用投稿包：--verify（PDF 重叠门禁）+ 色盲安全主题 "
               f"{args.theme} + 多格式导出 {args.multi_format}", file=sys.stderr)
 
-    # ── v3.1：--quick 一键出图（自动选型 → 复用主渲染管线）──
+    
     if getattr(args, "quick", False):
         if not args.data:
             parser.error("--quick 需要 -d/--data 指向数据文件（不确定图型可先跑 --suggest）")
@@ -2517,7 +2517,7 @@ def main():
               "打分明细见 --suggest）", file=sys.stderr)
 
     if getattr(args, "doctor", False) and not args.out:
-        # v3.9 --doctor 只体检模式：不渲染不出图
+        
         if not args.type or not args.data:
             parser.error("--doctor（省略 -o）仍需 -t/--type 与 -d/--data")
         _d = load_data(args.data, chart_type=args.type, sheet=args.sheet)
@@ -2544,9 +2544,9 @@ def main():
 
     if args.style in ("glm-brand", "nature-clean") and args.type == "line" \
             and not args.legend_loc:
-        args.direct_label = True  # 设计语言第二刀：品牌/顶刊风格下 line 默认直接标注
+        args.direct_label = True  
     if args.style == "nature-clean":
-        # ── v3.3：顶刊版式（设计语言包第一刀）——纯增量，默认行为零变化 ──
+        
         args.theme = "okabe-ito"
         _STYLE_NO_GRID[0] = True
         plt.rcParams.update({
@@ -2563,7 +2563,7 @@ def main():
               "（Nature 系版式语言）", file=sys.stderr)
 
     if getattr(args, "area", False) and args.type != "venn":
-        # v3.6：与其他静默忽略项统一口径——显式告知而非致命错（limits/faq 已同步）
+        
         print("[ignored] --area 仅用于 venn；对", args.type,
               "不适用，已忽略（等圆模式为 venn 默认）", file=sys.stderr)
         args.area = False
@@ -2588,13 +2588,13 @@ def main():
         print(f"ERROR: 未知主题 '{args.theme}'。运行 --list-themes 查看全部配色。", file=sys.stderr)
         sys.exit(1)
     if args.journal and args.theme is None and args.journal in JOURNAL_THEME:
-        # v2.5 联动：--journal 期刊预设自动套同款配色（显式 --theme 优先）
+        
         theme_key = JOURNAL_THEME[args.journal]
         print(f"配色已联动 {theme_key} 主题（显式 --theme 可覆盖）", file=sys.stderr)
     args.theme = theme_key
     theme = THEMES[theme_key]
 
-    # ── v3.2：自动行为透明化（[auto] 前缀显式告知）──
+    
     if args.journal and getattr(args, "width", None):
         print("[auto] --journal 锁定图宽，--width "
               f"{args.width} 已被忽略（--height 仍生效）", file=sys.stderr)
@@ -2612,7 +2612,7 @@ def main():
     if args.journal:
         preset = JOURNAL_PRESETS[args.journal]
         if preset.get("cjk_default"):
-            args.cjk = True  # Chinese journals: CJK font on by default
+            args.cjk = True  
         theme = dict(theme)
         w_in = preset["widths_mm"][args.column] / 25.4
         h_ratio = theme["figsize"][1] / theme["figsize"][0]
@@ -2639,9 +2639,9 @@ def main():
     else:
         data = load_data(args.data, chart_type=args.type, sheet=args.sheet)
 
-    # ── A4(v2.8)+v3.1：cluster_heatmap 降采样（确定性等距采样；校验前执行）──
-    # v3.1：行数>3000 且未给 --downsample 时自动采样到 2000 行并显著告知
-    #（此前为致命错退出；评测 errorHandling 指出"缺乏自动建议参数尝试"）。
+    
+    
+    
     if (args.type == "cluster_heatmap" and isinstance(data, dict)
             and isinstance(data.get("matrix"), list)):
         _m = data["matrix"]
@@ -2662,12 +2662,12 @@ def main():
             print(f"downsample: cluster_heatmap 行数 {_n} → {len(data['matrix'])}"
                   f"（等距采样，步长 {_step}）", file=sys.stderr)
 
-    # ── v2.9：cluster_heatmap 行数预判（半限 1500 即预警，不等 3000 硬限）──
+    
     for _adv in _preflight_advisories(data, args.type,
                                       getattr(args, "downsample", None)):
         print(f"WARNING: {_adv}", file=sys.stderr)
 
-    # ── v3.6：参数不适用显式告知（消除"静默忽略"——accuracy/usability 靶点）──
+    
     _ignored = []
     if args.stats in ("auto", "multi", "bootstrap") and args.type not in ("box", "violin"):
         _ignored.append(f"--stats {args.stats}（仅 box/violin 生效）")
@@ -2690,7 +2690,7 @@ def main():
     for _ig in _ignored:
         print(f"[ignored] {_ig} 对 {args.type} 不适用，本次渲染已忽略", file=sys.stderr)
 
-    # ── v2.9：JSON 字段名近似匹配告警（拼写错误前置提醒，非致命）──
+    
     for _w in _field_nearmiss_warnings(data):
         print(f"WARNING: {_w}", file=sys.stderr)
 
@@ -2706,7 +2706,7 @@ def main():
                   file=sys.stderr)
         sys.exit(1)
     _memory_hint(data, args.type)
-    # ── v3.9：--order / --normalize（渲染前数据变换，stderr 透明告知）──
+    
     if getattr(args, "order", None):
         try:
             apply_series_order(data, args.order, args.type)
@@ -2721,12 +2721,12 @@ def main():
             sys.exit(1)
     if getattr(args, "doctor", False):
         _doctor_report(args, data)
-    # ── A1(v2.8)：看门狗武装（--timeout 覆盖自适应预算；0=禁用）──
+    
     if args.timeout is None or args.timeout > 0:
         _watchdog_arm(args.type, data,
                       budget=None if args.timeout is None else float(args.timeout))
     cjk_fp = None
-    # Auto-detect: scan displayable text for CJK chars
+    
     def _scan_cjk(obj):
         if isinstance(obj, str):
             return has_cjk(obj)
@@ -2740,7 +2740,7 @@ def main():
         for t in [args.title, args.xlabel, args.ylabel]:
             if t and has_cjk(t):
                 return True
-        # Recursive scan catches CJK nested in composite panels/diagram text
+        
         return _scan_cjk(data) if data else False
     _auto_cjk = _text_has_cjk()
     if args.cjk or args.cjk_font or _auto_cjk:
@@ -2753,7 +2753,7 @@ def main():
         else:
             print("WARNING: 未找到中文字体，中文可能显示为方框", file=sys.stderr)
 
-    # Create figure（km 默认带自动风险表：主图 + 下方独立表轴）
+    
     width = args.width if args.width else theme["figsize"][0]
     height = args.height if args.height else theme["figsize"][1]
     km_risk = False
@@ -2787,7 +2787,7 @@ def main():
             width = max(width, 8.5)
             height = max(height, 6.0)
     def _make_fig():
-        """fig/ax/risk_axes 创建（km 风险表时主图+表轴双行）；A2 降级重建复用。"""
+
         if km_risk:
             _n_rows = len(data.get("groups", data.get("series", {})) or {})
             _rt_h = min(0.9, 0.34 + 0.24 * max(_n_rows, 1))
@@ -2800,7 +2800,7 @@ def main():
 
     fig, ax, risk_axes = _make_fig()
 
-    # Generate
+    
     gen_func = GENERATORS[args.type]
     kwargs = {
         "show_values": args.show_values,
@@ -2844,14 +2844,14 @@ def main():
             print("WARNING: 渲染内存不足——已自动降级重试（图幅 ×0.85，输出 DPI 减半）",
                   file=sys.stderr)
 
-    # composite/diagram manage their own axes and styling
+    
     is_self_managed = extra in ("composite", "diagram")
 
-    # Style (skip for self-managed types and dual_axis)
+    
     if args.type not in ('dual_axis',) and not is_self_managed:
         apply_base_style(ax, theme)
 
-    # Labels (skip for self-managed types like composite/diagram)
+    
     if not is_self_managed:
         if args.title:
             title_text = args.title.replace('\\n', '\n')
@@ -2860,8 +2860,8 @@ def main():
                          pad=_t_pad,
                          fontproperties=cjk_fp if cjk_fp and has_cjk(title_text) else None)
         if getattr(args, "summary", False) and not getattr(args, "subtitle", None):
-            # v4.1 自动数据摘要副标题：只陈述计数事实（零推断，accuracy 优先）。
-            # 单列观测计 wide 系列"系列名: 列表"的全部数值个数；km 统计例数与事件数。
+            
+            
             try:
                 _sum_txt = _auto_summary(data, args.type)
             except Exception:
@@ -2870,20 +2870,20 @@ def main():
                 print(f"summary: {_sum_txt}", file=sys.stderr)
             args.subtitle = _sum_txt
         if getattr(args, "subtitle", None):
-            # v4.0 标题层级：副标题主标题正下方第二行（小号灰色，非加粗）
+            
             _sub = str(args.subtitle).strip()[:200]
             ax.text(0.5, 1.012, _sub, transform=ax.transAxes, ha="center", va="bottom",
                     fontsize=theme["font_size"] - 1, color="#555555",
                     fontproperties=cjk_fp if cjk_fp and has_cjk(_sub) else None)
         if getattr(args, "source", None):
-            # v4.0 来源注：整图底部小字（supxlabel 参与 tight_layout 自动让位，
-            # 不与 x 刻度标签重叠；组合图/双轴均安全）
+            
+            
             _src = str(args.source).strip()[:200]
             try:
                 fig.supxlabel(_src, x=0.995, ha="right",
                               fontsize=max(5.5, theme["font_size"] - 2), color="#777777",
                               fontproperties=cjk_fp if cjk_fp and has_cjk(_src) else None)
-            except AttributeError:  # matplotlib<3.4 无 supxlabel：退化为 fig.text
+            except AttributeError:  
                 fig.text(0.995, 0.005, _src, ha="right", va="bottom",
                          fontsize=max(5.5, theme["font_size"] - 2), color="#777777",
                          fontproperties=cjk_fp if cjk_fp and has_cjk(_src) else None)
@@ -2895,7 +2895,7 @@ def main():
                           fontproperties=cjk_fp if cjk_fp and has_cjk(args.ylabel) else None)
             _ensure_ylabel_clear(ax)
 
-        # Colorbar (for heatmap only — extra must be a ScalarMappable)
+        
         if extra is not None and hasattr(extra, 'get_cmap'):
             cbar = fig.colorbar(extra, ax=ax, shrink=0.8)
             cbar_label = data.get("cbar_label", args.ylabel)
@@ -2903,10 +2903,10 @@ def main():
                 cbar.set_label(cbar_label, fontsize=theme["font_size"] - 1,
                               fontproperties=cjk_fp if cjk_fp and has_cjk(cbar_label) else None)
 
-        # Legend (skip if no labeled artists)
+        
         _dl = getattr(args, "direct_label", False) and args.type == "line"
-        # v3.4.1（55 线发现）：dual_axis 的组合图例（左+右轴）由 gen_dual_axis 内部构建，
-        # 主流程无参 ax.legend() 会用主轴 handles 重建→右轴系列（如 CRP）从图例消失。
+        
+        
         if not _dl and args.type != "dual_axis" and not args.no_legend \
                 and args.legend and ax.get_legend_handles_labels()[1]:
             ax.legend(fontsize=theme["font_size"] - 1, loc='best', framealpha=0.9,
@@ -2922,17 +2922,17 @@ def main():
         if audit_msg:
             print(f"WARNING: {audit_msg}", file=sys.stderr)
 
-    # ── v2.5 投稿精修：注释与图例控制（置于 CJK 兜底前，新文本一并被兜底覆盖；
-    #    组合图/流程图等自管类型同样生效）──
+    
+    
     if annotations:
         cjk_fp = _apply_annotations(fig, annotations, theme, cjk_fp)
     if getattr(args, "legend_loc", None) or getattr(args, "legend_outside", False):
         _apply_legend_control(fig, loc=args.legend_loc, outside=args.legend_outside,
                               theme=theme, cjk_fp=cjk_fp)
 
-    # ── 机制级兜底（必须在一切 draw 前：tight_layout/防重叠/savefig 都会渲染文本）──
-    # 两层防护：①调用点忘传 fontproperties ②用户数据无中文但引擎自动生成中文标注
-    # （如 KM 风险表/中位生存标注）导致 cjk_fp 未启用——此处发现 CJK 文本即自动找字体。
+    
+    
+    
     import matplotlib.text as _mtext
     _cjk_texts = [t for t in fig.findobj(_mtext.Text)
                   if t.get_text() and has_cjk(t.get_text())]
@@ -2961,11 +2961,11 @@ def main():
     if not is_self_managed:
         plt.tight_layout()
 
-    # Mechanism-level anti-overlap: detect real collisions post-render and
-    # degrade tick labels until no axis overlaps (works for composite panels)
+    
+    
     fix_tick_overlaps(fig)
 
-    # Determine output format(s) and DPI（v2.6 C1：--multi-format 一次多格式）
+    
     out_ext = os.path.splitext(args.out)[1].lower()
     fmt_map = {'.png': 'png', '.svg': 'svg', '.pdf': 'pdf', '.tiff': 'tiff', '.tif': 'tiff', '.eps': 'eps'}
     if getattr(args, "multi_format", None):
@@ -2979,8 +2979,8 @@ def main():
             final_out = args.out + '.' + out_format
         save_targets = [(out_format, final_out)]
 
-    # Smart DPI: raster formats use theme DPI (default 600 for line art),
-    # vector formats ignore DPI (but we still set it for fallback)
+    
+    
     dpi = args.dpi if args.dpi else theme["dpi"]
     if _a2_degraded:
         dpi = max(150, int(dpi) // 2)
@@ -2988,7 +2988,7 @@ def main():
     saved_files = []
     for out_format, final_out in save_targets:
         is_vector = out_format in ('svg', 'pdf', 'eps')
-        # For heatmaps or photo-heavy content, user can specify --dpi 300
+        
         save_kwargs = {
             "dpi": dpi,
             "bbox_inches": 'tight',
@@ -3024,7 +3024,7 @@ def main():
             with open(alt_path, "w", encoding="utf-8") as f:
                 f.write(alt + "\n")
             print(f"无障碍描述: {alt_path}", file=sys.stderr)
-        except Exception as e:  # alt text must never break rendering
+        except Exception as e:  
             print(f"WARNING: alt text generation failed: {e}", file=sys.stderr)
 
     if getattr(args, "caption", False):
@@ -3037,7 +3037,7 @@ def main():
             with open(cap_path, "w", encoding="utf-8") as f:
                 f.write(cap + "\n")
             print(f"图注: {cap_path}", file=sys.stderr)
-        except Exception as e:  # caption 同样永不阻断渲染
+        except Exception as e:  
             print(f"WARNING: caption generation failed: {e}", file=sys.stderr)
 
     cjk_info = " (colorblind-safe)" if theme.get("colorblind_safe") else ""
@@ -3081,7 +3081,7 @@ def main():
 
 
 
-# ── A1(v2.8)：渲染看门狗（v2.10：退出码分级与异常诊断拆至 af_diagnostics.py）──
+
 
 _WD_BASE_BUDGET = {
     "cluster_heatmap": 240, "composite": 180, "pca": 120, "km": 120,
@@ -3092,7 +3092,7 @@ _WD_MIN, _WD_MAX = 30.0, 1800.0
 
 
 def _wd_estimate_rows(data):
-    """粗估数据规模（行数），供自适应预算；取不到返回 0。"""
+
     try:
         if not isinstance(data, dict):
             return 0
@@ -3121,9 +3121,9 @@ def _wd_budget_for(chart_type, data):
 
 
 def _watchdog_arm(chart_type, data, budget=None):
-    """A1(v2.8)：看门狗。监控线程发现主线程超过预算仍未结束 → 中文三段式诊断 +
-    强制退出（exit 5）。跨平台（监控线程 + os._exit，不用 SIGALRM）；正常或异常
-    结束时主线程消亡，守护线程自行退出，不会误伤。AF_NO_WATCHDOG=1 亦可禁用。"""
+
+
+
     if os.environ.get("AF_NO_WATCHDOG"):
         return None
     if budget is None:
@@ -3179,8 +3179,8 @@ if __name__ == "__main__":
             raise
         _print_v3_error(e)
         sys.exit(_classify_exit_code(e))
-    except Exception as e:  # A2 v3：未知异常 → 中文诊断 + 原文保留 + 针对性建议
+    except Exception as e:  
         if os.environ.get("AF_DEBUG"):
-            raise  # 维护者/反馈通道：完整 traceback
+            raise  
         _print_v3_error(e)
         sys.exit(_classify_exit_code(e))

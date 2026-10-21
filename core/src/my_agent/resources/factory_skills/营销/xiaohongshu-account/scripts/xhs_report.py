@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
-"""报告渲染：把 analysis.json 变成可交付的 Markdown / HTML 报告。
 
-    python xhs_report.py --analysis <dir>/analysis.json --dataset <dir>/dataset.json \
-        [--narrative 叙事.md] --format md|html|both --out <dir>
 
-产物：
-    report.md    数据完整 + 需要 Agent 补写的段落用 ✍️ 标记
-    report.html  自包含单页报告（内联 SVG 图表，无外网依赖）
 
-叙事段落（商业定位诊断 / 算法推演 / 爆款拆解 / SOP）由 Agent 撰写后写入 narrative.md，
-再执行一次本脚本即可合成完整报告。
-"""
+
+
+
+
+
+
+
+
+
 from __future__ import annotations
 
 import argparse
@@ -28,9 +28,9 @@ TODO = ("<div class='todo'>✍️ 本节需结合上面的数据与素材清单�
         "把填好的叙事稿交给本脚本（指定叙事稿参数）即可自动合成本节。</div>")
 
 
-# --------------------------------------------------------------------------- #
-# Markdown 迷你渲染器
-# --------------------------------------------------------------------------- #
+
+
+
 def md_to_html(text: str) -> str:
     if not text:
         return ""
@@ -99,9 +99,9 @@ def inline(text: str) -> str:
     return text
 
 
-# --------------------------------------------------------------------------- #
-# SVG 图表
-# --------------------------------------------------------------------------- #
+
+
+
 def svg_bars(values: list[float], labels: list[str], width: int = 1100, height: int = 240,
              median: float = 0.0) -> str:
     if not values:
@@ -162,11 +162,11 @@ def svg_ratio_bar(items: list[tuple[str, float]], width: int = 1100, height: int
     return "".join(parts)
 
 
-# --------------------------------------------------------------------------- #
-# 片段构造
-# --------------------------------------------------------------------------- #
+
+
+
 def ratio_text(rate: float, available: bool, nd: int = 0) -> str:
-    """缺失指标显示「未采集」，不要用 0% 冒充——0% 会被读成"这个账号很差"。"""
+
     return f"{rate:.{nd}%}" if available else "未采集"
 
 
@@ -283,7 +283,7 @@ def build_slots(analysis: dict, dataset: dict, narrative: str, media_index: dict
     else:
         tag_table = "<p>该账号笔记未携带话题标签。</p>"
 
-    # 图文 / 视频占比（旧 analysis.json 无这些字段时自动兜底，保证向后兼容）
+    
     total_notes = formats.get("total_notes") or (formats["video_count"] + formats["image_count"])
     image_rate = formats.get("image_rate", round(1 - formats["video_rate"], 4))
     mix = formats.get("format_mix") or [
@@ -476,7 +476,7 @@ def _hours(pairs) -> str:
 def render_html(slots: dict, narrative_map: dict) -> str:
     template = TEMPLATE.read_text(encoding="utf-8")
     data = dict(slots)
-    # 叙事段落：允许 narrative.md 用二级标题分区，按标题关键字落到对应章节
+    
     for key in ("VIRAL_SECTION", "SOP_SECTION", "ROADMAP_SECTION"):
         if narrative_map.get(key):
             data[key] = narrative_map[key]
@@ -489,9 +489,9 @@ def render_html(slots: dict, narrative_map: dict) -> str:
     return template
 
 
-# --------------------------------------------------------------------------- #
-# Markdown 报告
-# --------------------------------------------------------------------------- #
+
+
+
 def render_md(analysis: dict, dataset: dict, narrative: str, media_index: dict | None) -> str:
     p, e, c = analysis["profile"], analysis["engagement"], analysis["content"]
     t, h, m, s = analysis["tier"], analysis["health"], analysis["monetization"], analysis["scores"]
@@ -674,7 +674,7 @@ def render_md(analysis: dict, dataset: dict, narrative: str, media_index: dict |
 
 
 def split_narrative(text: str) -> dict:
-    """把 narrative.md 按二级标题拆到对应章节。"""
+
     result = {"MAIN": "", "VIRAL_SECTION": "", "SOP_SECTION": "", "ROADMAP_SECTION": ""}
     if not text:
         return result
@@ -707,7 +707,7 @@ def split_narrative(text: str) -> dict:
     return result
 
 
-# --------------------------------------------------------------------------- #
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--analysis", required=True)
@@ -746,5 +746,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     from xhs_env import ensure_ready
-    ensure_ready(need_browser=False)     # 纯渲染，不需要 Chromium 内核
+    ensure_ready(need_browser=False)     
     raise SystemExit(main())

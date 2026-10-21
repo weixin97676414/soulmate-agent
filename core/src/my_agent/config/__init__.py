@@ -1,4 +1,4 @@
-"""配置层：路径解析、数据模型、加载与保存。"""
+
 
 from .loader import ConfigStore
 from .paths import AppPaths, default_data_dir

@@ -1,9 +1,9 @@
 {
-  "version": "0.0.1",
-  "min_from": "0.0.1",
+  "version": "1.0.0",
+  "min_from": "1.0.0",
   "line": "seoul",
-  "generated_at": "2026-10-11T09:50:24.715Z",
-  "base_url": "https://raw.githubusercontent.com/REPLACE_ME/REPLACE_ME/main/updates",
+  "generated_at": "2026-10-21T18:09:39.821Z",
+  "base_url": "https://raw.githubusercontent.com/weixin97676414/soulmate-agent/main/updates",
   "files": [
     {
       "target": "core",
@@ -476,8 +476,8 @@
     {
       "target": "core",
       "path": "resources/factory_skills/办公/office-task-dispatch/assets/office-task-dispatch/templates/audio-asr-guide.md",
-      "size": 3327,
-      "sha256": "66b82fce193a2549e4142ce1887dda79a64b34b62f12e265dd567ed59ed4b4e5"
+      "size": 3312,
+      "sha256": "fa3bc5a8ab76c4de25ab524579879debe33a7a16f8a06594f0b96b4b710af734"
     },
     {
       "target": "core",
@@ -6559,12 +6559,6 @@
     },
     {
       "target": "core",
-      "path": "resources/factory_skills/科技/api-testing/scripts/api-test-automation/src/__pycache__/__init__.cpython-314.pyc",
-      "size": 862,
-      "sha256": "dd4f5c28ffb4fff17cd06468876789f07271b71103885bce8fc4fa05f0315e72"
-    },
-    {
-      "target": "core",
       "path": "resources/factory_skills/科技/api-testing/scripts/api-test-automation/src/assertions.py",
       "size": 6207,
       "sha256": "d368c0434a6c005f42e503a6a357ab0d1eec79bd3a35bbe67ed736b698966ac8"
@@ -7855,18 +7849,6 @@
     },
     {
       "target": "core",
-      "path": "resources/factory_skills/设计/data-charts/assets/chart-engine/scripts/__pycache__/chart_generator.cpython-314.pyc",
-      "size": 32652,
-      "sha256": "2f1ca45d758ab642cbc6848110bd5367afe2fca7ad46ec184fbcf7e7c4f52113"
-    },
-    {
-      "target": "core",
-      "path": "resources/factory_skills/设计/data-charts/assets/chart-engine/scripts/__pycache__/cli.cpython-314.pyc",
-      "size": 27810,
-      "sha256": "834c3864d4a923c8ff1a705076385d3c5cc56605608fb5c893f59df7dd946875"
-    },
-    {
-      "target": "core",
       "path": "resources/factory_skills/设计/data-charts/assets/chart-engine/scripts/_bootstrap.py",
       "size": 1139,
       "sha256": "5f45ef72b4fec30a200af9580b8ce9ec28cd9090ec468b070b8647f09400d258"
@@ -9001,15 +8983,45 @@
     },
     {
       "target": "core",
+      "path": "resources/persona_pack/Fortune telling Buddy/IDENTITY.md",
+      "size": 781,
+      "sha256": "c5bd16068376787b1e228a940a7222496bb4d9d06f113c886bd9b69c9f7be450"
+    },
+    {
+      "target": "core",
+      "path": "resources/persona_pack/Fortune telling Buddy/RULES.md",
+      "size": 657,
+      "sha256": "4b928d9e51a17a578e48f7e873fae049840d920347ac9cf058a23adf15779175"
+    },
+    {
+      "target": "core",
+      "path": "resources/persona_pack/Fortune telling Buddy/SOUL.md",
+      "size": 133,
+      "sha256": "bf03996500ddc3fb3dc9dcac4a080928a28022e2f6974fc8309c659b77865747"
+    },
+    {
+      "target": "core",
+      "path": "resources/persona_pack/Fortune telling Buddy/USER.md",
+      "size": 230,
+      "sha256": "020fffb193d91d243fb80adf0298b384a19a8c98a17ce9c07c39013797804ce6"
+    },
+    {
+      "target": "core",
+      "path": "resources/persona_pack/Fortune telling Buddy/简介.md",
+      "size": 176,
+      "sha256": "d8d04afbd388c3164a730b09e3acec1e0088470d57b457d3375833e6858ef5c3"
+    },
+    {
+      "target": "core",
       "path": "resources/persona_pack/Relation Buddy/IDENTITY.md",
-      "size": 1820,
-      "sha256": "a86ef9a0df56b28922ecd2a4515e9b2e308321ee70b59781d230af22795afa67"
+      "size": 1734,
+      "sha256": "4e5fc676d7c6f98807414e039949696d7f6d2d2485828f259da68643eeb80289"
     },
     {
       "target": "core",
       "path": "resources/persona_pack/Relation Buddy/RULES.md",
-      "size": 1016,
-      "sha256": "06eb067094701a0f277fb38bfa6463a48424f258a53444f29fb9ebf43f01a748"
+      "size": 945,
+      "sha256": "56f39d7a03e9f5b2def67d3e83583861acb8445ea9f4e0ec4c2f273cada04ff7"
     },
     {
       "target": "core",
@@ -9062,20 +9074,20 @@
     {
       "target": "core",
       "path": "resources/persona_pack/soulmate/IDENTITY.md",
-      "size": 1339,
-      "sha256": "6a65c4456dc345cbe7a49a7b6c33668ff9ce7a7e1d5d4913f35f9c7c126f74e5"
+      "size": 1613,
+      "sha256": "2532552d4aef5dca44bf2484c2b450ab2fd351d3d483699c65c11902691ac663"
     },
     {
       "target": "core",
       "path": "resources/persona_pack/soulmate/RULES.md",
-      "size": 3222,
-      "sha256": "bc7ba7f6190f65dfb2261609a7c91b077291db06731ca5ce82b5a7e511661e22"
+      "size": 3135,
+      "sha256": "e4af1be604b2f31ffd07cdba637965540404ec9527df2bf2d5d82c61fc6ff9a4"
     },
     {
       "target": "core",
       "path": "resources/persona_pack/soulmate/SOUL.md",
-      "size": 2373,
-      "sha256": "a0c98c1daa3afb7b876294284c29216c6c321e98a7386360c0d14efbb6a2676a"
+      "size": 2080,
+      "sha256": "2017450a4ae104d504abded79a4a8a92d9d7177d2877ca652611604d8e6d2b77"
     },
     {
       "target": "core",
@@ -9086,32 +9098,80 @@
     {
       "target": "core",
       "path": "resources/persona_pack/soulmate/简介.md",
-      "size": 145,
-      "sha256": "22d2c19927f6e8e4740df880eb6d68382e78b67aa9e17668d4937abda0bbbac7"
+      "size": 154,
+      "sha256": "c271932dac0d172d6365edecec66a9408ace1b6b4cda39be14773a9589c468eb"
+    },
+    {
+      "target": "core",
+      "path": "resources/xjx/astro-cn.md",
+      "size": 10157,
+      "sha256": "febdca48bb1d08df9eae68b4281024736ced81af3fd77b4365d66be7beaeb31f"
+    },
+    {
+      "target": "core",
+      "path": "resources/xjx/astro-global.md",
+      "size": 10169,
+      "sha256": "3754dad28396ac9167ad0e47a06afe3efc9c1ee5784ffeb6db80b9f0a9c7fe1e"
+    },
+    {
+      "target": "core",
+      "path": "resources/xjx/bazi-cn.md",
+      "size": 5979,
+      "sha256": "3f276ac8a8ac9080e70c6656aad1db6a941437a54b4c021d1e391daef36df101"
+    },
+    {
+      "target": "core",
+      "path": "resources/xjx/bazi-global.md",
+      "size": 5991,
+      "sha256": "5a8d04457c5f5b8efbd943a545e8358bdbc5741f7a209bf230cf5a3bb09a0741"
     },
     {
       "target": "core",
       "path": "resources/xjx/buddies-cn.md",
-      "size": 18009,
-      "sha256": "0d764be9249a4c413adde34a5954943b13a8288ed2f3b6bb8320f825907f1fb8"
+      "size": 18036,
+      "sha256": "cc5bfe978f801aa6c60fb43b038063a9f01f0ed0146e1e31cd3d7317c4b9dc5a"
     },
     {
       "target": "core",
       "path": "resources/xjx/buddies-global.md",
-      "size": 18017,
-      "sha256": "f8c2e0667c6ba1bf977fb08b91cff416fd94b0d9b306e29c665b43441db4ab73"
+      "size": 18044,
+      "sha256": "b5b28ed2a18029564dd46c77365720b2147a1e7fae3f0c5c5ef77c168068ec7d"
+    },
+    {
+      "target": "core",
+      "path": "resources/xjx/meihua-cn.md",
+      "size": 8594,
+      "sha256": "45027931ca9060026dcc6a9bed5e4fd69c3d58776d5fca6d69c22a7778d393a0"
+    },
+    {
+      "target": "core",
+      "path": "resources/xjx/meihua-global.md",
+      "size": 8606,
+      "sha256": "0a8a11c1bafd2f152af75d2f5428672728402953a508ec4bf9a82010fcc28596"
     },
     {
       "target": "core",
       "path": "resources/xjx/soulmate-cn.md",
-      "size": 17580,
-      "sha256": "86798531ef56e6e67c65a9daef5684ff194f120004fefc585e8659d607230e98"
+      "size": 17754,
+      "sha256": "e44f8c219d6aa82f607d1a1703fdf26d7c9e1d0ce3c199392e57c9ce5b5a44c2"
     },
     {
       "target": "core",
       "path": "resources/xjx/soulmate-global.md",
-      "size": 17577,
-      "sha256": "5e5722bb8afae413319f28d88a631679d13c22e1c10c8de28eb8e3cd76023a68"
+      "size": 17751,
+      "sha256": "f30773c573b658509bc4c578d0a65c399581bb33ad5c97d9b1af51a896fda4a9"
+    },
+    {
+      "target": "core",
+      "path": "resources/xjx/tarot-cn.md",
+      "size": 17360,
+      "sha256": "4eebcb528f8dc7d1c71a8b8de1d2a3984a69b85fe723177bbc03f944707f4658"
+    },
+    {
+      "target": "core",
+      "path": "resources/xjx/tarot-global.md",
+      "size": 17372,
+      "sha256": "e055ab3b940c72a587d4eb4a81acac9a789d22695739ba760d7dc4329014edfc"
     },
     {
       "target": "renderer",
@@ -9775,15 +9835,15 @@
     },
     {
       "target": "renderer",
-      "path": "assets/index-ByDb2pTM.css",
-      "size": 223175,
-      "sha256": "50153059d50a3f31851dfd8d48b514c67a3ec3424057f95ea5121674435fc58b"
+      "path": "assets/index-0PzJRPAp.js",
+      "size": 1401625,
+      "sha256": "1a862ad382947d96f3a6efb57a27533ba43512543aa12bf476e712f3c5ff438d"
     },
     {
       "target": "renderer",
-      "path": "assets/index-Dy99gaRr.js",
-      "size": 1389775,
-      "sha256": "b631d2a9db8fdc955bac733af632d337f1a42d20719d388cedc2e5e4b46f082f"
+      "path": "assets/index-Bnv7JNeI.css",
+      "size": 234241,
+      "sha256": "1249bf273941613adfdfe0cdb8bd05d550f34c25fdbe0923174918cb3805e7b3"
     },
     {
       "target": "renderer",
@@ -9795,7 +9855,7 @@
       "target": "renderer",
       "path": "index.html",
       "size": 1803,
-      "sha256": "f18722c86bf4861a24b74eeba5bd21df811ab28549d0cd9a863b163d074387b5"
+      "sha256": "a5fc683d7ac81f4ea5393f60623aefee8ccde0def71619e7258aad903bcca93f"
     }
   ]
 }

@@ -1,21 +1,21 @@
-"""检索历史记录：群聊记录 / 单聊历史 / 长期记忆，一个入口。
 
-## 为什么要有它
 
-这三份数据住在三个地方，而用户问的是同一件事：「上周我们定的那个方案是怎么说的」。
-没有它，模型只能挨个技能试（群聊用 group 的技能、记忆用 kb_search），试到哪算哪，
-而且很容易只翻到一半就回答 —— 那正是用户说的"别把旧的当当下聊"。
 
-真正的检索逻辑在 ``agent/history.py`` 的 ``HistorySearch`` 门面里（技能拿不到
-runtime，也不该拿到）：这里只负责把参数翻成"时间区间"，并把结果原样交回模型。
 
-## 时间
 
-- ``since`` / ``until`` 用 ``YYYY-MM-DD``，**结束日含当天**（与 kb_search、
-  审计页同一套口径 —— ``utils.timefmt.day_range`` 统一处理，不在这里另算一次）；
-- 每条结果都带**可读时间**（``when``）：模型据此判断新旧，epoch 它算不明白；
-- 没有时间戳的老记录**不补假时间**，被跳过多少条会写在 ``notes`` 里。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -65,20 +65,20 @@ class HistorySearchSkill(BaseSkill):
         args = HistorySearchParams(**params)
         search = ctx.service("history")
 
-        # 日期 → epoch 区间。解析不出来的日期会被忽略（`day_range` 返回 None），
-        # 而不是让整次检索报错：模型写日期的方式千奇百怪，宁可范围宽一点。
+        
+        
         since, until = day_range(args.since, args.until)
         return await search.search(
             query=args.query,
             scope=args.scope,
-            # ⚠️ 模型没指定群时，用**当前所在的群**：群记忆是群内
-            # 成员共享的，在群里问"我们以前说过什么"就该翻到这个群的历史。
-            # 单聊时 ctx.group_id 为空，行为与改动前完全一样（不碰群库）。
+            
+            
+            
             group_id=args.group_id or ctx.group_id,
             author=args.author,
             since=since,
             until=until,
             limit=args.limit,
-            # 长期记忆是按搭子分库的：不带这个，就查不到当前搭子那份
+            
             assistant_id=ctx.assistant_id,
         )

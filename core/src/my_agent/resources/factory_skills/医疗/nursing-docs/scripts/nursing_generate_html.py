@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-护理监护计划HTML生成脚本 v3.0
-功能增强：
-  1. 量表支持多次记录（操作前/后、入院/出院等对比评估）
-  2. 量表项目按指南标准扩展，正确计算总分，支持保存
-  3. 护理宣教支持单独打印PDF
-  4. 护理操作记录推荐日期基于临床路径时间轴预设
-  5. 每日巡查登记表选择项支持多选，列宽可拖拽调节，可连续打印PDF
-  6. 临床路径时间轴置顶
-  7. 护理会诊、随访、不良事件完整登记表
-"""
+
+
+
+
+
+
+
+
+
+
+
 
 import argparse
 import json
@@ -139,7 +139,7 @@ def get_supplies(diagnosis, standards):
 
 
 def generate_risk_list(diagnosis, pathway_days=7):
-    """生成结构化的护理监护风险因素清单（列表式）"""
+
     base_risks = [
         {"name": "体温异常", "type": "生命体征监测", "stage": f"D1-D{pathway_days}", "monitor_value": "36.0-37.2℃", "level": "中风险", "intervention": "每4小时监测体温，物理降温", "handling": "体温>38.5℃立即通知医生，给予退热处理"},
         {"name": "心律失常", "type": "生命体征监测", "stage": f"D1-D{pathway_days}", "monitor_value": "P 60-100次/分", "level": "高风险", "intervention": "持续心电监护，每班记录", "handling": "发现频发室早/房颤/传导阻滞立即通知医生"},
@@ -208,7 +208,7 @@ def get_education_content(stage, diagnosis, symptoms="", medications="", examina
         ]
         return items
 
-    else:  # discharge
+    else:  
         items = [
             {"title": "出院带药指导", "content": f"{'出院带药可能包括：气道湿化液、抗生素、止痰药（按医嘱）。居家气管切开护理需提前接受培训。' if is_airway else ''}{'心脏病带药：抗血小板药物（阿司匹林）不可随意停药；ACEI/ARB；β受体阻滞剂。出现严重低血压、心律不齐立即就诊。' if is_cardiac else ''}{'化疗间期带药：止吐药、升白细胞药（G-CSF）；口腔护理液；下次化疗时间遵医嘱。' if is_chemo else ''}{'糖尿病带药：胰岛素储存（未开封冷藏，开封后室温25℃以下保存28天）；血糖监测设备及耗材。' if is_diabetes else f'出院带药严格按医嘱服用，「{medications if medications else diagnosis}」相关药物不可自行停药。'}"},
             {"title": "居家自我管理", "content": f"{'居家气管切开护理：每日换药（生理盐水清洁造瘘口）；气管套管固定检查；痰液观察（颜色/黏稠度）；备好吸引器；发现呼吸困难立即就诊。' if is_airway else ''}{'心脏病居家：每日测量体重（增加>2kg/天提示水肿加重，就诊）；低盐饮食；限制剧烈活动；自测脉搏。' if is_cardiac else ''}{'化疗间期：监测体温（>38℃立即就诊，可能感染）；避免生食；外出戴口罩；下次化疗前1天复查血常规。' if is_chemo else ''}{'糖尿病居家：每日监测血糖（空腹+餐后）；足部检查（皮肤完整性、感觉）；规律运动（每次30分钟中等强度）；戒烟限酒。' if is_diabetes else f'「{diagnosis}」出院后继续执行居家护理计划，注意观察病情变化。'}"},
@@ -436,7 +436,7 @@ def generate_care_plan_html(
     ], ensure_ascii=False)
     pathway_rows_js = json.dumps(pathway_rows_data, ensure_ascii=False)
 
-    # 量表数据（支持多次记录）
+    
     scale_definitions = get_scale_definitions()
 
     html = f"""<!DOCTYPE html>
@@ -2046,7 +2046,7 @@ function parseXLSText(file) {{
     return html
 
 
-# ===== 辅助HTML生成函数 v3 =====
+
 
 def generate_supplies_rows_v2(supplies):
     rows = ""
@@ -2076,7 +2076,7 @@ def generate_patrol_items_rows_v2(items, frequency):
         "瞳孔变化": "等大等圆/对光反射",
         "安全防护": "床档/约束/呼叫铃",
     }
-    # 异常处理的智能默认值
+    
     abnormal_handling_defaults = {
         "意识状态": "意识障碍立即通知医生，评估GCS评分",
         "生命体征（至少每4小时）": "生命体征异常立即复测，通知医生",
@@ -2098,14 +2098,14 @@ def generate_patrol_items_rows_v2(items, frequency):
 
 
 def generate_patrol_day_panels_v3(now, times, items, select_options, pathway_days):
-    """生成多日巡查面板（合并巡查表+三测表+体温折线图）"""
+
     consciousness_opts = ["清醒", "嗜睡", "昏睡", "浅昏迷", "深昏迷"]
     skin_opts = ["完整无异常", "局部潮红", "破损/压疮", "水肿/皮疹"]
     tube_opts = ["固定通畅", "固定松动", "引流不畅", "脱出/移位"]
     excrete_opts = ["正常", "少尿/无尿", "腹泻", "便秘", "失禁"]
     
     html = ""
-    # 三测表JS函数已移至页面底部主script块中
+    
     
     for day_idx in range(min(7, pathway_days)):
         date = now + timedelta(days=day_idx)
@@ -2114,7 +2114,7 @@ def generate_patrol_day_panels_v3(now, times, items, select_options, pathway_day
         html += f'<div class="patrol-day-panel{active}" id="patrol-panel-{day_idx}">'
         html += f'<p style="font-size:12px;color:#1a5fa8;font-weight:700;margin-bottom:8px">📅 {date.strftime("%Y年%m月%d日")} 护理巡查登记</p>'
         
-        # 合并巡查表：时间+意识+生命体征(T/P/R/BP/SpO2)+皮肤+管道+排泄+异常+签名
+        
         html += '<div style="overflow-x:auto"><table class="patrol-printable" id="patrol-table-' + str(day_idx) + '"><thead><tr>'
         html += '<th style="width:50px">时间</th>'
         html += '<th style="width:70px">意识状态</th>'
@@ -2134,25 +2134,25 @@ def generate_patrol_day_panels_v3(now, times, items, select_options, pathway_day
             row_id = f"pr_{day_idx}_{time_str.replace(':','')}"
             tpr_key = time_str.replace(':', '')
             html += f'<tr><td class="time-col">{time_str}</td>'
-            # 意识状态
+            
             html += f'<td><select id="{row_id}_consciousness" style="font-size:11px">'
             html += '<option value="">--</option>' + ''.join([f'<option>{o}</option>' for o in consciousness_opts]) + '</select></td>'
-            # 生命体征 T/P/R/BP/SpO2
+            
             html += f'<td><input type="text" id="{row_id}_t" style="width:50px;font-size:11px" placeholder="36.5" onchange="recordTPR({day_idx}, \'{time_str}\', \'t\', this.value); drawTempCurve();"></td>'
             html += f'<td><input type="text" id="{row_id}_p" style="width:50px;font-size:11px" placeholder="80" onchange="recordTPR({day_idx}, \'{time_str}\', \'p\', this.value)"></td>'
             html += f'<td><input type="text" id="{row_id}_r" style="width:50px;font-size:11px" placeholder="18" onchange="recordTPR({day_idx}, \'{time_str}\', \'r\', this.value)"></td>'
             html += f'<td><input type="text" id="{row_id}_bp" style="width:75px;font-size:11px" placeholder="120/80" onchange="recordTPR({day_idx}, \'{time_str}\', \'bp\', this.value)"></td>'
             html += f'<td><input type="text" id="{row_id}_spo2" style="width:50px;font-size:11px" placeholder="98" onchange="recordTPR({day_idx}, \'{time_str}\', \'spo2\', this.value)"></td>'
-            # 皮肤
+            
             html += f'<td><select id="{row_id}_skin" style="font-size:11px">'
             html += '<option value="">--</option>' + ''.join([f'<option>{o}</option>' for o in skin_opts]) + '</select></td>'
-            # 管道
+            
             html += f'<td><select id="{row_id}_tube" style="font-size:11px">'
             html += '<option value="">--</option>' + ''.join([f'<option>{o}</option>' for o in tube_opts]) + '</select></td>'
-            # 排泄
+            
             html += f'<td><select id="{row_id}_excrete" style="font-size:11px">'
             html += '<option value="">--</option>' + ''.join([f'<option>{o}</option>' for o in excrete_opts]) + '</select></td>'
-            # 异常+不良事件
+            
             abnormal_id = f"{row_id}_abnormal"
             html += f'<td><input type="text" id="{abnormal_id}" placeholder="异常描述/处理措施" style="width:120px;font-size:11px" onchange="checkAbnormal(this)">'
             html += f'<span class="adverse-event-btn no-print" onclick="openAdverseModal(\'{row_id}\', document.getElementById(\'{abnormal_id}\').value)">⚠️</span></td>'
@@ -2161,7 +2161,7 @@ def generate_patrol_day_panels_v3(now, times, items, select_options, pathway_day
         
         html += '</tbody></table></div>'
         
-        # 三测表汇总（当日T/P/R汇总表）
+        
         html += f'<div style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:6px;border:1px solid #dce4ef">'
         html += f'<div style="font-weight:700;font-size:12px;color:#0d3d7a;margin-bottom:6px">📊 当日三测表汇总 ({date.strftime("%m月%d日")})</div>'
         html += '<table style="width:100%;border-collapse:collapse;font-size:11px">'
@@ -2180,7 +2180,7 @@ def generate_patrol_day_panels_v3(now, times, items, select_options, pathway_day
         
         html += '</div>'
     
-    # 体温折线图（Canvas）
+    
     html += '<div style="margin-top:16px;padding:12px;background:#fff;border-radius:8px;border:1px solid #dce4ef">'
     html += '<div style="font-weight:700;font-size:13px;color:#0d3d7a;margin-bottom:8px">🌡️ 体温变化曲线（三测表折线图）</div>'
     html += '<canvas id="tempCurveCanvas" width="700" height="200" style="border:1px solid #ddd;border-radius:4px"></canvas>'
@@ -2190,12 +2190,12 @@ def generate_patrol_day_panels_v3(now, times, items, select_options, pathway_day
 
 
 def generate_detail_patrol_rows_v3(now, pathway_days):
-    """3.6护理巡查记录表已合并到每日巡查表中，此函数保留兼容但返回空"""
+
     return ""
 
 
 def get_scale_definitions():
-    """返回量表定义（含完整项目，按指南标准）"""
+
     return [
         {
             "id": "braden",
@@ -2327,7 +2327,7 @@ def get_scale_definitions():
 
 
 def generate_all_scales_v3(scale_definitions, pathway_days, now):
-    """生成所有量表（支持多次记录）"""
+
     html = ""
     for scale_def in scale_definitions:
         scale_id = scale_def["id"]
@@ -2345,7 +2345,7 @@ def generate_all_scales_v3(scale_definitions, pathway_days, now):
 
 
 def generate_operation_cards_v3(operation_points, diagnosis, pathway_days, now):
-    """生成护理操作卡片（含操作要点核查 + 操作记录表，推荐日期基于临床路径）"""
+
     html = ""
     for op_idx, op in enumerate(operation_points):
         indications_html = "".join([f'<span class="tag green">{ind}</span>' for ind in (op.get("indications") or [])[:5]])
@@ -2361,7 +2361,7 @@ def generate_operation_cards_v3(operation_points, diagnosis, pathway_days, now):
 
         prep = op.get("preparations", {})
 
-        # 生成操作核查清单HTML
+        
         checklist_html = '<div>'
         for i, item in enumerate(kp_items):
             cb_id = f"chk_op{op_idx}_{i}"
@@ -2371,7 +2371,7 @@ def generate_operation_cards_v3(operation_points, diagnosis, pathway_days, now):
             </div>'''
         checklist_html += '</div>'
 
-        # 生成操作记录表HTML（推荐日期基于临床路径时间轴）
+        
         record_table_html = f'''
         <div class="sub-header orange" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
           📋 护理操作记录表
@@ -2392,10 +2392,10 @@ def generate_operation_cards_v3(operation_points, diagnosis, pathway_days, now):
           </thead>
           <tbody id="op-record-tbody-{op_idx}">
         '''
-        # 根据操作要点生成记录行，推荐日期均匀分布在临床路径天数内
+        
         for i, kp in enumerate(kp_items[:8]):
             row_id = f"opr{op_idx}_{i}"
-            # 推荐日期：将操作要点均匀分配到临床路径各天
+            
             rec_day = min(i + 1, pathway_days)
             rec_date = (now + timedelta(days=rec_day - 1)).strftime("%Y-%m-%d")
             rec_date_display = f"D{rec_day} ({rec_date})"
@@ -2457,7 +2457,7 @@ def generate_operation_cards_v3(operation_points, diagnosis, pathway_days, now):
 
 
 def generate_risk_cards(risks, pathway_days=7):
-    """生成列表式风险因素清单（含登记功能）"""
+
     html = """<div style="margin-bottom:10px;font-size:11px;color:#666">
     <span>请在对应风险因素行登记「是否出现」及「发生日期」</span>
     </div>"""

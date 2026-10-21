@@ -1,4 +1,4 @@
-"""临时调试：重现"对齐只跑一次"的失败场景，看第二次加载谁在改 SOUL。"""
+
 import sys
 import tempfile
 from pathlib import Path

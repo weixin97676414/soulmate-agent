@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""字数核验 + <code> 标签完整性自检脚本
-用法: python scripts/wordcount_check.py <文件路径>  # 给定文件
-      python scripts/wordcount_check.py               # 自动扫 ./other/_draft_*.html
-在 Phase 5.2 每个写作 agent 写完草稿后运行，两种检查全部通过才算完成。
-"""
+
+
+
+
+
 import re, sys, glob, os
 
 BLOCK_TAGS = {'p','table','div','h3','h4','h5','blockquote','ul','ol'}
@@ -17,7 +17,7 @@ def valid_chars(text):
     return cn + pn
 
 def check_code_tags(html, filepath):
-    """检查 <code> 标签完整性，失败返回错误消息列表"""
+
     errors = []
     opens = len(re.findall(r'<\s*code[^>]*>', html, re.I))
     closes = len(re.findall(r'</\s*code\s*>', html, re.I))

@@ -1,7 +1,7 @@
-"""Contract Testing Module
 
-Provides OpenAPI/Swagger contract validation and schema testing.
-"""
+
+
+
 
 import json
 from pathlib import Path
@@ -13,7 +13,7 @@ from jsonschema import validate, ValidationError
 
 
 class ContractTester:
-    """Contract testing for API validation."""
+
     
     def __init__(self, schema: Optional[Dict[str, Any]] = None, schema_path: Optional[str] = None):
         self.schema = schema
@@ -24,11 +24,11 @@ class ContractTester:
     
     @classmethod
     def from_openapi(cls, path: str) -> "ContractTester":
-        """Create tester from OpenAPI specification file."""
+
         return cls(schema_path=path)
     
     def _load_schema(self, path: str) -> Dict[str, Any]:
-        """Load schema from file."""
+
         path = Path(path)
         with open(path, 'r') as f:
             if path.suffix in ['.yaml', '.yml']:
@@ -37,11 +37,11 @@ class ContractTester:
     
     def validate_endpoint(self, path: str, method: str = "GET", 
                          response_schema: Optional[Dict] = None) -> bool:
-        """Validate API endpoint against schema."""
+
         if not self.schema:
             raise ValueError("No schema provided")
         
-        # Find path in schema
+        
         paths = self.schema.get("paths", {})
         if path not in paths:
             raise ValueError(f"Path {path} not found in schema")
@@ -54,7 +54,7 @@ class ContractTester:
     
     def validate_response(self, response_data: Any, schema_ref: Optional[str] = None,
                          schema: Optional[Dict] = None) -> bool:
-        """Validate response data against JSON schema."""
+
         validation_schema = schema or self._resolve_schema_ref(schema_ref)
         if not validation_schema:
             raise ValueError("No schema provided for validation")
@@ -66,7 +66,7 @@ class ContractTester:
             raise ContractValidationError(f"Response validation failed: {e.message}")
     
     def _resolve_schema_ref(self, ref: Optional[str]) -> Optional[Dict]:
-        """Resolve schema reference."""
+
         if not ref or not self.schema:
             return None
         
@@ -77,14 +77,14 @@ class ContractTester:
         return components.get(ref)
     
     def run_schemathesis_tests(self, base_url: str, checks: Optional[List[str]] = None) -> Any:
-        """Run automated Schemathesis tests."""
+
         if not self.schema:
             raise ValueError("No schema provided")
         
-        # Create Schemathesis schema
+        
         schema = schemathesis.from_dict(self.schema, base_url=base_url)
         
-        # Run tests
+        
         @schema.parametrize()
         def test_api(case):
             case.call_and_validate()
@@ -92,7 +92,7 @@ class ContractTester:
         return test_api
     
     def generate_test_data(self, schema_ref: str, count: int = 1) -> List[Dict]:
-        """Generate test data based on schema."""
+
         schema = self._resolve_schema_ref(schema_ref)
         if not schema:
             raise ValueError(f"Schema reference {schema_ref} not found")
@@ -103,7 +103,7 @@ class ContractTester:
         return data
     
     def _generate_from_schema(self, schema: Dict) -> Any:
-        """Generate data from JSON schema."""
+
         schema_type = schema.get("type", "object")
         
         if schema_type == "object":
@@ -141,7 +141,7 @@ class ContractTester:
         return None
     
     def extract_endpoints(self) -> List[Dict[str, str]]:
-        """Extract all endpoints from OpenAPI schema."""
+
         if not self.schema:
             return []
         
@@ -163,5 +163,5 @@ class ContractTester:
 
 
 class ContractValidationError(Exception):
-    """Contract validation error."""
+
     pass

@@ -1,21 +1,21 @@
-"""从 raw/api/ 的接口原始响应重建 dataset.json（数据损坏 / 通道降级后的恢复通道）。
 
-使用场景（见 SKILL.md §4「数据损坏恢复路径」）：
-  - 主页接口本来抓到了全量笔记，但后续一次失败的运行把 dataset.json 覆盖成
-    只有 SSR 首页几十条（note_id 为空）的版本；
-  - 或者列表抓取成功、详情阶段被风控中断，需要先把列表数据抢救回来。
 
-raw/api/ 里的 user_posted_*.json 是带 note_id 的完整接口响应，
-逐条过 normalize_note() 即可还原，不需要重新登录、不再访问网络。
 
-用法：
-    python xhs_rebuild.py --out "<任务输出目录>" [--media-top N] [--media]
 
-说明：
-  - 只做「离线重建」，不联网；详情/评论可用 xhs_crawl.py 再跑一次补（需重新登录）。
-  - 重建后 meta.rebuilt 会置为 True，meta.detail_all 按实际详情文件数判定，
-    避免下游把「列表数据」误当成「全量详情」来下结论。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -26,8 +26,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import xhs_common as common  # noqa: E402
-from xhs_common import read_json, write_json  # noqa: E402
+import xhs_common as common  
+from xhs_common import read_json, write_json  
 
 log = common.log
 
@@ -43,7 +43,7 @@ def _load_payloads(api_dir: Path, prefix: str) -> list[dict]:
 
 
 def collect_notes(api_dir: Path) -> list[dict]:
-    """按 note_id 去重，还原主页接口抓到的全部笔记卡片。"""
+
     seen: set[str] = set()
     notes: list[dict] = []
     for payload in _load_payloads(api_dir, "user_posted"):
@@ -99,7 +99,7 @@ def main() -> int:
     write_json(out_dir / "raw" / "profile.json", profile)
     write_json(out_dir / "raw" / "notes.json", notes)
 
-    # 详情文件数决定 detail_all：空 note_id 的 .json 是登录墙产生的垃圾，不算数
+    
     valid_ids = {n["note_id"] for n in notes}
     detail_files = [p for p in (out_dir / "raw" / "notes").glob("*.json") if p.stem in valid_ids]
     has_comments = any((out_dir / "raw" / "comments" / f"{p.stem}.json").exists()
@@ -125,7 +125,7 @@ def main() -> int:
         "notes": notes,
     }
 
-    # 把已抓到的详情/评论按 note_id 合并回列表（只认 id 匹配得上的文件）
+    
     from xhs_crawl import _merge_details
     _merge_details(out_dir, dataset)
     notes = dataset["notes"]
@@ -135,7 +135,7 @@ def main() -> int:
             from xhs_media import download_media
             dataset["meta"]["media"] = download_media(
                 dataset, out_dir / "media", args.media_top)
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:  
             log.warning("素材下载失败（不影响文本分析）：%s", err)
             dataset["meta"]["media"] = {"error": str(err)[:200]}
 

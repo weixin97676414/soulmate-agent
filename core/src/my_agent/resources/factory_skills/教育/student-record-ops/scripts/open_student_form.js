@@ -86,7 +86,7 @@ async function ensureServerRunning() {
       await requestHealth();
       return;
     } catch (_) {
-      // retry
+      
     }
   }
 

@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""国内热门城市景点数据库 + 查询工具。
 
-用途:
-  - planner.py 从这里取坐标/门票/图标/描述/照片搜索词，消除模型凭记忆手写坐标。
-  - 坐标精度：模型知识库，误差几百米内（示意图性质），不确定的在 desc 标"示意"。
 
-用法:
-  python3 spots_db.py --cities              # 列出所有城市
-  python3 spots_db.py --city 重庆 --list     # 列出某城市全部景点
-  python3 spots_db.py --city 重庆 --names 解放碑,洪崖洞   # 取指定景点（JSON 输出）
-"""
+
+
+
+
+
+
+
+
+
 import argparse, json
 
-# 每个景点: [lon, lat, tag, pay(bool), icon, desc, photo_query]
-#  - tag: 门票文案（"免费"/"约¥30"/"约¥50(旺季)"/"免费·需预约"）
-#  - pay: 是否收费（卡片价格 chip 用）
-#  - photo_query: Wikimedia Commons 英文搜索词（wiki_photo.py 用），可留空
+
+
+
+
 CITIES = {
  "重庆": {
   "解放碑": [106.5776, 29.5573, "免费", False, "🗼", "重庆市中心地标", "Jiefangbei Chongqing"],

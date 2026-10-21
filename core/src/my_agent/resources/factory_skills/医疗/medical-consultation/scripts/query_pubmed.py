@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""
-PubMed API Query Tool (with retry and better error handling)
-Search for medical literature from NIH PubMed database.
 
-Usage:
-    python3 query_pubmed.py "keyword" [--limit N] [--year YYYY]
 
-Examples:
-    python3 query_pubmed.py "cough treatment"
-    python3 query_pubmed.py "diabetes" --limit 5 --year 2024
-"""
+
+
+
+
+
+
+
+
+
 
 import json
 import urllib.request
@@ -19,24 +19,24 @@ import sys
 import time
 from datetime import datetime
 
-# PubMed API base URLs
+
 ESEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
 
 def search_pubmed(query, limit=5, year=None, max_retries=3):
-    """
-    Search PubMed for medical literature with retry logic.
-    Uses esummary to get article summaries directly.
-    """
+
+
+
+
     if year is None:
         year = str(datetime.now().year - 1)
     
-    # Build search query with date filter
+    
     search_query = f'({query}) AND ({year}[Date - Publication] : 3000[Date - Publication])'
     
     for attempt in range(max_retries):
         try:
-            # Step 1: Search for article IDs
+            
             search_params = {
                 'db': 'pmc',
                 'term': search_query,
@@ -61,7 +61,7 @@ def search_pubmed(query, limit=5, year=None, max_retries=3):
             with urllib.request.urlopen(req, **kwargs) as response:
                 search_data = json.loads(response.read().decode('utf-8'))
             
-            # Extract IDs from search result
+            
             if 'esearchresult' not in search_data or 'idlist' not in search_data['esearchresult']:
                 return {'error': '未找到相关文献', 'note': '请尝试其他关键词'}
             
@@ -70,7 +70,7 @@ def search_pubmed(query, limit=5, year=None, max_retries=3):
             if not id_list:
                 return {'error': '未找到相关文献', 'note': '请尝试其他关键词'}
             
-            # Step 2: Get summaries via esummary
+            
             summary_params = {
                 'db': 'pmc',
                 'id': ','.join(id_list),
@@ -91,15 +91,15 @@ def search_pubmed(query, limit=5, year=None, max_retries=3):
             with urllib.request.urlopen(req2, **kwargs) as response2:
                 summary_data = json.loads(response2.read().decode('utf-8'))
             
-            # Parse esummary results
+            
             results = []
             if 'result' in summary_data:
                 result_data = summary_data['result']
-                # Get list of IDs
+                
                 uids_list = result_data.get('uids', [])
                 
                 for uid in uids_list:
-                    # Get info for this UID
+                    
                     info = result_data.get(uid, {})
                     title = info.get('title', 'No title')
                     authors = info.get('authors', [])
@@ -128,7 +128,7 @@ def search_pubmed(query, limit=5, year=None, max_retries=3):
             
         except urllib.error.URLError as e:
             if attempt < max_retries - 1:
-                wait_time = 2 ** attempt  # Exponential backoff
+                wait_time = 2 ** attempt  
                 print(f"Attempt {attempt + 1} failed, retrying in {wait_time}s...", file=sys.stderr)
                 time.sleep(wait_time)
             else:
@@ -150,7 +150,7 @@ def search_pubmed(query, limit=5, year=None, max_retries=3):
     return {'error': '未知错误'}
 
 def format_output(results):
-    """Format search results for display."""
+
     if isinstance(results, dict) and 'error' in results:
         return f"❌ {results['error']}\n{results.get('note', '')}"
     

@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
-"""
-1688 开放平台 API 客户端 — ali_api.py
 
-【重要说明】
-本脚本为可选增强模块，无需配置即可运行基础功能。
-如需获取更完整的1688数据（价格阶梯、SKU详情、认证资质），可选择性配置：
-  1. 注册 1688 开放平台：https://open.1688.com/
-  2. 创建应用获取 AppKey + AppSecret
-  3. 设置环境变量：
-     export ALI_APP_KEY=your_app_key
-     export ALI_APP_SECRET=your_app_secret
 
-未配置时，脚本会返回友好提示，不影响其他脚本使用。
 
-API 覆盖范围：
-  - 商品搜索 (alibaba.product.search)
-  - 商品详情 (alibaba.product.get)
-  - 公司信息 (alibaba.company.get)
-  - 旺旺在线状态
 
-依赖：python3, requests（标准库 + pip install requests）
-网络：仅访问 gw.open.1688.com
-凭证：可选（ALI_APP_KEY / ALI_APP_SECRET）
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import os
 import json
@@ -32,18 +32,18 @@ import requests
 from urllib.parse import urlencode, quote
 from typing import Optional
 
-# ── 配置 ──────────────────────────────────────────────
-# 【可选】1688 开放平台凭证，未配置时脚本会返回友好提示
-# 获取方式：https://open.1688.com/ → 创建应用 → 获取 AppKey + AppSecret
+
+
+
 APP_KEY    = os.environ.get("ALI_APP_KEY",    "")
 APP_SECRET = os.environ.get("ALI_APP_SECRET", "")
 
-# 1688 开放平台 API 基础地址
+
 API_BASE = "https://gw.open.1688.com/openapi"
 
-# ── 签名算法 ──────────────────────────────────────────
+
 def _sign(params: dict, secret: str) -> str:
-    """MD5 签名（1688 开放平台标准）"""
+
     sorted_keys = sorted(params.keys())
     pairs = [f"{k}{params[k]}" for k in sorted_keys]
     sign_str = "".join(pairs) + secret
@@ -51,14 +51,14 @@ def _sign(params: dict, secret: str) -> str:
 
 
 def _top_call(method: str, params: dict, timeout: int = 20) -> Optional[dict]:
-    """
-    调用 1688 TOP API（开放平台标准协议）。
-    method: 类似 alibaba.product.search
-    """
+
+
+
+
     if not APP_KEY or not APP_SECRET:
         return None
 
-    # 公共参数
+    
     ts = str(int(time.time() * 1000))
     all_params = {
         "appKey":       APP_KEY,
@@ -67,7 +67,7 @@ def _top_call(method: str, params: dict, timeout: int = 20) -> Optional[dict]:
         "format":       "json",
         "v":            "2.0",
         "signMethod":   "md5",
-        # 业务参数
+        
         **{k: json.dumps(v, ensure_ascii=False) if isinstance(v, (dict, list)) else str(v)
            for k, v in params.items()},
     }
@@ -83,14 +83,14 @@ def _top_call(method: str, params: dict, timeout: int = 20) -> Optional[dict]:
         return {"error": str(e)}
 
 
-# ── 商品搜索 ──────────────────────────────────────────
+
 def search_products(keyword: str, page: int = 1, page_size: int = 20,
                     category_id: str = "", price_min: float = 0,
                     price_max: float = 0, sort: str = "commissionRate-desc") -> dict:
-    """
-    搜索 1688 商品，支持按价格区间、排序筛选。
-    sort 选项：commissionRate-desc / price-asc / price-desc / salecount-desc
-    """
+
+
+
+
     params = {
         "keyword":    keyword,
         "pageNo":     page,
@@ -126,7 +126,7 @@ def search_products(keyword: str, page: int = 1, page_size: int = 20,
 
 def _format_product_result(products: list, keyword: str, total: int,
                             page: int, page_size: int) -> dict:
-    """格式化商品搜索结果"""
+
     items = []
     for p in products:
         skus = p.get("skuInfos", {}).get("skuInfo", [])
@@ -168,9 +168,9 @@ def _format_product_result(products: list, keyword: str, total: int,
     return {"success": True, "items": items, "stats": stats}
 
 
-# ── 商品详情 ──────────────────────────────────────────
+
 def get_product_detail(product_id: str) -> dict:
-    """获取商品详细信息（含价格阶梯、SKU、认证）"""
+
     params = {"productID": product_id}
     result = _top_call("alibaba.product.get", params)
 
@@ -192,7 +192,7 @@ def get_product_detail(product_id: str) -> dict:
 
 
 def _format_product_detail(p: dict, product_id: str) -> dict:
-    """格式化商品详情"""
+
     skus = p.get("skuInfos", {}).get("skuInfo", [])
     price_list = []
     for s in skus:
@@ -203,7 +203,7 @@ def _format_product_detail(p: dict, product_id: str) -> dict:
             "库存":    s.get("canBookCount", ""),
         })
 
-    # 认证资质
+    
     certs = p.get("certificationList", {}).get("certification", [])
     cert_names = [c.get("certificationName", "") for c in certs if c.get("certificationName")]
 
@@ -231,9 +231,9 @@ def _format_product_detail(p: dict, product_id: str) -> dict:
     }
 
 
-# ── 旺旺状态 ──────────────────────────────────────────
+
 def check_ww_status(member_id: str) -> dict:
-    """检查旺旺在线状态"""
+
     params = {"memberId": member_id}
     result = _top_call("alibaba.ww.isOnline", params)
     if result is None:
@@ -245,7 +245,7 @@ def check_ww_status(member_id: str) -> dict:
         return {"success": False, "error": str(e)}
 
 
-# ── CLI ──────────────────────────────────────────────
+
 if __name__ == "__main__":
     import sys, argparse
     p = argparse.ArgumentParser(description="1688 开放平台 API 客户端")

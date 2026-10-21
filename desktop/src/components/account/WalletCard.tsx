@@ -7,18 +7,18 @@ import { Badge, Button } from '@/components/ui'
 import { useAccountStore } from '@/stores/accountStore'
 import { copyText } from '@/utils/amount'
 
-/**
- * 钱包与**赞助**卡（国际线路）：余额、费率、TRC20 地址 + 一键复制 + 本地二维码、盯单状态。
- *
- * （口径 从"充值"改为"赞助"，对齐官网 recharge.html。）
- *
- * 二维码内容按文档 §4.2 用 `tron:<地址>`，扫码器（TRON 钱包 / 主流钱包）能直接识别。
- *
- * ## "到账闪一下"
- *
- * 主进程在轮询里发现余额变大时会把 `balanceIncreasedAt` 戳进快照；这里监听它变化，
- * 给整卡一个短暂的 success 底色 —— 充值到账是这个页面上最该被看见的一件事。
- */
+
+
+
+
+
+
+
+
+
+
+
+
 export function WalletCard() {
   const snapshot = useAccountStore((state) => state.snapshot)
   const watchRecharge = useAccountStore((state) => state.watchRecharge)
@@ -66,19 +66,19 @@ export function WalletCard() {
         ) : null}
       </header>
 
-      {/*
-        ⚠️ 这里原本是 `<RedeemCodeField />`（兑换码输入块），整体剔除。
+      {
 
-        国际线路也一样：兑换码是**同一个后端接口**，两条线路同去同留，
-        否则会变成"大陆能兑、首尔不能"这种没人能解释的差异。
-      */}
+
+
+
+}
       {!current ? (
         <p className="text-[12.5px] text-ink-soft">登录账号后即可赞助。</p>
       ) : (
         <div className="space-y-3">
-          {/* ⚠️ 余额展示整块删除：权益页顶部的「我的 Token」
-              已经在展示余额，同一页两份大数字只会让人怀疑哪份是准的；
-              这张卡只回答"怎么充"。 */}
+          {
+
+}
 
           <div className="rounded-[8px] bg-canvas px-3 py-2">
             <Row label="费率">
@@ -116,10 +116,10 @@ export function WalletCard() {
             </div>
           ) : null}
 
-          {/* 盯单按钮放二维码正下方居中，说明移到按钮下方：扫码 → 点按钮 → 到账，
-              操作顺序和视觉顺序一致，按钮不再和说明挤在同一行。
-              到账不是全自动的：用户转账后必须点一次「开始盯单」，后端才开始盯链上，
-              之前写"无需额外操作"是错的，会让人转了钱干等却一直不到账。 */}
+          {
+
+
+}
           <div className="flex flex-col items-center gap-2 pt-1">
             {watching ? (
               <Button size="sm" variant="secondary" onClick={() => void stopWatch()}>

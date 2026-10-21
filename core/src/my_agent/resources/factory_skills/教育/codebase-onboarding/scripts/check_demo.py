@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Demo 自检：是否真的「开箱即用」
 
-用法:
-    python check_demo.py <demo目录|单文件> [--min-comment 0.15] [--type auto|full|single]
 
-检查项（ERROR 必须修完再交付）:
-  1. 是否有构建文件 / 运行说明（可运行性）
-  2. 依赖版本是否写死（禁止 latest / RELEASE / +）
-  3. 注释率是否达标（默认 15%）
-  4. 是否有 TODO / FIXME / 占位符
-  5. 是否有验证步骤（跑完能观察到什么）
-  6. 是否有入口（main / 测试类 / 启动脚本）
-"""
+
+
+
+
+
+
+
+
+
+
+
 import argparse
 import os
 import re
@@ -63,7 +63,7 @@ ENTRY_PAT = {
 
 
 def collect(path):
-    """返回 (代码文件列表, 是否有构建文件, 文档文本, 全部文本)"""
+
     code_files, docs, all_text, has_build = [], [], [], False
     if os.path.isfile(path):
         code_files = [path] if os.path.splitext(path)[1] in CODE_EXT else []
@@ -102,7 +102,7 @@ def check(path, min_comment, dtype):
         errors.append("目录下既无代码文件也无构建文件，无法判定为 Demo")
         return errors, warns, infos
 
-    # 1. 可运行性
+    
     if dtype in ("auto", "full"):
         if has_build:
             infos.append("检测到构建文件")
@@ -112,7 +112,7 @@ def check(path, min_comment, dtype):
     if is_single and not RUN_PAT.search(docs + blob):
         warns.append("单文件示例缺少运行说明，建议在文件头注释里写明执行命令")
 
-    # 2. 依赖版本写死
+    
     if not is_single:
         bad = FLOATING_VER.findall(blob)
         if bad:
@@ -121,7 +121,7 @@ def check(path, min_comment, dtype):
         elif has_build:
             infos.append("依赖版本均为固定值")
 
-    # 3. 注释率
+    
     total = comment = 0
     per_file = []
     for f in code_files:
@@ -150,19 +150,19 @@ def check(path, min_comment, dtype):
     else:
         warns.append("未统计到代码行")
 
-    # 4. TODO / 占位符
+    
     todos = TODO_PAT.findall(blob)
     if todos:
         errors.append(f"存在未完成的占位标记 {len(todos)} 处: "
                       + "、".join(sorted(set(todos))[:4]))
 
-    # 5. 验证步骤
+    
     if VERIFY_PAT.search(docs + blob):
         infos.append("含验证步骤/预期输出")
     else:
         warns.append("缺少验证步骤——应说明跑完能观察到什么（预期输出/断言/界面变化）")
 
-    # 6. 入口
+    
     has_entry = False
     for f in code_files:
         ext = os.path.splitext(f)[1].lower()
@@ -179,7 +179,7 @@ def check(path, min_comment, dtype):
     else:
         warns.append("未检测到入口（main 方法 / 测试类 / 启动脚本），无法直接运行验证")
 
-    # 7. 目录/文档
+    
     if not is_single and not docs.strip():
         warns.append("缺少 README/说明文档，建议写明：能跑出什么、怎么跑、怎么改")
 

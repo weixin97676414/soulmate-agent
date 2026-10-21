@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Extract Highlights — 视频精华片段提取"""
+
 import argparse, os, subprocess, shutil, sys, json
 from datetime import datetime
 
 def get_video_info(input_file: str) -> dict:
-    """使用 ffprobe 获取视频信息。"""
+
     cmd = [
         "ffprobe", "-v", "quiet", "-print_format", "json",
         "-show_format", "-show_streams", input_file
@@ -26,7 +26,7 @@ def get_video_info(input_file: str) -> dict:
         return {}
 
 def detect_scenes(input_file: str, threshold: float = 30.0) -> list:
-    """使用 FFmpeg scene detection 检测场景切换点。"""
+
     cmd = [
         "ffmpeg", "-y", "-i", input_file,
         "-vf", f"select='gt(scene,{1/threshold})',showinfo",
@@ -62,10 +62,10 @@ def extract_highlights(input_file: str, num_clips: int, min_duration: float,
     print(f"发现 {len(scenes)} 个场景切换点")
 
     if not scenes:
-        # 无场景检测结果：均匀分段
+        
         scenes = [i * duration / (num_clips + 1) for i in range(1, num_clips + 1)]
 
-    # 过滤距离太近的
+    
     filtered = []
     last = -999
     for s in scenes:
@@ -73,7 +73,7 @@ def extract_highlights(input_file: str, num_clips: int, min_duration: float,
             filtered.append(s)
             last = s
 
-    # 取前 num_clips 个
+    
     clips = filtered[:num_clips]
     base = os.path.splitext(os.path.basename(input_file))[0]
     results = []

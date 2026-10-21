@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-precheck_files.py - 批量文件预检脚本（办公技能配套）
 
-用途：
-  在正式处理（清洗/转换/解析/生成）之前，先把待处理文件过一遍，
-  提前暴露"文件不存在 / 太大 / 格式不支持 / 编码异常 / Office 文件损坏"
-  这类问题，避免处理到一半才失败、浪费整轮 token 与时间。
 
-设计原则：
-  * 只读，不写 —— 不创建、不修改、不删除任何文件。
-  * 零依赖 —— 只用 Python 标准库，不联网。
-  * 先探后处 —— 与 dispatch.md 的"大文件先探后处"原则配套。
 
-用法：
-  python precheck_files.py 文件.xlsx
-  python precheck_files.py ./待处理目录
-  python precheck_files.py ./目录 --max-mb 50 --json
 
-退出码：
-  0 = 全部通过
-  1 = 存在警告（仍可处理，但有风险）
-  2 = 存在致命问题或输入错误
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import argparse
 import json
@@ -33,7 +33,7 @@ import zipfile
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-# 支持直接处理的格式
+
 SUPPORTED = {
     ".xlsx": "Excel 表格", ".xlsm": "Excel 表格(宏)", ".xls": "Excel 旧格式", ".csv": "CSV 文本",
     ".docx": "Word 文档", ".doc": "Word 旧格式", ".wps": "WPS 文字",
@@ -44,9 +44,9 @@ SUPPORTED = {
     ".mp3": "音频", ".wav": "音频", ".m4a": "音频", ".mp4": "视频",
 }
 
-# 本质是 zip 包，可校验完整性
+
 OOXML_EXT = {".xlsx", ".xlsm", ".docx", ".pptx"}
-# 旧二进制格式，本脚本只能看大小，不能校验内容
+
 LEGACY_EXT = {".xls", ".doc", ".ppt", ".wps"}
 
 
@@ -59,7 +59,7 @@ def human(size: float) -> str:
 
 
 def probe(path: str, max_mb: float):
-    """检查单个文件，返回 (状态, 说明列表)。"""
+
     issues = []
     name = os.path.basename(path)
     ext = os.path.splitext(name)[1].lower()

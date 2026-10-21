@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""graph.json -> .drawio（mxGraph XML）。
 
-生成的图元带完整样式，在 drawio / diagrams.net / VS Code Draw.io 插件中打开后
-可直接拖拽节点、改连线、改配色。分组用 swimlane 表达系统边界。
 
-用法: python gen_drawio.py graph.json -o out.drawio
-"""
+
+
+
+
+
 import argparse
 import hashlib
 import os
@@ -13,10 +13,10 @@ import sys
 from xml.sax.saxutils import escape, quoteattr
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from lib_graph import load, layout, style_of, edge_style, FONT  # noqa: E402
+from lib_graph import load, layout, style_of, edge_style, FONT  
 
 SHAPE_STYLE = {
-    # drawio arcSize 是圆角占短边的百分比：默认圆角矩形约 10，胶囊为 50
+    
     "rect":     lambda r: ("rounded=1;arcSize=%d;" % (50 if r >= 16 else int(r * 1.5))
                            if r else "rounded=0;"),
     "ellipse":  lambda r: "ellipse;",
@@ -42,7 +42,7 @@ def node_style(node):
 
 
 def _port(pts, kind):
-    """按首尾线段的实际走向推断出/入端口，避免横向连线的端口被写死成上下。"""
+
     if len(pts) < 2:
         return ""
     if kind == "exit":
@@ -85,14 +85,14 @@ def build(g):
     em = {e["id"]: e for e in g["edges"]}
     gm = {x["id"]: x for x in g["groups"]}
 
-    # 节点 -> 所属分组（取最内层）
+    
     parent_of = {}
     for n in g["nodes"]:
         parent_of[n["id"]] = n.get("group") or "1"
 
     out = ['<mxfile host="app.diagrams.net" type="device" version="24.0.0">']
-    # 用确定性摘要而非内置 hash()——后者带随机种子，会导致同一模型每次生成的
-    # diagram id 都不同，产物无法 diff、不可复现
+    
+    
     did = "vg-" + hashlib.md5(
         (meta.get("title") or "diagram").encode("utf-8")).hexdigest()[:8]
     out.append('  <diagram id="%s" name=%s>'
@@ -106,7 +106,7 @@ def build(g):
     out.append('        <mxCell id="0" />')
     out.append('        <mxCell id="1" parent="0" />')
 
-    # 分组（swimlane）
+    
     for gid, box in groups.items():
         src = gm.get(gid) or {}
         st = ("swimlane;whiteSpace=wrap;html=1;startSize=%d;horizontal=1;"
@@ -120,7 +120,7 @@ def build(g):
                    'as="geometry" />' % (box["x"], box["y"], box["w"], box["h"]))
         out.append('        </mxCell>')
 
-    # 节点（坐标转为相对父容器）
+    
     for nid, d in nodes.items():
         src = nm.get(nid) or {}
         pid = parent_of.get(nid, "1")
@@ -135,7 +135,7 @@ def build(g):
                    'as="geometry" />' % (d["x"] - ox, d["y"] - oy, d["w"], d["h"]))
         out.append('        </mxCell>')
 
-    # 边
+    
     for e in edges:
         src = em.get(e["id"]) or {}
         ex = _port(e["points"], "exit")

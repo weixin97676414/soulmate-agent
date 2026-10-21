@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export Social — 导出多平台短视频格式"""
+
 import argparse, os, subprocess, shutil, sys
 
 FORMATS = {
@@ -9,7 +9,7 @@ FORMATS = {
 }
 
 def smart_trim(input_file: str, duration: float, output: str) -> bool:
-    """裁剪为指定时长（从开头或随机位置）。"""
+
     cmd = [
         "ffmpeg", "-y",
         "-i", input_file,
@@ -21,8 +21,8 @@ def smart_trim(input_file: str, duration: float, output: str) -> bool:
     return subprocess.run(cmd, capture_output=True).returncode == 0
 
 def scale_and_pad(input_file: str, target_size: str, output: str) -> bool:
-    """缩放并填充黑边以适应目标比例。"""
-    # scale 缩放到目标宽度，高度等比，pad 在两侧或上下加黑边
+
+    
     cmd = [
         "ffmpeg", "-y",
         "-i", input_file,
@@ -39,17 +39,17 @@ def export(input_file: str, fmt: str, duration: float, output_dir: str) -> list:
     target = FORMATS[fmt]["size"]
     note = FORMATS[fmt]["note"]
 
-    # 先裁剪时长
+    
     trimmed = os.path.join(output_dir, f"{base}_trimmed.mp4")
     print(f"  裁剪为 {duration}s...")
     if not smart_trim(input_file, duration, trimmed):
         return []
 
-    # 再缩放填充
+    
     out = os.path.join(output_dir, f"{base}_{fmt}.mp4")
     print(f"  缩放为 {note}...")
     if not scale_and_pad(trimmed, target, out):
-        # 如果失败，直接返回截断版
+        
         shutil.copy(trimmed, out)
 
     os.remove(trimmed)

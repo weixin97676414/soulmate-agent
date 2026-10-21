@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""
-从 Quark 浏览器提取知乎 Cookie 并写入配置文件
-Extract Zhihu cookies from Quark browser and save to config
 
-需要: 暂关 Quark 浏览器 / Need: close Quark browser temporarily
-"""
+
+
+
+
+
 
 import json
 import os
@@ -18,47 +18,47 @@ sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 from Crypto.Cipher import AES
 import win32crypt
 
-# 路径配置
+
 QUARK_PROFILE = os.path.expandvars(r'%LOCALAPPDATA%\Quark\User Data')
 COOKIE_DB = os.path.join(QUARK_PROFILE, 'Default', 'Network', 'Cookies')
 LOCAL_STATE = os.path.join(QUARK_PROFILE, 'Local State')
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'fallback-sources.json')
 
-# 知乎需要的核心 cookie 字段
+
 KEY_COOKIES = ['z_c0', '_xsrf', '_zap', 'd_c0', 'zhihu_session', 'tst', 'q_c1', 'tgw_l7_route']
 
 
 def get_encryption_key():
-    """从 Quark Local State 获取 AES 解密密钥"""
+
     with open(LOCAL_STATE, 'r', encoding='utf-8') as f:
         state = json.load(f)
     enc_key_b64 = state['os_crypt']['encrypted_key']
     enc_key = base64.b64decode(enc_key_b64)
-    # 去掉 'DPAPI' 前缀 (5 bytes)
+    
     enc_key = enc_key[5:]
     return win32crypt.CryptUnprotectData(enc_key, None, None, None, 0)[1]
 
 
 def decrypt_value(encrypted_value, key):
-    """解密 v10/v11 AES-GCM 加密的 cookie 值"""
+
     if len(encrypted_value) < 3:
         return None
     prefix = encrypted_value[:3]
-    # v10/v11: b'v10' or b'v11'
+    
     if prefix in (b'v10', b'v11'):
         nonce = encrypted_value[3:15]
         ciphertext = encrypted_value[15:-16]
         tag = encrypted_value[-16:]
         cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)
         return cipher.decrypt_and_verify(ciphertext, tag).decode('utf-8', errors='replace')
-    # 旧格式: DPAPI 直接解密
+    
     else:
         return win32crypt.CryptUnprotectData(encrypted_value, None, None, None, 0)[1].decode('utf-8', errors='replace')
 
 
 def extract_cookies():
-    """提取所有 zhihu.com 域名下的 cookie"""
-    # 复制数据库避免锁冲突
+
+    
     tmp_db = os.path.join(os.environ['TEMP'], 'quark_cookies_extract.db')
     try:
         shutil.copy2(COOKIE_DB, tmp_db)
@@ -98,27 +98,27 @@ def extract_cookies():
 
 
 def update_config(cookies):
-    """更新 fallback-sources.json 中的 cookie 配置"""
-    # 读取现有配置
+
+    
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             config = json.load(f)
     else:
         config = {}
 
-    # 过滤出关键 cookie
+    
     filtered = {}
     for k in KEY_COOKIES:
         if k in cookies:
             filtered[k] = cookies[k]
-    # 也保留其他 zhihu 相关 cookie
+    
     for k, v in cookies.items():
         if k not in filtered:
             filtered[k] = v
 
     config['cookie'] = filtered
 
-    # 写入配置
+    
     os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
     with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
         json.dump(config, f, ensure_ascii=False, indent=2)
@@ -128,7 +128,7 @@ def update_config(cookies):
 
 
 def test_cookie(cookies):
-    """快速测试 cookie 是否有效"""
+
     import urllib.request
     cookie_str = '; '.join(f'{k}={v}' for k, v in cookies.items())
 
@@ -170,16 +170,16 @@ def main():
 
     print(f"\n共提取 {len(cookies)} 个 zhihu.com cookie")
 
-    # 核心 cookie 检查
+    
     print(f"\n核心 Cookie 状态:")
     for k in KEY_COOKIES:
         status = '✅' if k in cookies else '❌'
         print(f"  {status} {k}")
 
-    # 写入配置
+    
     update_config(cookies)
 
-    # 测试 cookie
+    
     test_cookie(cookies)
 
     print(f"\n" + "=" * 60)

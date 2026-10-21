@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-电商商品标题生成器
-根据产品信息自动生成多个高转化率的商品标题
-"""
+
+
+
+
 
 import sys
 import json
 from typing import List, Dict
 
 def generate_titles(product_info: Dict) -> List[str]:
-    """
-    根据产品信息生成标题
-    
-    Args:
-        product_info: 包含 product_name, selling_points, target_audience, 
-                     promotion, platform 等信息的字典
-    
-    Returns:
-        生成的标题列表
-    """
+
+
+
+
+
+
+
+
+
+
     titles = []
     
     product_name = product_info.get('product_name', '产品')
@@ -28,7 +28,7 @@ def generate_titles(product_info: Dict) -> List[str]:
     promotion = product_info.get('promotion', '')
     platform = product_info.get('platform', 'taobao')
     
-    # 淘宝标题模板（60 字符）
+    
     if platform == 'taobao':
         templates = [
             f"【买 1 送 3】2026 新款{product_name}{' '.join(selling_points[:2])} {target_audience} 限时特惠",
@@ -37,7 +37,7 @@ def generate_titles(product_info: Dict) -> List[str]:
             f"【{promotion}】{product_name} {' '.join(selling_points[:3])} 包邮",
         ]
     
-    # 拼多多标题（简单直接）
+    
     elif platform == 'pinduoduo':
         templates = [
             f"9.9 包邮 {product_name} {selling_points[0] if selling_points else ''} 特价",
@@ -45,7 +45,7 @@ def generate_titles(product_info: Dict) -> List[str]:
             f"{product_name} 爆款热销 {target_audience} 首选",
         ]
     
-    # 抖音标题（场景化）
+    
     elif platform == 'douyin':
         templates = [
             f"冬天怕冷？{product_name}让你暖一整天！{selling_points[0] if selling_points else ''}",
@@ -53,7 +53,7 @@ def generate_titles(product_info: Dict) -> List[str]:
             f"用了{product_name}才知道，{selling_points[0] if selling_points else ''}这么重要！",
         ]
     
-    else:  # 通用
+    else:  
         templates = [
             f"【热销】{product_name} {' '.join(selling_points[:3])} {promotion}",
             f"2026 新款{product_name} {target_audience}推荐 {selling_points[0] if selling_points else ''}",

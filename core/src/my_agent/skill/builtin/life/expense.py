@@ -1,9 +1,9 @@
-"""记账技能：记录一笔支出、统计花销分布。
 
-数据存在本机 SQLite，不上传任何地方。
-分类做**自动推断**——用户说话通常是「中午吃饭 35」，不会主动说"分类=餐饮"，
-让模型每次都追问分类体验会很差。推断不准时用户可以显式指定 category 覆盖。
-"""
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -88,7 +88,7 @@ def _resolve_relative_date(text: str) -> str:
     }
     if raw in mapping:
         return (today + timedelta(days=mapping[raw])).isoformat()
-    return raw  # 交给仓储层统一规范化（支持 2026/9/17、20260917 等写法）
+    return raw  
 
 
 class ExpenseAnalyzeParams(BaseModel):
@@ -122,8 +122,8 @@ class ExpenseAnalyzeSkill(BaseSkill):
         repository = ctx.service("expenses")
 
         try:
-            # 分类过滤必须同时作用于汇总，否则会出现
-            # "总额是全部花销、明细却只有交通"的自相矛盾结果
+            
+            
             summary = await repository.summary(period=args.period, category=args.category)
         except ValueError as exc:
             raise SkillExecutionError(str(exc)) from exc

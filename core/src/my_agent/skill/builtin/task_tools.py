@@ -1,19 +1,19 @@
-"""自动化任务技能：搭子自己建 / 查 / 改 / 删 / 立刻跑自动化任务。
 
-## 为什么要有这些技能
 
-用户的原话是「搭子也能自己建任务」。没有它们时，模型只能说"请你到设置页
-自己建一个"，而这恰恰是零基础用户最容易卡住的一步（触发方式、时间格式、
-条件目标三个字段）。有了它，用户说一句"每天早上九点帮我看看那条新闻有没有更新"
-就够了。
 
-## 权限分级
 
-- 查（``scheduled_task_list``）：safe，只读；
-- 建 / 改 / 删 / 立刻跑：**confirm**。它们会落盘配置、并且会**真的花钱**
-  （每一轮都调用模型），所以必须让用户看到"要建的是什么、什么时候跑"再点头。
-  尤其"立刻跑"：它绕过了时间轴，等于当场花钱。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -25,8 +25,8 @@ from ...errors import ScheduledTaskNotFoundError, SkillExecutionError
 from ...skill.base import BaseSkill, SkillContext
 from ...skill.decorator import skill
 
-# 任务列表里每条最多回显多少字符的指令 —— 只是给模型看的摘要，不是截断内容：
-# 完整指令在 return 的 prompt 字段里原样给出（用户要求：不许省略给 AI 的内容）
+
+
 _PROMPT_ECHO = 200
 
 
@@ -89,7 +89,7 @@ class TaskCreateParams(BaseModel):
         description="interval=每隔一段时间；daily=每天；weekly=每周",
     )
     interval_minutes: int = Field(
-        60, ge=1, le=10080, description="trigger=interval 时用：间隔分钟数"
+        60, ge=1, le=43200, description="trigger=interval 时用：间隔分钟数（上限 30 天）"
     )
     at_time: str = Field("09:00", description="trigger=daily/weekly 时用：HH:MM，例如 09:00")
     weekday: int = Field(0, ge=0, le=6, description="trigger=weekly 时用：0=周一 … 6=周日")
@@ -135,12 +135,12 @@ class ScheduledTaskCreateSkill(BaseSkill):
         store = ctx.service("tasks")
 
         fields = args.model_dump()
-        # 留空表示"用当前这个搭子"：让模型去猜 id 没意义，它手上有 ctx.assistant_id
+        
         if not fields.get("assistant_id"):
             fields["assistant_id"] = ctx.assistant_id or ""
-        # 「搭子在对话里建的任务」= origin=agent（产品约定）：
-        # 给**内置搭子**建的那些，用户从此不能手动改/关/删，只能再找搭子改。
-        # ⚠️ 这一句不能少：少了它任务会被当成"用户建的"，那道锁就形同虚设。
+        
+        
+        
         fields["origin"] = "agent"
 
         try:
@@ -165,7 +165,7 @@ class TaskUpdateParams(BaseModel):
     name: str | None = Field(None, max_length=48, description="新名字；不填则不改")
     prompt: str | None = Field(None, description="新的执行指令；不填则不改")
     trigger: Literal["interval", "daily", "weekly"] | None = Field(None, description="新的触发方式")
-    interval_minutes: int | None = Field(None, ge=1, le=10080, description="新的间隔分钟数")
+    interval_minutes: int | None = Field(None, ge=1, le=43200, description="新的间隔分钟数（上限 30 天）")
     at_time: str | None = Field(None, description="新的执行时刻 HH:MM")
     weekday: int | None = Field(None, ge=0, le=6, description="新的星期几（0=周一）")
     start_at: str | None = Field(
@@ -276,7 +276,7 @@ class ScheduledTaskRunSkill(BaseSkill):
         except ScheduledTaskNotFoundError as exc:
             raise SkillExecutionError(exc.message) from exc
 
-        # 条件不在这里检查：用户是明知"内容可能没变"也要跑一遍（多半在做验收）
+        
         if not await store.run_now(args.task_id):
             raise SkillExecutionError(
                 f"任务「{spec.name}」正在执行中，等它跑完再试。"
@@ -291,11 +291,11 @@ class ScheduledTaskRunSkill(BaseSkill):
 
 
 def _first_error(exc: ValidationError) -> str:
-    """把 Pydantic 的错误压成一句人话。
 
-    模型看到的必须是"哪个字段不对"，而不是一长串带 loc/type 的结构 ——
-    后者会让它把整段报错原样复述给用户。
-    """
+
+
+
+
     errors = exc.errors()
     if not errors:
         return str(exc)

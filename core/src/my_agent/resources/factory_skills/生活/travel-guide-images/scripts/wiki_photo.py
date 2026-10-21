@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Wikimedia Commons 景点照片下载（CC 协议，可安全用于攻略配图）。
 
-用法:
-  python3 wiki_photo.py "Hongya Cave night" out.jpg
-  python3 wiki_photo.py --batch queries.json --dir photos/
 
-要点（踩坑记录）:
-  - 缩略图直接拼 URL 会 400（"Use thumbnail sizes listed"），必须走 API 的
-    iiurlwidth 参数拿合法 thumburl
-  - 请求要限速（间隔 ~3s），否则 429
-  - 中文景点用英文名搜命中率更高；重庆搜 "Hongya Cave"，李子坝搜 "Liziba Station"
-"""
+
+
+
+
+
+
+
+
+
+
 import argparse, json, os, sys, time, urllib.parse, urllib.request
 
 UA = {'User-Agent': 'TravelGuideBot/1.0 (personal travel guide generation)'}

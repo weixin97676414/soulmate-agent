@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Script to Storyboard Converter  v2
-将剧本转换为分镜脚本表格（CSV / Markdown / 幻镜漫剧平台 storyboards JSON）
 
-v2 修复（相对 v1）：
-  1. Markdown 结构污染：标题行 / 分隔线 / 元信息块（人物服装细节等）不再混入画面内容
-  2. 场景识别：改为按标题分块，每块独立判定场景，不再全局只认第一个匹配
-  3. 出场人物：支持【角色】、中文「角色：台词」、数量群体短语（20多名非洲土著人），可用 --characters 指定
-  4. 控制台截断：统一截断逻辑，中文按双宽对齐
 
-用法：
-  python3 convert.py <剧本.txt|md> [输出文件] [--format csv|md|json] [--duration 5] [--title 分镜表标题] [--scriptId xxx] [--characters "甲,乙"]
-示例：
-  python3 convert.py script.md storyboard.csv
-  python3 convert.py script.md storyboard.md --format md
-  python3 convert.py script.md board.json --format json --title 洞庭商客·第一集
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import argparse
 import csv
@@ -24,14 +24,14 @@ import json
 import re
 import sys
 
-# ---------- 控制台编码保护（Windows cmd 默认 GBK 会崩） ----------
+
 try:
     if sys.stdout.encoding and sys.stdout.encoding.lower().replace('-', '') not in ('utf8',):
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 except Exception:
     pass
 
-# ---------- 关键词表（长词优先，遍历时按长度降序） ----------
+
 SHOT_TYPES = {
     '大特写': '大特写', '特写': '特写', '近景': '近景', '中近景': '中近景',
     '中景': '中景', '全景': '全景', '远景': '远景', '半身景': '中景',
@@ -55,7 +55,7 @@ CAMERA_MOVES = {
     '慢镜头': '慢镜', '慢镜': '慢镜', '慢动作': '慢镜',
     '定格': '定格', '固定机位': '固定',
 }
-# 单字兜底（带负向断言，避免误伤「推开/推动/拉开门」等动作描写）
+
 CAMERA_MOVES_SINGLE = [
     (r'推(?!开|动|门|倒|广|荐|测|理)', '推镜头'),
     (r'拉(?!开|动|门|上|下|手|扯|伸)', '拉镜头'),
@@ -63,7 +63,7 @@ CAMERA_MOVES_SINGLE = [
     (r'跟(?!着|前|后|班)', '跟镜头'),
 ]
 
-# 元信息块标题（不产镜头）
+
 META_HEADING_KEYWORDS = (
     '概述', '简介', '说明', '总览', '摘要', '背景',
     '人物', '角色', '服装', '造型', '设定', '人设',
@@ -71,15 +71,15 @@ META_HEADING_KEYWORDS = (
     '注意', '备注', '附录', '要求', '规范', '术语',
 )
 
-# 泛称（不作为出场人物）
+
 GENERIC_CHARS = {'有人', '无人', '每人', '某人', '个人', '人物', '人影', '人声', '人流'}
-# 含这些词的匹配串视为噪声（「火光照亮人」不是人物）
+
 CHAR_STOPWORDS = ('照亮', '面对', '出现', '经过', '变成', '成为', '吸引', '没有',
                   '所有', '很多', '许多', '周围', '旁边', '附近', '以及', '然后')
-# 人物词最大中文字符数
+
 CHAR_MAX_LEN = 8
 
-# 音效推断规则（按优先级）
+
 SOUND_RULES = [
     (('海', '沙滩', '海岸', '浪', '潮'), '海浪声、背景音乐'),
     (('烟花', '爆竹', '爆炸'), '烟花爆炸声、背景音乐'),
@@ -97,7 +97,7 @@ def _sorted_items(mapping):
     return sorted(mapping.items(), key=lambda kv: -len(kv[0]))
 
 
-# ---------- 文本预处理 ----------
+
 HEADING_RE = re.compile(r'^(#{1,6})\s*(.+?)\s*$')
 HR_RE = re.compile(r'^\s*([-*_])\s*\1\s*\1[\s\-*_]*$')
 
@@ -113,19 +113,19 @@ def read_text(path):
 
 
 def clean_line(line):
-    """去掉 Markdown 装饰，只留纯文本。"""
+
     s = line.strip()
-    s = re.sub(r'^\s*[-*+]\s+', '', s)          # 列表符号
-    s = re.sub(r'^\s*\d+[.、]\s*', '', s)        # 编号
-    s = re.sub(r'\*\*(.+?)\*\*', r'\1', s)       # 粗体
-    s = re.sub(r'\*(.+?)\*', r'\1', s)           # 斜体
-    s = re.sub(r'`(.+?)`', r'\1', s)             # 代码
-    s = re.sub(r'^\s*>+\s?', '', s)              # 引用
+    s = re.sub(r'^\s*[-*+]\s+', '', s)          
+    s = re.sub(r'^\s*\d+[.、]\s*', '', s)        
+    s = re.sub(r'\*\*(.+?)\*\*', r'\1', s)       
+    s = re.sub(r'\*(.+?)\*', r'\1', s)           
+    s = re.sub(r'`(.+?)`', r'\1', s)             
+    s = re.sub(r'^\s*>+\s?', '', s)              
     return s.strip()
 
 
 def split_blocks(text):
-    """按 Markdown 标题切块；返回 [{level, title, body:[str], meta:bool}]"""
+
     blocks, cur = [], None
     for raw in text.split('\n'):
         line = raw.rstrip()
@@ -161,9 +161,9 @@ SCENE_TITLE_RE = re.compile(
 
 
 def is_meta_block(b):
-    """元信息块：标题命中关键词，或正文为空。
-    但显式场景标题（「场景5：人物特写」）即便含「人物」等词也必须算镜头块。
-    """
+
+
+
     if SCENE_TITLE_RE.match(b['title']):
         return False
     return b['meta'] or not b['body']
@@ -173,7 +173,7 @@ SHOT_SPLIT_RE = re.compile(r'(?:^|\s)(?:镜头|镜|Shot|shot)\s*(\d+)\s*[:：]?'
 
 
 def split_shots(block):
-    """一个块可能含多个镜头（出现「镜头N」≥2 次时拆分），否则整块 1 镜头。"""
+
     body = block['body']
     marks = [i for i, line in enumerate(body) if SHOT_SPLIT_RE.search(line)]
     if len(marks) >= 2:
@@ -186,7 +186,7 @@ def split_shots(block):
     return [body]
 
 
-# ---------- 镜头要素解析 ----------
+
 def detect(text, table):
     for kw, val in _sorted_items(table):
         if kw in text:
@@ -205,11 +205,11 @@ def detect_camera(text):
 
 
 GROUP_CHAR_RE = re.compile(
-    # 后缀只保留身份词；「客」「手」太容易误伤（茶客 / 抬手），交给「人物设定」块按行首定义抓
+    
     r'((?:[0-9零一两三四五六七八九十百千万]+\s*多?\s*)?(?:名|个|位)?'
     r'[一-龥]{1,6}(?:人|者|师|员|众|兵|童|们))'
 )
-# 概述/简介类元信息块（其人物描述可作全局兜底）
+
 OVERVIEW_KEYWORDS = ('概述', '简介', '背景', '摘要', '总览', '梗概')
 ALL_CHAR_RE = re.compile(r'(全体[一-龥]{1,8}|众人|群众)')
 BRACKET_CHAR_RE = re.compile(r'【([^】]{1,20})】')
@@ -217,7 +217,7 @@ LINE_CHAR_RE = re.compile(r'^\s*([一-龥A-Za-z·]{1,8})\s*[：:]\s*\S')
 
 
 def _collect(x, found):
-    """人物词入库过滤：泛称 / 噪声动词 / 超长串 一律丢弃。"""
+
     x = (x or '').strip()
     if not x or x in GENERIC_CHARS:
         return found
@@ -240,7 +240,7 @@ def extract_characters(text, manual=None):
     for m in BRACKET_CHAR_RE.finditer(text):
         add(m.group(1))
     for line in text.split('\n'):
-        if INSTR_LINE_RE.match(line):   # 「音效：」「时长：8」不是人名
+        if INSTR_LINE_RE.match(line):   
             continue
         m = LINE_CHAR_RE.match(line)
         if m:
@@ -254,15 +254,15 @@ def extract_characters(text, manual=None):
 
 
 CHAR_BLOCK_KEYWORDS = ('人物', '角色', '人设', '演员', '出场')
-# 「人物服装细节」「角色造型」这类是美术设定，不是角色名单
+
 CHAR_BLOCK_EXCLUDE = ('服装', '造型', '道具', '细节', '外观', '服饰', '美术', '风格', '色调')
 
 
 def global_characters(blocks):
-    """全篇兜底人物：
-    1) 「人物设定」类块按「名字：描述」行首抓角色名（王老三、李秀才…）
-    2) 概述块与镜头块抓群体描述（20多名非洲土著人）
-    """
+
+
+
+
     named, groups, shot_groups = [], [], []
     for b in blocks:
         body = '\n'.join(b['body'])
@@ -280,7 +280,7 @@ def global_characters(blocks):
         if any(k in b['title'] for k in OVERVIEW_KEYWORDS):
             for x in GROUP_CHAR_RE.findall(body):
                 _collect(x, groups)
-    # 概述人物优先；概述里没有才退回镜头块里的群体描述
+    
     if not groups:
         groups = shot_groups
     out = named[:3]
@@ -300,7 +300,7 @@ def infer_sound(text):
 
 
 def scene_name(block):
-    """从块标题提取场景名：去掉「场景N：」前缀和编号。"""
+
     t = block['title']
     t = re.sub(r'^场景\s*\d+\s*[:：]?\s*', '', t)
     t = re.sub(r'^\d+\s*[.、]\s*', '', t)
@@ -310,14 +310,14 @@ def scene_name(block):
     return t or '未标注'
 
 
-# 指令行（不进画面内容，已单独成字段）
+
 INSTR_LINE_RE = re.compile(r'^\s*(?:音效|音乐|声音|配乐|声效|时长|duration)\s*[：:]', re.I)
-# 「镜头推近，…」的前缀标记
+
 SHOT_MARK_PREFIX_RE = re.compile(r'^\s*(?:镜头|镜|Shot|shot)\s*\d*\s*[：:，,]?\s*', re.I)
 
 
 def strip_lead_shotwords(s):
-    """剥离首行开头的景别/角度词：「远景，航拍。清晨…」→「清晨…」"""
+
     words = [k for k, _ in _sorted_items(SHOT_TYPES)] + [k for k, _ in _sorted_items(ANGLE_TYPES)]
     changed = True
     while changed:
@@ -340,7 +340,7 @@ def build_shots(blocks, default_duration=5, manual_chars=None):
         for seg in split_shots(b):
             if not seg:
                 continue
-            # 保留行结构：指令行先取值再剔除，画面内容才干净
+            
             raw = '\n'.join(seg)
             duration = default_duration
             m = re.search(r'(?:时长|duration)\s*[：:]?\s*(\d+(?:\.\d+)?)\s*(?:s|秒)?', raw, re.I)
@@ -353,7 +353,7 @@ def build_shots(blocks, default_duration=5, manual_chars=None):
 
             lines = [ln for ln in seg if not INSTR_LINE_RE.match(ln)]
             lines = [SHOT_MARK_PREFIX_RE.sub('', ln).strip() for ln in lines]
-            lines = [re.sub(r'^【[^】]{1,20}】\s*', '', ln) for ln in lines]  # 角色标记已进人物列
+            lines = [re.sub(r'^【[^】]{1,20}】\s*', '', ln) for ln in lines]  
             lines = [ln for ln in lines if ln]
             if not lines:
                 continue
@@ -362,7 +362,7 @@ def build_shots(blocks, default_duration=5, manual_chars=None):
             if not content:
                 continue
 
-            # 景别/角度/运镜在未剥离的原始文本上检测（否则「远景，航拍。」被剥掉就丢了航拍）
+            
             head = b['title']
             full = ' '.join(seg)
             shot_type = detect(head, SHOT_TYPES) or detect(full, SHOT_TYPES)
@@ -409,9 +409,9 @@ def camera_str(s):
     return '/'.join(p for p in parts if p)
 
 
-# ---------- 输出 ----------
+
 def _w(s):
-    """显示宽度：中日韩按 2 计。"""
+
     return sum(2 if ord(c) > 0x2E80 else 1 for c in str(s))
 
 
@@ -494,13 +494,13 @@ def write_md(shots, path, title=''):
 
 
 def write_platform_json(shots, path, title='分镜表', script_id='', schema='ui'):
-    """幻镜漫剧平台 storyboards 资产结构。
 
-    schema=ui       编辑器字段（后台「分镜表」表格列，推荐手填/导入用）：
-        { title, scriptId, shots:[{no,scene,action,duration,camera,artRef,promptRef,note}] }
-    schema=pipeline 流水线生成字段（lib/pipeline.js 产出的镜头结构）：
-        { title, scriptId, shots:[{no,scene,shotType,cam,desc,line,dur,imgPrompt}] }
-    """
+
+
+
+
+
+
     if schema == 'pipeline':
         board = {
             'title': title,

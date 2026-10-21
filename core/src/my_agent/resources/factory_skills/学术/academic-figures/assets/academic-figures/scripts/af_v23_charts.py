@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""v2.3 新图型模块：funnel / bland_altman / pca / paired / venn / cluster_heatmap。
 
-由 gen_figure.py 在启动时 import 并合并进 GENERATORS/DEMO_DATA；
-校验与 alt 文本经 validate_extra()/alt_extra() 钩子接入。
-仅依赖 numpy + matplotlib + af_v23_stats。
-"""
+
+
+
+
+
 from __future__ import annotations
 
 import sys
@@ -14,11 +14,11 @@ import numpy as np
 
 try:
     import af_v23_stats as st
-except ImportError:  # 同目录运行时直接可用；打包路径异常时显式报错
+except ImportError:  
     raise
 
-MAX_CLUSTER_ROWS = 3000   # linkage O(n²) 内存护栏
-MAX_PCA_COLS = 200        # 特征列护栏
+MAX_CLUSTER_ROWS = 3000   
+MAX_PCA_COLS = 200        
 
 
 def _has_cjk(text):
@@ -36,15 +36,15 @@ def _warn(msg):
     print(f"WARNING: {msg}", file=sys.stderr)
 
 
-# ── funnel 漏斗图 ─────────────────────────────────────────────────────
+
 
 def gen_funnel(data, ax, theme, cjk_fp, **kwargs):
-    """Meta 分析漏斗图：研究效应散点 + 合并效应竖线 + 95% 伪置信漏斗线。
 
-    数据: {"studies": [{"name": "Smith 2020", "effect": 0.69, "se": 0.12}, ...]}
-    或 {"effects": [...], "ses": [...], "labels": [...] }（效应建议为 log 尺度）。
-    选项: egger=True 画 Egger 回归线（stderr 报告不对称检验 p）。
-    """
+
+
+
+
+
     studies = data.get("studies", None)
     if studies:
         names = [str(s.get("name", f"研究{i+1}")) for i, s in enumerate(studies)]
@@ -75,7 +75,7 @@ def gen_funnel(data, ax, theme, cjk_fp, **kwargs):
                linewidth=0.8, zorder=4)
     se_max = float(ses.max()) * 1.08
     se_min = 0.0
-    # 95% 伪置信漏斗
+    
     for sign in (-1.0, 1.0):
         ax.plot([pooled["pooled"] - 1.96 * se_max, pooled["pooled"],
                  pooled["pooled"] + 1.96 * se_max],
@@ -92,7 +92,7 @@ def gen_funnel(data, ax, theme, cjk_fp, **kwargs):
     if kwargs.get("egger"):
         if len(es) >= 3:
             eg = st.egger_test(es, ses)
-            # Egger 线：z = intercept + slope * (1/se) → effect = intercept*se + slope
+            
             se_grid = np.linspace(se_min, se_max, 32)
             ax.plot(eg["slope"] + eg["intercept"] * se_grid, se_grid,
                     color=theme["colors"][1 % len(theme["colors"])],
@@ -108,14 +108,14 @@ def gen_funnel(data, ax, theme, cjk_fp, **kwargs):
     return None
 
 
-# ── bland_altman 一致性分析 ───────────────────────────────────────────
+
 
 def gen_bland_altman(data, ax, theme, cjk_fp, **kwargs):
-    """Bland-Altman 一致性图：均值差 vs 均值，LoA=mean±1.96SD。
 
-    数据: {"a": [...], "b": [...]} 或 {"methods": {"新方法": [...], "金标准": [...]}}
-    （methods 恰好两项，差值=第一项−第二项）。
-    """
+
+
+
+
     a, b, name_a, name_b = _two_series(data, "bland_altman")
     a = np.asarray(a, float)
     b = np.asarray(b, float)
@@ -147,7 +147,7 @@ def gen_bland_altman(data, ax, theme, cjk_fp, **kwargs):
 
 
 def _two_series(data, chart_name):
-    """取恰好两个系列：支持 {'a':..,'b':..} 或 {'methods': {名:.., 名:..}}。"""
+
     if "a" in data and "b" in data:
         return data["a"], data["b"], str(data.get("label_a", "A")), str(data.get("label_b", "B"))
     methods = data.get("methods", None)
@@ -162,14 +162,14 @@ def _two_series(data, chart_name):
 
 def _declutter_texts(ax, texts, anchors, max_pass=120, step=9.0,
                      max_disp_frac=0.15, leader_min_frac=0.02):
-    """散点数据标签防重叠：重叠排斥 + 锚点弹簧 + 位移上限 + 引导线。
 
-    - 排斥：测量真实 bbox，重叠对互推（显示坐标测量、数据坐标移动）
-    - 锚点弹簧：每轮向自己的数据点回拉，标签永不远离锚点
-    - 位移上限：标签离锚点超过 max_disp_frac·min(轴跨度) 即强制拉回边界
-    - 引导线：最终位移 > leader_min_frac 时画点→标签细线，保证对应关系可读
-    返回剩余重叠对数。
-    """
+
+
+
+
+
+
+
     if len(texts) < 2:
         return 0
     import math as _m
@@ -209,11 +209,11 @@ def _declutter_texts(ax, texts, anchors, max_pass=120, step=9.0,
         for t, (mx, my), (axn, ayn) in zip(texts, moves, anchors):
             tx, ty = t.get_position()
             nx, ny = tx + mx * ddx, ty + my * ddy
-            nx += (axn - nx) * 0.25   # 锚点弹簧
+            nx += (axn - nx) * 0.25   
             ny += (ayn - ny) * 0.25
             ddx_a, ddy_a = nx - axn, ny - ayn
             dist_a = _m.hypot(ddx_a, ddy_a)
-            if dist_a > max_disp:     # 位移上限：拉回锚点邻域
+            if dist_a > max_disp:     
                 nx = axn + ddx_a / dist_a * max_disp
                 ny = ayn + ddy_a / dist_a * max_disp
             t.set_position((nx, ny))
@@ -225,7 +225,7 @@ def _declutter_texts(ax, texts, anchors, max_pass=120, step=9.0,
         for j in range(i + 1, len(bbs)):
             if bbs[i].overlaps(bbs[j]):
                 n_over += 1
-    # 引导线：位移超阈值的标签画点→标签细线（对应关系可读）
+    
     drawn = 0
     for t, (axn, ayn) in zip(texts, anchors):
         tx, ty = t.get_position()
@@ -237,7 +237,7 @@ def _declutter_texts(ax, texts, anchors, max_pass=120, step=9.0,
 
 
 def _thin_overlapping_texts(ax, texts):
-    """最后手段：反复移除卷入重叠最多的标签，直到无重叠。返回移除数（调用方发 stderr 警告）。"""
+
     fig = ax.figure
     removed = 0
     while texts:
@@ -257,14 +257,14 @@ def _thin_overlapping_texts(ax, texts):
     return removed
 
 
-# ── pca 得分图 ────────────────────────────────────────────────────────
+
 
 def gen_pca(data, ax, theme, cjk_fp, **kwargs):
-    """PCA 得分图（PC1×PC2）：标准化默认开，分组椭圆=均值±2SD，载荷 top5。
 
-    数据: {"matrix": [[...]], "row_labels": [...], "groups": [...](可选, 按行),
-           "feature_names": [...]}
-    """
+
+
+
+
     matrix = data.get("matrix", data.get("values", None))
     if matrix is None or not isinstance(matrix, (list, tuple)) or len(matrix) == 0:
         raise ValueError("pca: 需要 'matrix'（二维数值数组，行=样本 列=特征）")
@@ -331,7 +331,7 @@ def gen_pca(data, ax, theme, cjk_fp, **kwargs):
             _sy = float(np.ptp(scores[:, 1])) or 1.0
             _anchors = []
             for i, rl in enumerate(row_labels):
-                ang = 2.399 * i  # 黄金角环绕初始位，天然散开减少推移
+                ang = 2.399 * i  
                 ox, oy = _sx * 0.02 * _m.cos(ang), _sy * 0.02 * _m.sin(ang)
                 label_texts.append(ax.text(
                     scores[i, 0] + ox, scores[i, 1] + oy,
@@ -340,7 +340,7 @@ def gen_pca(data, ax, theme, cjk_fp, **kwargs):
                     ha="center", va="center"))
                 _anchors.append((scores[i, 0], scores[i, 1]))
 
-    # 载荷箭头 top5（|PC1|+|PC2|）
+    
     loadings = Vt[:2, :].T
     imp = np.abs(loadings).sum(axis=1)
     top_idx = np.argsort(imp)[::-1][:5]
@@ -380,14 +380,14 @@ def gen_pca(data, ax, theme, cjk_fp, **kwargs):
     return None
 
 
-# ── paired 配对前后图 ─────────────────────────────────────────────────
+
 
 def gen_paired(data, ax, theme, cjk_fp, **kwargs):
-    """配对前后折线图：每个受试对象一条线 + 配对检验（配对 t / Wilcoxon 符号秩）。
 
-    数据: {"before": [...], "after": [...]} 或
-          {"series": {"术前": [...], "术后": [...]}}（恰好两项）+ 可选 labels。
-    """
+
+
+
+
     from scipy import stats as _st
     if "before" in data and "after" in data:
         a = list(data["before"]); b = list(data["after"])
@@ -451,12 +451,12 @@ def gen_paired(data, ax, theme, cjk_fp, **kwargs):
     return None
 
 
-# ── venn 韦恩图 ───────────────────────────────────────────────────────
 
-# ── venn 面积比例（Euler）几何求解 ────────────────────────────────────
+
+
 
 def _circle_overlap_area(d, r1, r2):
-    """两圆交集面积（d=圆心距）。d>=r1+r2 → 0；d<=|r1-r2| → 较小圆全面积。"""
+
     import math as _m
     if d >= r1 + r2:
         return 0.0
@@ -470,12 +470,12 @@ def _circle_overlap_area(d, r1, r2):
     return a1 + a2 - a3
 
 
-_R_MIN = 0.04  # 空集/极小集合仍可辨识的最小视觉半径（0-1 归一坐标）
+_R_MIN = 0.04  
 
 
 def _fit_into_unit(centers, radii, margin=0.16):
-    """把布局（任意单位）平移缩放到 [0,1]² 内切（留 margin 给集合名标签）。
-    返回 (centers, radii, affine)，affine=(cx, cy, s) 供质心同批换算。"""
+
+
     xs = [c[0] for c in centers]
     ys = [c[1] for c in centers]
     x0, x1 = min(xs) - max(radii), max(xs) + max(radii)
@@ -488,9 +488,9 @@ def _fit_into_unit(centers, radii, margin=0.16):
 
 
 def _venn2_geometry(n1, n2, inter):
-    """2 集合 Euler 布局（解析解）。n1=|A\\B|, n2=|B\\A|, inter=|A∩B|（计数）。
 
-    返回 (centers, radii, notes)：notes 为需 stderr 提示的异常布局说明列表。"""
+
+
     import math as _m
     from scipy.optimize import brentq
     t1, t2 = n1 + inter, n2 + inter
@@ -503,7 +503,7 @@ def _venn2_geometry(n1, n2, inter):
     r1 = _m.sqrt(t1 / _m.pi) if t1 > 0 else None
     r2 = _m.sqrt(t2 / _m.pi) if t2 > 0 else None
     if inter <= 0:
-        # 不相交（或单侧为空）：留 12% 间隙并列
+        
         if t1 <= 0:
             notes.append("集合 A 为空（图中以最小圆示意）")
         if t2 <= 0:
@@ -514,14 +514,14 @@ def _venn2_geometry(n1, n2, inter):
         centers, radii, _aff = _fit_into_unit([(-d / 2, 0.0), (d / 2, 0.0)], [rr1, rr2])
         return centers, radii, notes
     if n1 <= 0 and n2 <= 0:
-        # 两集合完全相同：同心微偏，仍能看出两层边
+        
         r = _m.sqrt(t1 / _m.pi)
         centers, radii, _aff = _fit_into_unit([(0.0, 0.0), (0.0, 0.0)], [r, r])
         radii[1] = radii[0] * 0.985
         notes.append("两集合元素完全相同（同心绘制）")
         return centers, radii, notes
     if n1 <= 0 or n2 <= 0:
-        # 单侧包含：A ⊆ B（或反向），内切
+        
         if n1 <= 0:
             r_in, r_out = r1, r2
         else:
@@ -533,12 +533,12 @@ def _venn2_geometry(n1, n2, inter):
             radii = radii[::-1]
         notes.append("子集关系：小集合完全包含于大集合")
         return centers, radii, notes
-    # 常规：半径固定，brentq 解圆心距 d 使交集面积=inter（面积单位=计数）
+    
     lo, hi = abs(r1 - r2) * (1 + 1e-9), (r1 + r2) * (1 - 1e-9)
     f = lambda d: _circle_overlap_area(d, r1, r2) - inter
-    if f(lo) < 0:      # inter 达到包含上限（计数不自洽的边界）
+    if f(lo) < 0:      
         d = lo
-    elif f(hi) > 0:    # inter 小于相切下限（几乎不相交）
+    elif f(hi) > 0:    
         d = hi
     else:
         d = brentq(f, lo, hi, xtol=1e-10, rtol=1e-12)
@@ -547,9 +547,9 @@ def _venn2_geometry(n1, n2, inter):
 
 
 def _venn_region_masks(centers, radii, box, res):
-    """网格化各区域（2 或 3 圆），返回 (area dict, centroid dict, cell_area)。
-    box=(x0,y0,x1,y1)；area 以坐标面积为单位；centroid 为数据坐标（空区域为 None）。
-    键：单集 "1"/"2"[/"3"]、两两 "12"…、三集 "123"。"""
+
+
+
     xs = np.linspace(box[0], box[2], res)
     ys = np.linspace(box[1], box[3], res)
     X, Y = np.meshgrid(xs, ys)
@@ -572,8 +572,8 @@ def _venn_region_masks(centers, radii, box, res):
 
 
 def _triple_overlap_area(c1, c2, c3, r1, r2, r3, n=2048):
-    """三圆交集面积：竖弦长 1D 积分（凸集 → 截面交集=交集截面，无网格噪声）。
-    L(x) = max(0, min(上弦) − max(下弦))，逐圆弦在圆外时长度取 0。"""
+
+
     cxs = (c1[0], c2[0], c3[0])
     cys = (c1[1], c2[1], c3[1])
     rs = (r1, r2, r3)
@@ -595,13 +595,13 @@ def _triple_overlap_area(c1, c2, c3, r1, r2, r3, n=2048):
 
 
 def _venn3_geometry(regions, keys):
-    """3 集合 Euler 布局：半径由集合总数定，圆心按区域计数拟合。
 
-    目标函数 6/7 项解析（成对交集闭式解 + 容斥单集），仅三集合项用小网格，
-    避免纯网格分段常数导致的 trust-region 早停；初值=成对解析解三角布置。
-    regions 键：k1/k2/k3/k1k2/k1k3/k2k3/k1k2k3（计数）。
-    返回 (centers, radii, fit)；fit 含 max_rel_err（非零区域最大面积相对偏差）。
-    """
+
+
+
+
+
+
     import math as _m
     from scipy.optimize import least_squares, brentq
     k1, k2, k3 = keys
@@ -614,7 +614,7 @@ def _venn3_geometry(regions, keys):
     radii_ideal = [_m.sqrt(t / _m.pi) if t > 0 else 1e-3 for t in totals]
 
     def _pair_d(i, j, ov):
-        """解析解两圆心距使交集面积=ov；不可行时夹到边界。"""
+
         ri, rj = radii_ideal[i], radii_ideal[j]
         lo, hi = abs(ri - rj) * (1 + 1e-9), (ri + rj) * (1 - 1e-9)
         f = lambda d: _circle_overlap_area(d, ri, rj) - ov
@@ -626,7 +626,7 @@ def _venn3_geometry(regions, keys):
             return hi
         return brentq(f, lo, hi, xtol=1e-10, rtol=1e-12)
 
-    # 初值：成对交集 = 两两区域 + 三集合，解析求三个圆心距 → 三角布置
+    
     d12 = _pair_d(0, 1, target["12"] + target["123"])
     d13 = _pair_d(0, 2, target["13"] + target["123"])
     d23 = _pair_d(1, 2, target["23"] + target["123"])
@@ -645,8 +645,8 @@ def _venn3_geometry(regions, keys):
         only3 = _m.pi * radii[2] ** 2 - ov13 - ov23 + tri
         return [only1, only2, only3, ov12 - tri, ov13 - tri, ov23 - tri, tri]
 
-    # 圆心 + 半径联合拟合（venneuler 思路）：固定半径的圆无法精确实现任意
-    # 7 区域面积（数学上常无解），放开半径 + 锚定惩罚项可把误差压到低个位数 %
+    
+    
     _rad_w = 0.35
 
     def residuals(p):
@@ -659,7 +659,7 @@ def _venn3_geometry(regions, keys):
                 for r, ri in zip(radii, radii_ideal)]
         return res
 
-    # 多起点（成对解析三角布置 / 嵌套堆叠 / 等边对称），各自两段精修，取代价最小者
+    
     r_max0 = max(radii_ideal)
     cos_a = (d12 * d12 + d13 * d13 - d23 * d23) / (2 * d12 * d13)
     cos_a = max(-1.0, min(1.0, cos_a))
@@ -683,7 +683,7 @@ def _venn3_geometry(regions, keys):
     sol = best
     centers = [(sol.x[0], sol.x[1]), (sol.x[2], sol.x[3]), (sol.x[4], sol.x[5])]
     radii = [float(sol.x[6]), float(sol.x[7]), float(sol.x[8])]
-    # 精细网格硬面积复算（报告 + 质心），与目标函数解耦
+    
     all_r = max(radii)
     xs = [c[0] for c in centers]
     ys = [c[1] for c in centers]
@@ -699,12 +699,12 @@ def _venn3_geometry(regions, keys):
     return centers_u, radii_u, fit
 
 
-# ── v2.8 D1：venn 4 集合（椭圆风车布局）──────────────────────────────────
-_V4_R, _V4_A, _V4_B = 0.10, 0.32, 0.20  # 布局常数：网格探针验证 15 区域全非空
+
+_V4_R, _V4_A, _V4_B = 0.10, 0.32, 0.20  
 
 
 def _venn4_ells(r=_V4_R, a=_V4_A, b=_V4_B):
-    """默认 4 椭圆布局（径向风车式，坐标中心为原点）：[(cx,cy,a,b,θrad)×4]。"""
+
     import math as _m
     return [(r * _m.cos(_m.pi / 2 + i * _m.pi / 2),
              r * _m.sin(_m.pi / 2 + i * _m.pi / 2), a, b,
@@ -712,9 +712,9 @@ def _venn4_ells(r=_V4_R, a=_V4_A, b=_V4_B):
 
 
 def _venn4_region_masks(ells, box, res):
-    """网格化 4 椭圆的 15 个区域（确定性，无随机）。ells=[(cx,cy,a,b,θ)]，
-    返回 (areas, centroids, cell_area)，键为成员并排序号 "1".."4"/"12"/"1234"；
-    空区域 centroids=None。"""
+
+
+
     import itertools as _it
     xs = np.linspace(box[0], box[2], res)
     ys = np.linspace(box[1], box[3], res)
@@ -741,12 +741,12 @@ def _venn4_region_masks(ells, box, res):
 
 
 def _venn4_geometry(regions, keys):
-    """4 集合 --area：椭圆联合最优拟合（eulerAPE 思路，零新依赖）。
 
-    (cx,cy,a,b,θ)×4 最小二乘，残差=15 区域网格面积 vs 目标比例；低分辨率网格
-    定向 + 高分辨率复核（全程确定性）。任意 15 区域面积组合在椭圆几何下可能
-    无解——非零区域最大面积相对偏差如实写入 fit["max_rel_err"] 由调用方披露。
-    返回 (ells_unit, fit)；ells_unit 已归一到 [0,1]²，fit["centroids"] 同坐标系。"""
+
+
+
+
+
     import itertools as _it
     import math as _m
     from scipy.optimize import least_squares
@@ -769,7 +769,7 @@ def _venn4_geometry(regions, keys):
             if t > 0:
                 out.append((got[mk] * s - t) / max(t, 1.0))
             else:
-                out.append(0.3 * min(got[mk] * s, 1.0))  # 零目标区域温和压空
+                out.append(0.3 * min(got[mk] * s, 1.0))  
         return out
 
     lo, hi = [], []
@@ -807,8 +807,8 @@ def _venn4_geometry(regions, keys):
 
 
 def _declutter_points(points, min_dist=0.078, iters=48, relax=0.6):
-    """确定性标签疏散：对过近标签对做对称排斥迭代（无随机，同输入同结果）。
-    points: {key: (x, y)}；返回新 dict（仅移动过近者，其余原位）。"""
+
+
     pts = {k: [float(v[0]), float(v[1])] for k, v in sorted(points.items())
            if v is not None}
     keys = sorted(pts)
@@ -836,8 +836,8 @@ def _declutter_points(points, min_dist=0.078, iters=48, relax=0.6):
 
 
 def _gen_venn4(ax, keys, regions, colors, fs, cjk_fp, area_mode):
-    """v2.8 D1：4 集合韦恩绘制（椭圆）。默认=固定风车布局、15 区域计数全标；
-    area_mode=按面积比例最优拟合（残差中文披露，数字仍为精确计数）。"""
+
+
     import itertools as _it
     import math as _m
     import matplotlib.patches as mpatches
@@ -868,7 +868,7 @@ def _gen_venn4(ax, keys, regions, colors, fs, cjk_fp, area_mode):
             linewidth=1.4, alpha=0.42, zorder=2))
 
     zero_regions = []
-    label_plan = []  # (mkey, cnt, pos)：先收集，疏散后统一画（中心 5 区域质心彼此很近）
+    label_plan = []  
     for n in (1, 2, 3, 4):
         for combo in _it.combinations(range(4), n):
             mkey = "".join(str(i + 1) for i in combo)
@@ -901,7 +901,7 @@ def _gen_venn4(ax, keys, regions, colors, fs, cjk_fp, area_mode):
         norm = _m.hypot(dx, dy)
         if norm < 1e-9:
             dx, dy, norm = 0.0, 1.0, 1.0
-        dist = norm + a_i + 0.035  # 椭圆尖端外侧——计数在区域质心，两者不相撞
+        dist = norm + a_i + 0.035  
         lx = 0.5 + dx / norm * dist
         ly = 0.5 + dy / norm * dist
         lx = min(1.06, max(-0.06, lx))
@@ -912,16 +912,16 @@ def _gen_venn4(ax, keys, regions, colors, fs, cjk_fp, area_mode):
 
 
 def gen_venn(data, ax, theme, cjk_fp, **kwargs):
-    """韦恩图（2~4 集合；4 集合为椭圆布局，v2.8）。默认等圆/等椭圆示意、区域数字精确；--area 开面积比例
-    （Euler）模式：圆的大小与交集面积按区域计数比例（2 集合解析解，
-    3 集合圆心+半径联合最优拟合）。
 
-    数据两种格式（二选一）:
-      {"sets": {"A": [元素...], "B": [...]}} —— 元素列表，自动求交并（2~3 集合）
-      {"regions": {"A": 30, "B": 25, "AB": 9}} —— 全部区域计数：
-        2 集合恰 3 键 {A, B, A+B}；3 集合恰 7 键 {A,B,C,A+B,A+C,B+C,A+B+C}。
-        （v2.3 的数字型 sets 因键数歧义从未可用，v2.5 起以独立键 'regions' 修复）
-    """
+
+
+
+
+
+
+
+
+
     import matplotlib.patches as mpatches
     sets = data.get("sets", None)
     regs = data.get("regions", None)
@@ -945,7 +945,7 @@ def gen_venn(data, ax, theme, cjk_fp, **kwargs):
                        keys[0] + keys[2]: len((A & C) - B),
                        keys[1] + keys[2]: len((B & C) - A),
                        keys[0] + keys[1] + keys[2]: len(A & B & C)}
-        else:  # v2.8：4 集合 → 15 区域
+        else:  
             import itertools as _it4
             for _n in (1, 2, 3, 4):
                 for _combo in _it4.combinations(range(4), _n):
@@ -972,7 +972,7 @@ def gen_venn(data, ax, theme, cjk_fp, **kwargs):
                     if a == b:
                         continue
                     if {a, b, a + b} == set(all_keys):
-                        found = [a, b]  # 集合名只有两个，第三个键是交集计数
+                        found = [a, b]  
                         break
                 if found:
                     break
@@ -985,7 +985,7 @@ def gen_venn(data, ax, theme, cjk_fp, **kwargs):
                         need = {a, b, c, a + b, a + c, b + c, a + b + c}
                         if need == set(all_keys):
                             found = [a, b, c]
-        elif len(all_keys) == 15:  # v2.8：4 集合 15 区域
+        elif len(all_keys) == 15:  
             import itertools as _it4
             for _names in _it4.permutations(all_keys, 4):
                 _need = set()
@@ -1015,12 +1015,12 @@ def gen_venn(data, ax, theme, cjk_fp, **kwargs):
     fs = theme["font_size"] + 2
     area_mode = bool(kwargs.get("area_mode"))
     ax.set_xlim(0, 1); ax.set_ylim(0, 1); ax.set_aspect("equal"); ax.axis("off")
-    if len(keys) == 4:  # v2.8 D1：4 集合走椭圆布局（默认与 --area 皆支持）
+    if len(keys) == 4:  
         _gen_venn4(ax, keys, regions, colors, fs, cjk_fp, area_mode)
         return
 
     if area_mode:
-        # ── Euler 面积比例模式：圆的大小与交集面积按计数比例 ──
+        
         import math as _m
         if len(keys) == 2:
             k1, k2 = keys
@@ -1057,7 +1057,7 @@ def gen_venn(data, ax, theme, cjk_fp, **kwargs):
             ax.add_patch(mpatches.Circle((cx, cy), r_draw, facecolor=colors[i],
                                          edgecolor="#333333", linewidth=1.4,
                                          alpha=0.42, zorder=2))
-        # 集合名：沿 圆心→图心 反向推到圆外（角度逐个微错开防同心/子集情形相撞）
+        
         for i, k in enumerate(keys):
             cx, cy = centers[i]
             r_draw = max(radii[i], 0.012)
@@ -1069,7 +1069,7 @@ def gen_venn(data, ax, theme, cjk_fp, **kwargs):
             ax.annotate(k, (lx, ly), fontsize=fs, fontweight="bold",
                         ha="center", va="center",
                         fontproperties=_fp(cjk_fp, k), color="#333333", zorder=5)
-        # 区域计数：放网格质心（视觉中心即数学中心）
+        
         zero_regions = [r for r, v in regions.items() if v <= 0]
         for region, cnt in regions.items():
             if cnt <= 0:
@@ -1083,11 +1083,11 @@ def gen_venn(data, ax, theme, cjk_fp, **kwargs):
         if zero_regions:
             _warn(f"venn --area: 区域 {zero_regions} 计数为 0，无对应面积，图中省略数字")
     else:
-        # ── 等圆示意模式（默认）：区域数字精确，面积不按比例 ──
+        
         if len(keys) == 2:
             centers = [(0.62, 0.5), (0.38, 0.5)]
             r = 0.27
-            # 区域标签绝对坐标（与圆心几何对应）
+            
             k1, k2 = keys
             label_xy = {k1: (0.76, 0.5), k2: (0.24, 0.5), k1 + k2: (0.5, 0.5)}
         else:
@@ -1097,8 +1097,8 @@ def gen_venn(data, ax, theme, cjk_fp, **kwargs):
             label_xy = {k1: (0.745, 0.64), k2: (0.255, 0.64), k3: (0.50, 0.245),
                         k1 + k2: (0.50, 0.705), k1 + k3: (0.585, 0.462),
                         k2 + k3: (0.415, 0.462), k1 + k2 + k3: (0.50, 0.535)}
-        # 标签偏移与圈位同侧：圈1 在右(0.60)、圈2 在左(0.40)、圈3 在下——
-        # 旧版偏移镜像导致前两个集合的名称互相标到对方的圈上（标签-圈错位 bug）
+        
+        
         label_pos = [(0.24, 0.16), (-0.24, 0.16), (0.0, -0.26)] if len(keys) == 3 \
             else [(0.24, 0.0), (-0.24, 0.0)]
         for i, k in enumerate(keys):
@@ -1120,14 +1120,14 @@ def gen_venn(data, ax, theme, cjk_fp, **kwargs):
     return None
 
 
-# ── cluster_heatmap 聚类热图 ──────────────────────────────────────────
+
 
 def gen_cluster_heatmap(data, ax, theme, cjk_fp, **kwargs):
-    """聚类热图：行列按层次聚类（Ward）重排后绘制（v2.3 不含树状图面板，
-    聚类顺序写入 stderr 与 alt 文本；树状图面板计划 v2.4）。
 
-    数据格式同 heatmap：{"matrix": [[...]], "row_labels": [...], "col_labels": [...]}。
-    """
+
+
+
+
     from scipy.cluster.hierarchy import linkage, leaves_list
     matrix = data.get("matrix", data.get("data", data.get("values", None)))
     if matrix is None or not isinstance(matrix, (list, tuple)) or len(matrix) == 0:
@@ -1152,7 +1152,7 @@ def gen_cluster_heatmap(data, ax, theme, cjk_fp, **kwargs):
     rl2 = [row_labels[i] if i < len(row_labels) else f"行{i+1}" for i in row_order]
     cl2 = [col_labels[i] if i < len(col_labels) else f"列{i+1}" for i in col_order]
 
-    ax._af_category_axis = True  # 行列标签是数据：豁免 fix_tick_overlaps 降级
+    ax._af_category_axis = True  
     cmap = kwargs.get("cmap") or "RdBu_r"
     vmin = kwargs.get("vmin", None) or float(M2.min())
     vmax = kwargs.get("vmax", None) or float(M2.max())
@@ -1177,10 +1177,10 @@ def gen_cluster_heatmap(data, ax, theme, cjk_fp, **kwargs):
                         color="white" if abs(M2[i, j] - (vmin+vmax)/2) > (vmax-vmin)/4 else "#333333")
     _warn(f"cluster_heatmap: 行聚类顺序 {rl2[:8]}{'…' if len(rl2) > 8 else ''}；"
           f"列聚类顺序 {cl2[:8]}{'…' if len(cl2) > 8 else ''}（method={method}/{metric}）")
-    return im  # 交给主流程挂色条
+    return im  
 
 
-# ── 注册表 ────────────────────────────────────────────────────────────
+
 
 EXTRA_GENERATORS = {
     "funnel": gen_funnel,
@@ -1221,10 +1221,10 @@ EXTRA_DEMO_DATA = {
 }
 
 
-# ── validate / alt / caption 钩子 ─────────────────────────────────────
+
 
 def validate_extra(chart_type, data):
-    """新图型数据校验。返回 (fatal, warn) 两条列表（信息可含修正指引）。"""
+
     fatal, warns = [], []
     if chart_type == "funnel":
         studies = data.get("studies", None)
@@ -1250,9 +1250,9 @@ def validate_extra(chart_type, data):
     elif chart_type == "venn":
         s = data.get("sets")
         rg = data.get("regions")
-        ok_sets = (isinstance(s, dict) and 2 <= len(s) <= 4 and not rg  # v2.8：4 集合
+        ok_sets = (isinstance(s, dict) and 2 <= len(s) <= 4 and not rg  
                    and all(isinstance(v, (list, tuple, set)) for v in s.values()))
-        ok_regs = isinstance(rg, dict) and len(rg) in (3, 7, 15) and not s  # v2.8：15 键
+        ok_regs = isinstance(rg, dict) and len(rg) in (3, 7, 15) and not s  
         if not (ok_sets or ok_regs):
             fatal.append("venn: 需要 'sets'（2~4 个集合，值为元素列表）或 'regions'"
                          "（区域计数：2 集合恰 {A,B,A+B} 三键 / 3 集合恰 7 键 /"
@@ -1268,7 +1268,7 @@ def validate_extra(chart_type, data):
 
 
 def alt_extra(chart_type, data, title=""):
-    """新图型的无障碍描述（--alt）。"""
+
     t = f"{title}。" if title else ""
     if chart_type == "funnel":
         n = len(data.get("studies", data.get("effects", [])) or [])
@@ -1291,10 +1291,10 @@ def alt_extra(chart_type, data, title=""):
     return t or f"{chart_type} 图。"
 
 
-# ── 图注模板（--caption，中英双语并列） ────────────────────────────────
+
 
 def make_caption(chart_type, data, title=""):
-    """期刊式图注（中英双语并列），写 <out>.caption.txt。渲染失败不阻断出图。"""
+
     zh_head = f"{title}。" if title else ""
     en_head = ""
     def _n(key, default="?"):

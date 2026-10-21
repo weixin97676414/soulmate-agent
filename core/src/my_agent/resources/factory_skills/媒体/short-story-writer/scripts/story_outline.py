@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-短篇小说大纲生成器 (story_outline.py)
-=====================================
-根据类型和设定，生成知乎/番茄风格的故事大纲、章节骨架和钩子清单。
 
-用法:
-    python story_outline.py --type suspense --premise "老公每天凌晨出门" --platform zhihu
-    python story_outline.py --type revenge --premise "婚礼上被闺蜜抢走新郎" --platform both
-    python story_outline.py --list-types
-"""
+
+
+
+
+
+
+
+
+
 
 import argparse, sys, json
 from datetime import datetime
 
-# 类型别名（支持模糊匹配：输入"悬疑"→suspense，"甜宠"→sweet）
+
 TYPE_ALIASES = {
     "悬疑": "suspense", "反转": "suspense", "惊悚": "suspense", "恐怖": "suspense",
     "复仇": "revenge", "逆袭": "revenge", "打脸": "revenge",
@@ -130,7 +130,7 @@ GENRES = {
 
 
 def check_premise(premise):
-    """检查设定合理性，返回警告列表"""
+
     warnings = []
     if not premise or premise == "待填充" or len(premise) < 6:
         warnings.append("⚠️ 设定太短（<6字）。试试描述「谁 + 发现/遭遇了什么反常事件」")
@@ -147,7 +147,7 @@ def check_premise(premise):
 
 
 def generate_outline(genre_key, premise, platform="auto"):
-    # Fuzzy matching: try exact → alias → suggest
+    
     genre = GENRES.get(genre_key)
     if not genre:
         resolved = TYPE_ALIASES.get(genre_key)
@@ -164,7 +164,7 @@ def generate_outline(genre_key, premise, platform="auto"):
             print(f"\n💡 提示: --list-types 查看完整列表，或用中文名如「悬疑」「甜宠」")
             sys.exit(1)
 
-    # Premise sanity check
+    
     pwarnings = check_premise(premise)
 
     lines = []
@@ -175,7 +175,7 @@ def generate_outline(genre_key, premise, platform="auto"):
     lines.append(f"> 叙事人称: {genre['narrator']}")
     lines.append("")
 
-    # 情节骨架
+    
     lines.append("## 情节骨架")
     lines.append("")
     for i, (title, desc, length) in enumerate(genre["structure"], 1):
@@ -187,21 +187,21 @@ def generate_outline(genre_key, premise, platform="auto"):
         lines.append(f"【本幕结尾钩子】")
         lines.append("")
 
-    # 开头钩子建议
+    
     if "hooks" in genre:
         lines.append("## 开头钩子建议（选一个最契合的）")
         for i, h in enumerate(genre["hooks"], 1):
             lines.append(f"{i}. {h}")
         lines.append("")
 
-    # 结尾方式
+    
     if "endings" in genre:
         lines.append("## 结尾方式（选一个）")
         for i, e in enumerate(genre["endings"], 1):
             lines.append(f"{i}. {e}")
         lines.append("")
 
-    # 设定检查结果
+    
     if pwarnings:
         lines.append("## ⚠️ 设定检查")
         lines.append("")
@@ -209,7 +209,7 @@ def generate_outline(genre_key, premise, platform="auto"):
             lines.append(f"- {w}")
         lines.append("")
 
-    # 平台适配提示
+    
     lines.append("## 平台适配提示")
     if genre["platform"] == "zhihu" or platform == "zhihu":
         lines.append("- 知乎体：每段2-3句，大量留白，对话简短")
@@ -221,7 +221,7 @@ def generate_outline(genre_key, premise, platform="auto"):
         lines.append("- 章节结尾留钩子——读者不翻下一页睡不着")
     lines.append("")
 
-    # 写作提醒
+    
     lines.append("## 写作提醒")
     lines.append("- 第一句话就进入故事——不要铺垫")
     lines.append("- 短段。多断句。手机屏3-4行即换段")

@@ -1,19 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""video_audit.py — AI电影级短视频总导演 · 确定性裁决工具
 
-把 SKILL.md 里可判定的规则固化成命令，避免同一句需求每次裁决出不同模板。
 
-子命令：
-  template <文本>   模板适配裁决（品类词 > 形式词 > 渠道词 > 兜底）
-  spec <渠道>       技术参数裁决（宽高比 / 帧率 / 时长上限）
-  checklist         打印交付前 10 项质量门
-  demo              跑一个完整实战案例
-  selftest          跑内置断言
 
-退出码：0=成功  2=输入/用法错误  3=内部错误
-零第三方依赖，仅用 Python 标准库。
-"""
+
+
+
+
+
+
+
+
+
+
+
 
 import argparse
 import io
@@ -21,7 +21,7 @@ import json
 import os
 import sys
 
-# ---- Windows 控制台 GBK 兜底：任何环境下都不因编码炸掉 ----
+
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
@@ -32,11 +32,11 @@ except Exception:
     pass
 
 
-# ============================================================
-# 规则表（全部取自 references/templates.md 的「适用场景」与 SKILL.md §Step 2）
-# ============================================================
 
-# 第一层：品类词 —— 决定画面主体与材质美学，优先级最高
+
+
+
+
 CATEGORY_WORDS = {
     "D": ["科技出海", "企业品宣", "跨境展会", "B2B", "工业", "制造", "机械",
           "新能源", "芯片"],
@@ -45,18 +45,18 @@ CATEGORY_WORDS = {
     "B": ["美妆", "食品", "家居", "母婴"],
 }
 
-# 第二层：形式词 —— 决定叙事方式与情绪弧线
+
 FORM_WORDS = {
     "C": ["微短剧", "剧情号", "剧情", "带货", "情感", "快手"],
     "A": ["出海TVC", "高净值"],
     "B": ["种草", "生活方式", "生活", "温暖", "美妆日常"],
 }
 
-# 第三层：渠道词 —— 只决定投放端，不决定美学模板
+
 CHANNEL_WORDS = ["视频号", "小红书", "TikTok", "tiktok", "抖音", "B站", "b站",
                  "YouTube", "youtube", "LinkedIn", "linkedin", "官网"]
 
-# 兜底：品类与形式都未命中时
+
 FALLBACK_LUX = ["奢侈", "高端", "珠宝", "瓷器", "丝绸"]
 FALLBACK_CONSUMER = ["美妆", "食品", "家居", "母婴", "日用", "消费"]
 
@@ -67,20 +67,20 @@ TEMPLATE_NAME = {
     "D": "跨境/B2B 工业科技出海",
 }
 
-# 渠道 → 宽高比（SKILL.md §风险与边界 3 给了 TikTok/抖音=9:16、B站/官网=16:9；
-# 其余按平台实际主形态补齐，与 tags 承诺的「适配抖音、小红书、TikTok、视频号」一致）
+
+
 RATIO_PORTRAIT = ["抖音", "TikTok", "tiktok", "小红书", "视频号", "快手"]
 RATIO_LANDSCAPE = ["B站", "b站", "官网", "YouTube", "youtube", "LinkedIn", "linkedin"]
 
-MAX_SEC = 60  # SKILL.md §风险与边界 3：单条短视频建议 ≤60s
+MAX_SEC = 60  
 
 
-# ============================================================
-# 裁决逻辑
-# ============================================================
+
+
+
 
 def _longest_hit(text, words):
-    """返回 (最长命中词, 长度)；无命中返回 (None, 0)。"""
+
     best, best_len = None, 0
     for w in words:
         if w in text and len(w) > best_len:
@@ -89,17 +89,17 @@ def _longest_hit(text, words):
 
 
 def decide_template(text):
-    """模板裁决：品类词 > 形式词 > 渠道词 > 兜底。
 
-    返回 dict：template / name / reason / hit / fallback
-    """
+
+
+
     if text is None or not str(text).strip():
         raise ValueError("需求文本为空，无法裁决模板")
 
     text = str(text)
-    lowered = text + " " + text.lower()  # 兼容 TikTok / B站 等大小写变体
+    lowered = text + " " + text.lower()  
 
-    # 第一层：品类词（最长命中优先；并列时按 D > A > B，工业与出海企业形态最明确）
+    
     hits = []
     for tpl in ("D", "A", "B"):
         w, ln = _longest_hit(lowered, CATEGORY_WORDS[tpl])
@@ -118,7 +118,7 @@ def decide_template(text):
             "fallback": False,
         }
 
-    # 第二层：形式词
+    
     hits = []
     for tpl in ("C", "A", "B"):
         w, ln = _longest_hit(lowered, FORM_WORDS[tpl])
@@ -137,7 +137,7 @@ def decide_template(text):
             "fallback": False,
         }
 
-    # 第三层：只有渠道词
+    
     ch = [c for c in CHANNEL_WORDS if c in lowered]
     if ch:
         return {
@@ -150,7 +150,7 @@ def decide_template(text):
             "fallback": True,
         }
 
-    # 第四层：完全无法判断 —— 按品类兜底
+    
     if any(w in lowered for w in FALLBACK_LUX):
         tpl = "A"
         reason = "完全无特征词，命中奢侈/高端线索，兜底 Template A（高奢出海基线）"
@@ -172,7 +172,7 @@ def decide_template(text):
 
 
 def decide_spec(channel, sec=None):
-    """技术参数裁决：宽高比 / 帧率 / 时长上限。"""
+
     if channel is None or not str(channel).strip():
         raise ValueError("渠道为空，无法裁决技术参数")
 
@@ -302,24 +302,24 @@ def run_selftest(args):
     def chk(name, got, want):
         cases.append((name, got == want, "got=%r want=%r" % (got, want)))
 
-    # —— 冲突案例锁死：子串抢占（工业 + 出海，必须判 D 而非 A）——
+    
     chk("工业设备出海 → D", decide_template("工业设备出海")["code"], "D")
     chk("机械零件出海TVC → D", decide_template("机械零件出海TVC")["code"], "D")
     chk("新能源企业品宣 → D", decide_template("新能源企业品宣")["code"], "D")
     chk("B2B芯片科技出海 → D", decide_template("B2B芯片科技出海")["code"], "D")
-    # —— 泛化出海词在无工业线索时仍归 A ——
+    
     chk("高奢手表出海TVC → A", decide_template("高奢手表出海TVC")["code"], "A")
     chk("东方茶器出海 → A", decide_template("东方茶器出海")["code"], "A")
     chk("珠宝品牌高净值 → A", decide_template("珠宝品牌高净值")["code"], "A")
-    # —— 形式词层 ——
+    
     chk("抖音剧情带货 → C", decide_template("抖音剧情带货")["code"], "C")
     chk("小红书种草 → B", decide_template("小红书种草")["code"], "B")
     chk("母婴食品种草 → B", decide_template("母婴食品种草")["code"], "B")
-    # —— 兜底层 ——
+    
     chk("只说TikTok → B 且兜底", decide_template("TikTok")["code"], "B")
     chk("只说TikTok 标兜底", decide_template("TikTok")["fallback"], True)
     chk("空泛需求 → A 且兜底", decide_template("做个视频")["code"], "A")
-    # —— spec ——
+    
     chk("抖音 → 9:16", decide_spec("抖音")["ratio"], "9:16")
     chk("小红书 → 9:16", decide_spec("小红书")["ratio"], "9:16")
     chk("LinkedIn → 16:9", decide_spec("LinkedIn")["ratio"], "16:9")
@@ -327,7 +327,7 @@ def run_selftest(args):
     chk("75s 超限需拆 2 条", decide_spec("抖音", 75)["split_into"], 2)
     chk("60s 不超限", decide_spec("抖音", 60)["over_limit"], False)
     chk("61s 超限", decide_spec("抖音", 61)["over_limit"], True)
-    # —— 输入错误必须抛 ValueError（不是 sys.exit，保证调用方可捕获）——
+    
     for bad in (lambda: decide_template(""), lambda: decide_template("   "),
                 lambda: decide_spec(""), lambda: decide_spec("抖音", 0),
                 lambda: decide_spec("抖音", -5), lambda: decide_spec("抖音", "abc"),
@@ -389,8 +389,8 @@ def main(argv=None):
     try:
         return _main(argv)
     except SystemExit as e:
-        # argparse 遇到未知子命令/参数会 sys.exit(2)，SystemExit 是 BaseException，
-        # 不被 except Exception 捕获，会直接终止进程。这里转成返回值，保证退出码封闭。
+        
+        
         code = e.code
         if code is None or code == 0:
             return 0

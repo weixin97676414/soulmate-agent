@@ -1,29 +1,29 @@
 #!/usr/bin/env node
-/**
- * 知乎自动化发布工具 - Zhihu Human-like Publisher
- *
- * 模拟真实用户在浏览器中的操作，包括：
- * - 自然的鼠标移动（贝塞尔曲线）
- * - 变速键盘输入（包含偶尔停顿和修正）
- * - 随机滚动和页面等待
- * - 分步操作日志
- *
- * 发布模式:
- *   article: 发布文章（含封面图片）
- *   answer:  回答问题（支持多问题批量）
- *
- * 用法:
- *   node publisher.js article --draft data/drafts/xxx.json
- *   node publisher.js answer --draft data/drafts/xxx.json --questions 5
- *   node publisher.js answer --draft data/drafts/xxx.json --urls url1,url2
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const puppeteer = require('puppeteer-core');
 
-// ---------- 配置 ----------
+
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const USER_DATA = path.join(os.homedir(), 'AppData', 'Local', 'Microsoft', 'Edge', 'User Data');
@@ -34,14 +34,14 @@ const ZHIHU_URL = 'https://www.zhihu.com';
 const ARTICLE_PAGE = 'https://zhuanlan.zhihu.com/write';
 const LOGIN_URL = 'https://www.zhihu.com/signin';
 
-// 模拟参数
-const TYPING_SPEED = { min: 60, max: 180 };  // 每字毫秒
-const MOUSE_STEPS = { min: 20, max: 40 };      // 鼠标移动步数
-const SCROLL_PAUSE = { min: 500, max: 2000 };  // 滚动后等待
-const CLICK_DELAY = { min: 300, max: 1500 };   // 点击间延迟
-const ACTION_DELAY = { min: 800, max: 3000 };  // 操作间延迟
 
-// ---------- 工具函数 ----------
+const TYPING_SPEED = { min: 60, max: 180 };  
+const MOUSE_STEPS = { min: 20, max: 40 };      
+const SCROLL_PAUSE = { min: 500, max: 2000 };  
+const CLICK_DELAY = { min: 300, max: 1500 };   
+const ACTION_DELAY = { min: 800, max: 3000 };  
+
+
 
 const log = {
   _t: () => new Date().toLocaleTimeString('zh-CN'),
@@ -63,14 +63,14 @@ function randomSleep(min, max) {
   return sleep(rand(min, max));
 }
 
-// ---------- 人类模拟: 鼠标移动 ----------
+
 
 async function humanMouseMove(page, toX, toY, steps = null) {
   const start = await page.evaluate(() => ({ x: window.mouseX || 400, y: window.mouseY || 300 }));
 
   steps = steps || rand(MOUSE_STEPS.min, MOUSE_STEPS.max);
 
-  // 贝塞尔曲线控制点
+  
   const cp1x = start.x + (toX - start.x) * (0.2 + Math.random() * 0.3);
   const cp1y = start.y + (toY - start.y) * (0.1 + Math.random() * 0.2);
   const cp2x = start.x + (toX - start.x) * (0.6 + Math.random() * 0.2);
@@ -87,7 +87,7 @@ async function humanMouseMove(page, toX, toY, steps = null) {
     await sleep(rand(5, 15));
   }
 
-  // 更新位置
+  
   await page.evaluate((x, y) => { window.mouseX = x; window.mouseY = y; }, toX, toY);
 }
 
@@ -116,7 +116,7 @@ async function humanClick(page, selector, options = {}) {
   }
 }
 
-// ---------- 人类模拟: 键盘输入 ----------
+
 
 async function humanType(page, selector, text, options = {}) {
   const { clear = true, clickFirst = true } = options;
@@ -129,7 +129,7 @@ async function humanType(page, selector, text, options = {}) {
     }
 
     if (clear) {
-      await page.click(selector, { clickCount: 3 }); // 全选
+      await page.click(selector, { clickCount: 3 }); 
       await sleep(100);
       await page.keyboard.press('Backspace');
       await sleep(200);
@@ -141,12 +141,12 @@ async function humanType(page, selector, text, options = {}) {
     while (i < chars.length) {
       const ch = chars[i];
 
-      // 随机停顿（模拟思考）
+      
       if (Math.random() < 0.03) {
         await sleep(rand(500, 2000));
       }
 
-      // 段落间较长停顿
+      
       if (ch === '\n') {
         await sleep(rand(200, 600));
         await page.keyboard.press('Enter');
@@ -154,10 +154,10 @@ async function humanType(page, selector, text, options = {}) {
         continue;
       }
 
-      // 模拟打字速度变化
+      
       const speed = rand(TYPING_SPEED.min, TYPING_SPEED.max);
 
-      // 偶尔"打错"再删除（增加真实感）
+      
       if (Math.random() < 0.01 && i > 5) {
         const wrongChar = String.fromCharCode(ch.charCodeAt(0) + rand(-2, 2));
         await page.keyboard.type(wrongChar, { delay: speed });
@@ -169,7 +169,7 @@ async function humanType(page, selector, text, options = {}) {
       await page.keyboard.type(ch, { delay: speed });
       i++;
 
-      // 每100字输出进度
+      
       if (i % 100 === 0) {
         log.info(`输入中... ${i}/${chars.length}`);
       }
@@ -183,30 +183,30 @@ async function humanType(page, selector, text, options = {}) {
 }
 
 async function humanPaste(page, selector, text) {
-  /** 粘贴长文本（比逐字输入快但仍然模拟操作） */
+  
   try {
     await page.waitForSelector(selector, { visible: true, timeout: 10000 });
     await page.click(selector);
     await randomSleep(CLICK_DELAY.min, CLICK_DELAY.max);
 
-    // 模拟先聚焦然后使用 Ctrl+V 粘贴
+    
     await page.evaluate((sel) => {
       const el = document.querySelector(sel);
       if (el) {
         el.focus();
-        // 清空内容
+        
         if (el.innerHTML || el.value) {
           el.innerHTML = '';
           el.value = '';
         }
-        // 触发 input 事件（知乎编辑器需要）
+        
         el.dispatchEvent(new Event('input', { bubbles: true }));
       }
     }, selector);
 
     await sleep(300);
 
-    // 使用 clipboard API 粘贴
+    
     await page.evaluate((text) => {
       navigator.clipboard.writeText(text);
     }, text);
@@ -220,12 +220,12 @@ async function humanPaste(page, selector, text) {
     return true;
   } catch (e) {
     log.warn(`粘贴失败: ${e.message}`);
-    // 回退到逐字输入
+    
     return await humanType(page, selector, text, { clickFirst: false });
   }
 }
 
-// ---------- 人类模拟: 滚动 ----------
+
 
 async function humanScroll(page, distance = null) {
   const d = distance || rand(200, 600);
@@ -240,7 +240,7 @@ async function humanScroll(page, distance = null) {
   await randomSleep(SCROLL_PAUSE.min, SCROLL_PAUSE.max);
 }
 
-// ---------- 加载配置 ----------
+
 
 function loadCookie() {
   try {
@@ -260,7 +260,7 @@ function loadDraft(draftPath) {
   }
 }
 
-// ---------- 文章发布流程 ----------
+
 
 async function publishArticle(page, draft) {
   log.step('A1', '导航到知乎写文章页面');
@@ -268,7 +268,7 @@ async function publishArticle(page, draft) {
   await randomSleep(2000, 4000);
   await humanScroll(page, 100);
 
-  // 检查是否已登录
+  
   const currentUrl = page.url();
   if (currentUrl.includes('signin') || currentUrl.includes('login')) {
     log.warn('未登录！请先运行 auto_cookie.js 获取 Cookie');
@@ -276,12 +276,12 @@ async function publishArticle(page, draft) {
   }
 
   log.step('A2', '输入标题');
-  // 知乎文章编辑器标题选择器
+  
   const titleSelectors = [
-    '.WriteIndex-titleInput',           // 新版
-    '.Editable-title input',             // 旧版
-    '[data-testid="article-title"]',     // 测试ID
-    '[placeholder*="标题"]',             // placeholder
+    '.WriteIndex-titleInput',           
+    '.Editable-title input',             
+    '[data-testid="article-title"]',     
+    '[placeholder*="标题"]',             
     'textarea[placeholder*="文章"]',
     'input[placeholder*="标题"]',
   ];
@@ -304,10 +304,10 @@ async function publishArticle(page, draft) {
   await randomSleep(ACTION_DELAY.min, ACTION_DELAY.max);
 
   log.step('A3', '输入正文');
-  // 知乎编辑器正文选择器
+  
   const bodySelectors = [
-    '.public-DraftEditor-content',       // Draft.js
-    '.ql-editor',                         // Quill
+    '.public-DraftEditor-content',       
+    '.ql-editor',                         
     '[data-testid="article-content"]',
     '[contenteditable="true"]',
     '.WriteIndex-richText',
@@ -322,7 +322,7 @@ async function publishArticle(page, draft) {
         await box.click();
         await sleep(500);
       }
-      // 粘贴长文本（比打字快但仍然是模拟操作）
+      
       await humanPaste(page, sel, draft.body);
       bodyDone = true;
       log.ok('正文已输入');
@@ -363,12 +363,12 @@ async function publishArticle(page, draft) {
 
   await randomSleep(3000, 5000);
 
-  // 检查发布后的确认
+  
   log.ok('文章发布流程完成!');
   return true;
 }
 
-// ---------- 回答发布流程 ----------
+
 
 async function publishAnswer(page, draft, questionUrls) {
   log.step('B1', `准备回答 ${questionUrls.length} 个问题`);
@@ -377,15 +377,15 @@ async function publishAnswer(page, draft, questionUrls) {
     const qUrl = questionUrls[qi];
     log.step(`B${qi + 2}`, `回答问题 ${qi + 1}/${questionUrls.length}`);
 
-    // 导航到问题页面
+    
     log.info(`导航: ${qUrl}`);
     await page.goto(qUrl, { waitUntil: 'networkidle2', timeout: 30000 });
     await randomSleep(2000, 4000);
 
-    // 滚动页面找到"写回答"按钮
+    
     await humanScroll(page, 200);
 
-    // 点击"写回答"按钮
+    
     const answerBtnSelectors = [
       'button:has-text("写回答")',
       'a:has-text("写回答")',
@@ -406,13 +406,13 @@ async function publishAnswer(page, draft, questionUrls) {
     }
 
     if (!btnClicked) {
-      // 尝试直接在页面找编辑器（可能已经展开）
+      
       log.info('尝试直接使用编辑器...');
     }
 
     await randomSleep(2000, 3000);
 
-    // 输入回答内容
+    
     log.info('输入回答内容...');
     const editorSelectors = [
       '.public-DraftEditor-content',
@@ -444,7 +444,7 @@ async function publishAnswer(page, draft, questionUrls) {
 
     await randomSleep(1000, 2000);
 
-    // 点击"发布回答"
+    
     const submitSelectors = [
       'button:has-text("发布")',
       'button:has-text("提交回答")',
@@ -469,7 +469,7 @@ async function publishAnswer(page, draft, questionUrls) {
       log.warn(`问题 ${qi + 1} 未找到提交按钮`);
     }
 
-    // 问题间随机等待
+    
     if (qi < questionUrls.length - 1) {
       const wait = rand(5000, 15000);
       log.info(`等待 ${Math.round(wait/1000)}s 后回答下一个问题...`);
@@ -481,18 +481,18 @@ async function publishAnswer(page, draft, questionUrls) {
   return true;
 }
 
-// ---------- 搜索并选择问题 ----------
+
 
 async function searchAndSelectQuestion(page, questionTitle, maxResults = 5) {
-  /** 在知乎搜索问题，返回匹配的 URL 列表 */
+  
   log.info(`搜索: ${questionTitle.substring(0, 40)}...`);
 
-  // 导航到知乎搜索
+  
   const searchUrl = `https://www.zhihu.com/search?type=content&q=${encodeURIComponent(questionTitle)}`;
   await page.goto(searchUrl, { waitUntil: 'networkidle2', timeout: 20000 });
   await randomSleep(2000, 3000);
 
-  // 提取搜索结果中的问题链接
+  
   const results = await page.evaluate(() => {
     const items = [];
     const links = document.querySelectorAll('a[href*="/question/"]');
@@ -509,7 +509,7 @@ async function searchAndSelectQuestion(page, questionTitle, maxResults = 5) {
   return results.slice(0, maxResults);
 }
 
-// ---------- 主入口 ----------
+
 
 async function run(options = {}) {
   const {
@@ -525,9 +525,9 @@ async function run(options = {}) {
   console.log('║    Human-like Publisher for Edge Browser          ║');
   console.log('╚══════════════════════════════════════════════════╝\n');
 
-  // 加载草稿
+  
   if (!draftPath) {
-    // 尝试从最新草稿加载
+    
     const drafts = fs.readdirSync(DRAFTS_DIR).filter(f => f.endsWith('.json')).sort().reverse();
     if (drafts.length > 0) {
       draftPath = path.join(DRAFTS_DIR, drafts[0]);
@@ -547,14 +547,14 @@ async function run(options = {}) {
   log.ok(`草稿已加载: ${(draft.title || draft.topic?.title || '无标题').substring(0, 50)}`);
   log.info(`类型: ${draft.content_type || mode} | 长度: ${(draft.body || '').length} 字`);
 
-  // 加载 Cookie
+  
   const cookies = loadCookie();
   if (!cookies) {
     log.warn('未找到 Cookie 配置，请先运行 auto_cookie.js');
     return 1;
   }
 
-  // 启动浏览器
+  
   log.step('1', '启动 Edge 浏览器');
   let browser;
   try {
@@ -587,25 +587,25 @@ async function run(options = {}) {
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0'
     );
 
-    // 设置 cookies
+    
     const cookieList = Object.entries(cookies).map(([name, value]) => ({
       name, value, domain: '.zhihu.com', path: '/'
     }));
     await page.setCookie(...cookieList);
 
-    // 初始化鼠标位置
+    
     await page.evaluate(() => { window.mouseX = 400; window.mouseY = 300; });
 
-    // 根据模式执行
+    
     if (mode === 'article') {
       await publishArticle(page, draft);
     } else if (mode === 'answer') {
-      // 确定要回答的问题
+      
       let urls = questionUrls;
       if (urls.length === 0) {
         const questions = loadQuestions(questionCount);
         if (questions.length > 0) {
-          // 搜索并匹配问题
+          
           for (const q of questions) {
             const results = await searchAndSelectQuestion(page, q.title);
             if (results.length > 0) {
@@ -623,7 +623,7 @@ async function run(options = {}) {
       }
     }
 
-    // 关闭
+    
     log.info('操作完成，5秒后关闭浏览器...');
     await sleep(5000);
     await browser.close();
@@ -642,11 +642,11 @@ async function run(options = {}) {
 }
 
 function loadQuestions(count) {
-  /** 从问题数据库加载问题 */
+  
   try {
-    const db = require('better-sqlite3'); // 尝试
+    const db = require('better-sqlite3'); 
   } catch {
-    // 从保存的问题 JSON 加载
+    
     const qFile = path.join(DRAFTS_DIR, 'questions_for_answer.json');
     if (fs.existsSync(qFile)) {
       return JSON.parse(fs.readFileSync(qFile, 'utf-8')).slice(0, count);
@@ -655,7 +655,7 @@ function loadQuestions(count) {
   return [];
 }
 
-// ---------- CLI ----------
+
 
 function parseArgs() {
   const args = process.argv.slice(2);

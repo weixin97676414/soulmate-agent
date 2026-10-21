@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""
-LegalDoc AI - Main CLI Entry Point
-Unified interface for legal document automation.
-"""
+
+
+
+
 
 import os
 import sys
@@ -11,10 +11,10 @@ import subprocess
 from pathlib import Path
 
 
-# Get the directory containing this script
+
 SCRIPT_DIR = Path(__file__).parent.resolve()
 
-# Component scripts
+
 SCRIPTS = {
     "extract": SCRIPT_DIR / "clause_extractor.py",
     "summarize": SCRIPT_DIR / "document_summarizer.py",
@@ -24,7 +24,7 @@ SCRIPTS = {
 
 
 def print_banner():
-    """Print the LegalDoc AI banner."""
+
     banner = """
 ╔═══════════════════════════════════════════════════════════════╗
 ║                                                               ║
@@ -39,7 +39,7 @@ def print_banner():
 
 
 def run_component(component: str, args: list) -> int:
-    """Run a component script with arguments."""
+
     script_path = SCRIPTS.get(component)
     
     if not script_path or not script_path.exists():
@@ -116,31 +116,31 @@ For help on a specific command:
         print("  4. Track deadlines:  legaldoc deadlines list")
         return 0
     
-    # Handle extract command with subcommand
+    
     if args.command == "extract":
         if args.subcommand == "clauses":
             return run_component("extract", args.args)
         else:
-            # Treat subcommand as file path if no explicit subcommand
+            
             all_args = [args.subcommand] + args.args if args.subcommand else args.args
             return run_component("extract", all_args)
     
-    # Handle summarize command
+    
     elif args.command == "summarize":
         all_args = [args.subcommand] + args.args if args.subcommand else args.args
         return run_component("summarize", all_args)
     
-    # Handle research command
+    
     elif args.command == "research":
         all_args = [args.subcommand] + args.args if args.subcommand else args.args
         return run_component("research", all_args)
     
-    # Handle deadlines command
+    
     elif args.command == "deadlines":
         all_args = [args.subcommand] + args.args if args.subcommand else args.args
         return run_component("deadlines", all_args)
     
-    # Handle compare command (placeholder)
+    
     elif args.command == "compare":
         print("Document comparison feature coming soon!")
         print("Usage: legaldoc compare <file1> <file2> --type redline|summary")

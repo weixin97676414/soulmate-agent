@@ -1,4 +1,4 @@
-"""办公技能测试：Excel 读写与聚合、文档解析、报告与图表生成。"""
+
 
 from __future__ import annotations
 
@@ -28,12 +28,12 @@ openpyxl = pytest.importorskip("openpyxl", reason="需要 office 依赖")
 
 @pytest.fixture(autouse=True)
 def auto_approve(skill_env):
-    """让确认自动通过。
 
-    excel_write 是 confirm 级技能，没有确认通道时会被**正确地拒绝**。
-    这里显式装一个"总是批准"的通道，好让写入逻辑本身可测；
-    确认机制自身的行为由 test_agent_loop / test_security / test_server 覆盖。
-    """
+
+
+
+
+
 
     async def approve(_request) -> bool:
         return True
@@ -77,9 +77,9 @@ SALES_ROWS = [
 ]
 
 
-# --------------------------------------------------------------------------- #
-# excel_read
-# --------------------------------------------------------------------------- #
+
+
+
 async def test_excel_read(manager, skill_env):
     path = make_xlsx(skill_env.root / "sales.xlsx", SALES_ROWS)
     result = json.loads(await manager.execute("excel_read", {"file_path": str(path)}, skill_env.ctx))
@@ -99,7 +99,7 @@ async def test_excel_read_respects_max_rows(manager, skill_env):
         )
     )
     assert len(result["rows"]) == 2
-    # total_rows 必须是真实行数，否则模型会以为表里只有 2 行
+    
     assert result["total_rows"] == 5
     assert result["truncated"] is True
 
@@ -111,7 +111,7 @@ async def test_excel_read_handles_blank_and_duplicate_headers(manager, skill_env
     )
     result = json.loads(await manager.execute("excel_read", {"file_path": str(path)}, skill_env.ctx))
     assert result["columns"] == ["名称", "列2", "名称_1"]
-    # 整行为空的行应被跳过
+    
     assert result["total_rows"] == 2
 
 
@@ -124,9 +124,9 @@ async def test_excel_read_unknown_sheet_lists_available(manager, skill_env):
     assert "数据" in str(exc.value)
 
 
-# --------------------------------------------------------------------------- #
-# excel_analyze
-# --------------------------------------------------------------------------- #
+
+
+
 async def test_excel_analyze_sum_by_group(manager, skill_env):
     path = make_xlsx(skill_env.root / "sales.xlsx", SALES_ROWS)
     result = json.loads(
@@ -137,7 +137,7 @@ async def test_excel_analyze_sum_by_group(manager, skill_env):
         )
     )
     assert result["aggregation"] == "sum"
-    # 2月=1500+950=2450 > 1月=1200+800=2000 > 3月=1700，默认按值倒序
+    
     assert [(item["group"], item["value"]) for item in result["items"]] == [
         ("2月", 2450),
         ("1月", 2000),
@@ -170,7 +170,7 @@ async def test_excel_analyze_reports_unknown_column_with_hint(manager, skill_env
         )
     message = str(exc.value)
     assert "季度" in message
-    # 必须把可用列列出来，否则模型只能瞎猜
+    
     assert "月份" in message
 
 
@@ -199,9 +199,9 @@ async def test_excel_analyze_skips_non_numeric(manager, skill_env):
     assert result["total"] == 300
 
 
-# --------------------------------------------------------------------------- #
-# excel_write
-# --------------------------------------------------------------------------- #
+
+
+
 async def test_excel_write_creates_file(manager, skill_env):
     target = skill_env.root / "out.xlsx"
     result = json.loads(
@@ -239,7 +239,7 @@ async def test_excel_write_append_preserves_existing_columns(manager, skill_env)
 
 
 async def test_excel_write_append_adds_new_column(manager, skill_env):
-    """新出现的键应补成新列，而不是被丢弃。"""
+
     target = make_xlsx(skill_env.root / "base.xlsx", [["名称", "数量"], ["甲", 1]])
     await manager.execute(
         "excel_write",
@@ -275,12 +275,12 @@ async def test_excel_write_overwrite_clears_rows(manager, skill_env):
 
 
 async def test_excel_write_is_confirm_level(manager):
-    """写操作必须有副作用标记，否则会绕过权限确认。"""
+
     assert manager.get("excel_write").meta.permission_level == "confirm"
 
 
 async def test_excel_write_denied_without_confirm_channel(manager, skill_env):
-    """没有确认通道时必须拒绝写入，绝不能"悄悄写进去"。"""
+
     skill_env.ctx.confirm = None
     target = skill_env.root / "不该被创建.xlsx"
 
@@ -322,9 +322,9 @@ async def test_excel_write_rejects_non_serializable_cell(manager, skill_env):
     assert json.loads(readback["rows"][0]["配置"]) == {"a": 1}
 
 
-# --------------------------------------------------------------------------- #
-# doc_parse
-# --------------------------------------------------------------------------- #
+
+
+
 async def test_doc_parse_text(manager, skill_env):
     path = skill_env.root / "note.md"
     path.write_text("# 标题\n\n正文内容", encoding="utf-8")
@@ -334,7 +334,7 @@ async def test_doc_parse_text(manager, skill_env):
 
 
 async def test_doc_parse_gbk_text(manager, skill_env):
-    """中文 Windows 上的文本文件经常是 GBK，不能直接按 UTF-8 读崩。"""
+
     path = skill_env.root / "gbk.txt"
     path.write_bytes("这是 GBK 编码的中文内容".encode("gb18030"))
     result = json.loads(await manager.execute("doc_parse", {"file_path": str(path)}, skill_env.ctx))
@@ -406,9 +406,9 @@ async def test_doc_parse_missing_file(manager, skill_env):
     assert "不存在" in str(exc.value)
 
 
-# --------------------------------------------------------------------------- #
-# report_generate
-# --------------------------------------------------------------------------- #
+
+
+
 async def test_report_generate_writes_markdown(manager, skill_env):
     result = json.loads(
         await manager.execute(
@@ -462,7 +462,7 @@ async def test_report_generate_rejects_empty(manager, skill_env):
 
 
 async def test_report_generate_sanitizes_output_name(manager, skill_env):
-    """模型可能给出带目录的路径，必须只取文件名并落在产物目录内。"""
+
     result = json.loads(
         await manager.execute(
             "report_generate",
@@ -505,9 +505,9 @@ async def test_report_is_registered_as_artifact(manager, skill_env):
     assert artifacts[0].note == "归档测试"
 
 
-# --------------------------------------------------------------------------- #
-# chart_generate
-# --------------------------------------------------------------------------- #
+
+
+
 async def test_chart_generate_bar(manager, skill_env):
     result = json.loads(
         await manager.execute(
@@ -548,7 +548,7 @@ async def test_chart_generate_pie_and_line(manager, skill_env):
 
 
 async def test_chart_generate_rejects_length_mismatch(manager, skill_env):
-    """数值与标签数量不一致是模型最常犯的错，必须给出可操作的提示。"""
+
     with pytest.raises(SkillExecutionError) as exc:
         await manager.execute(
             "chart_generate",
@@ -563,7 +563,7 @@ async def test_chart_generate_rejects_length_mismatch(manager, skill_env):
 
 
 async def test_chart_generate_rejects_unknown_type(manager, skill_env):
-    """类型是 Literal，参数校验阶段就会被拦下（比进到技能里再报错更早）。"""
+
     with pytest.raises(SkillValidationError) as exc:
         await manager.execute(
             "chart_generate",
@@ -579,15 +579,15 @@ async def test_chart_generate_rejects_unknown_type(manager, skill_env):
     assert "bar" in message and "line" in message and "pie" in message
 
 
-# --------------------------------------------------------------------------- #
-# 白名单强制
-# --------------------------------------------------------------------------- #
-async def test_office_skills_respect_path_whitelist(manager, skill_env, tmp_path_factory):
-    """白名单是硬约束：技能不能读写白名单之外的文件。
 
-    错误类型必须是 ``PathNotAllowedError`` 而不是被包装成
-    ``SkillExecutionError`` —— 否则上层无法区分"权限问题"和"代码 bug"。
-    """
+
+
+async def test_office_skills_respect_path_whitelist(manager, skill_env, tmp_path_factory):
+
+
+
+
+
     outside = tmp_path_factory.mktemp("outside") / "secret.xlsx"
     make_xlsx(outside, [["机密", "数据"], ["a", 1]])
 

@@ -1,30 +1,30 @@
-"""把「心鉴学-地点库」的四个 JS 数据文件转成核心内置的 JSON 资源。
 
-用法（在 core 目录下）::
 
-    .venv/Scripts/python.exe tools/build_geo_data.py
 
-产物落在 ``src/my_agent/resources/geo/``，随核心一起打包（见 ``pyproject.toml``
-的 PyInstaller datas，以及 ``skill/builtin/geo_lookup.py`` 的读取处）::
 
-    countries.json          国家四要素（zh/en/iso2/iso3）
-    countries_regions.json  中国之外精选国家的「省/州 → 市」
-    regions.json            中国行政区划（省/市/县 三级）
-    cities.json             同上（全国城市表那份，两份都要，见下）
-    adjacency.json          省级 + 国家级邻接关系（本脚本自建并校验）
 
-## 为什么要这个脚本而不是手抄一遍
 
-源文件是 JS（``window.X = {...}`` / ``const X = {...}`` / 不引号的键），
-直接手抄 2000 多个地名必然抄错，而且下次源数据更新时没人愿意再抄一遍。
-脚本把"剥壳 → 解析 → 校验 → 落盘"固化下来，跑一次即可。
 
-## 为什么 cities.json 与 regions.json 是同一份内容
 
-《心鉴学-地点库》给了两个内容相同的中国区划文件（``全国城市表.js`` 与
-``regions-data.js``）。两个都保留：一个的名字对应"城市表"（地点查询用），
-另一个对应"行政区划"（级联选择用），将来它们真的分叉时不用改代码。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -36,16 +36,16 @@ from pathlib import Path
 SRC_DIR = Path(r"D:\win版客户端开发\心鉴学-地点库")
 OUT_DIR = Path(__file__).resolve().parents[1] / "src" / "my_agent" / "resources" / "geo"
 
-# --------------------------------------------------------------------------- #
-# 省级邻接（中国 34 个省级行政区，仅陆上/桥梁相连的行政区）
-#
-# 用途：地点核对命中不了时，按「同省 → 相邻省 → 全国主要城市」逐级给候选
-# （见 skill/builtin/xjx_skill_md 里的「地点核对」章节）。
-#
-# 海南与台湾是岛屿，没有陆上邻接 —— 空列表是**如实**表达"没有相邻省级单位"，
-# 而不是漏填；核对时会直接落到"全国主要城市"那一级。
-# 香港 / 澳门只与广东相连。
-# --------------------------------------------------------------------------- #
+
+
+
+
+
+
+
+
+
+
 PROVINCE_ADJACENCY: dict[str, list[str]] = {
     "北京市": ["河北省", "天津市"],
     "天津市": ["北京市", "河北省"],
@@ -101,13 +101,13 @@ PROVINCE_ADJACENCY: dict[str, list[str]] = {
     "澳门特别行政区": ["广东省"],
 }
 
-# --------------------------------------------------------------------------- #
-# 国家级邻接（只登记「地点库里有省/市级数据」的那些国家）
-#
-# 没登记的国家在核对时直接落到"该国主要城市"那一级 —— 邻接是**增强**，
-# 不是前提；宁可少给一级候选，也不要编一份自己不确信的邻接表出来。
-# 校验：脚本会检查对称性，并报告 countries_regions.json 里没有邻接的国家。
-# --------------------------------------------------------------------------- #
+
+
+
+
+
+
+
 COUNTRY_ADJACENCY: dict[str, list[str]] = {
     "中国": [
         "韩国",
@@ -175,7 +175,7 @@ COUNTRY_ADJACENCY: dict[str, list[str]] = {
     "阿根廷": ["巴西", "乌拉圭", "巴拉圭", "玻利维亚", "智利"],
     "智利": ["阿根廷", "玻利维亚", "秘鲁"],
     "秘鲁": ["巴西", "玻利维亚", "智利", "厄瓜多尔", "哥伦比亚"],
-    "墨西哥_": [],  # 占位，避免误删（真正的表项在上面）
+    "墨西哥_": [],  
     "台湾": [],
     "香港": ["中国"],
     "澳门": ["中国"],
@@ -183,12 +183,12 @@ COUNTRY_ADJACENCY: dict[str, list[str]] = {
 
 
 def strip_wrapper(text: str) -> str:
-    """剥掉 JS 外壳，只留下 ``{...}`` / ``[...]`` 那一段。
 
-    不能用 ``rfind('}')`` 取结尾：源文件在数据体之后还挂着别的东西
-    （映射表、导出语句），一取就"Extra data"。这里做**括号配对**，
-    精确截到数据体自己的收尾括号（字符串里的括号要跳过）。
-    """
+
+
+
+
+
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
     start = min(
         (i for i in (text.find("{"), text.find("[")) if i >= 0),
@@ -223,9 +223,9 @@ def strip_wrapper(text: str) -> str:
     if end <= start:
         raise ValueError("数据体的括号没有配对")
     body = text[start : end + 1]
-    # JS 允许对象键不加引号，JSON 不允许 —— 这里补上引号（只补键，不动字符串值）
+    
     body = re.sub(r'([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:', r'\1"\2":', body)
-    # JS 允许尾随逗号
+    
     body = re.sub(r",(\s*[}\]])", r"\1", body)
     return body
 
@@ -241,13 +241,13 @@ def close_and_verify(
     *,
     close: bool,
 ) -> dict[str, list[str]]:
-    """邻接必须对称，目标必须在已知集合里；``close=True`` 时先补全反向边。
 
-    省级表是完整的手写表，要求**本来就对称**（close=False，写错就报错）。
-    国家级表只登记"地点库里有省/市数据"的国家，邻居未必也有条目；
-    ``close=True`` 会把 ``A→B`` 自动补成 ``B→A``，让数据天然对称，
-    而不是靠人肉去维护一份几千个国家的全表。
-    """
+
+
+
+
+
+
     if close:
         for source, targets in list(pairs.items()):
             for target in targets:
@@ -282,14 +282,14 @@ def main() -> None:
     regions = load_js(SRC_DIR / "regions-data.js")
     cities = load_js(SRC_DIR / "全国城市表.js")
 
-    # 校验：countries_regions.json 里的国家名必须都在 countries-data.js 里
+    
     known_countries = {item["zh"] for item in countries}
     unknown = sorted(set(country_regions) - known_countries)
     if unknown:
         print(f"  ! countries-regions 里有 {len(unknown)} 个国家不在国家表里：{unknown}")
 
     province_adj = close_and_verify(PROVINCE_ADJACENCY, "省级", set(regions), close=False)
-    # 「墨西哥_」是防误删的占位键，校验前剔掉
+    
     country_adj = {
         k: list(v) for k, v in COUNTRY_ADJACENCY.items() if not k.endswith("_")
     }

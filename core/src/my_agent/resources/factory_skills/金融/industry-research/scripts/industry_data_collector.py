@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""
-行业数据采集辅助脚本
-从公开数据源获取行业关键数据，辅助行业研究报告编写。
 
-用法:
-    python3 scripts/industry_data_collector.py --industry "AI芯片" --market "CN"
-    python3 scripts/industry_data_collector.py --industry "robotics" --market "US"
-    python3 scripts/industry_data_collector.py --companies "NVDA,AMD,INTC" --compare
-"""
+
+
+
+
+
+
+
+
 
 import argparse
 import json
@@ -18,7 +18,7 @@ from datetime import datetime
 
 
 def get_stock_data(ticker: str) -> dict:
-    """从Yahoo Finance获取股票基本面数据"""
+
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?range=1y&interval=1d"
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
@@ -42,7 +42,7 @@ def get_stock_data(ticker: str) -> dict:
 
 
 def compare_companies(tickers: list) -> list:
-    """批量获取公司数据用于对比"""
+
     results = []
     for ticker in tickers:
         data = get_stock_data(ticker.strip())
@@ -51,7 +51,7 @@ def compare_companies(tickers: list) -> list:
 
 
 def format_comparison_table(companies: list) -> str:
-    """格式化为Markdown对比表"""
+
     if not companies:
         return "No data"
     
@@ -63,7 +63,7 @@ def format_comparison_table(companies: list) -> str:
         ["交易所"] + [str(c.get("exchange", "N/A")) for c in companies],
     ]
     
-    # Build markdown table
+    
     table = "| " + " | ".join(headers) + " |\n"
     table += "|" + "|".join(["---"] * len(headers)) + "|\n"
     for row in rows:
@@ -87,7 +87,7 @@ def main():
         companies = compare_companies(tickers)
         print(format_comparison_table(companies))
         
-        # Also output raw JSON for further processing
+        
         print("\n<details><summary>原始数据(JSON)</summary>\n")
         print("```json")
         print(json.dumps(companies, indent=2, ensure_ascii=False))

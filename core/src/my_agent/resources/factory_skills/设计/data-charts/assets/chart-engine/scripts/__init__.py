@@ -1,7 +1,7 @@
-"""智能图表 - 图表生成与数据分析"""
 
-# 版本号唯一权威来源：SKILL.md frontmatter 的 version 字段必须与本值一致
-# （由 regression_check.py 强制校验，两处不一致即视为回归）。
+
+
+
 __version__ = '8.4.0'
 
 from .chart_generator import ChartGenerator, ChartType

@@ -1,22 +1,22 @@
-"""Reflection：回答交付前自检一轮。
 
-对应《智能体框架开发文档》7.4 节的反思机制。
 
-## 解决什么
 
-模型最常见的两种失误是**答非所问**和**漏了用户明确要求的点**。
-它们在本轮内看不出来（模型自认为答完了），要等用户回一句"你没做 X"。
-让它在交付前对着原始要求自查一遍，能拦下相当一部分。
 
-## 代价与默认值
 
-每次自检 = 一次额外的 LLM 调用，直接翻倍响应成本与延迟。所以：
 
-1. **默认关闭**，由用户在设置里开启；
-2. 只在**有实质产出**时才自检（空回答、纯寒暄不值得查）；
-3. 最多修正 ``max_rounds`` 次，避免"改—查—改"无限循环；
-4. 自检调用失败一律当"通过"，绝不因为自检出问题而卡住回答。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -27,8 +27,8 @@ from ..llm.base import BaseLLM, Message
 
 logger = logging.getLogger(__name__)
 
-# 判定标记。刻意要求一个**固定前缀**而不是"让模型回答是否满意"：
-# 后者会得到"我认为基本满足要求，但可以更详细"这种无法程序化判断的话。
+
+
 _OK = "OK"
 _REVISE = "REVISE"
 
@@ -49,7 +49,7 @@ _MIN_ANSWER_CHARS = 20
 
 @dataclass
 class Reflection:
-    """一次自检的结果。"""
+
 
     needs_revision: bool = False
     feedback: str = ""
@@ -60,7 +60,7 @@ class Reflection:
 
 
 class Reflector:
-    """回答交付前的自检。"""
+
 
     def __init__(self, *, enabled: bool = False, max_rounds: int = 1) -> None:
         self.enabled = enabled
@@ -69,7 +69,7 @@ class Reflector:
     def should_review(self, answer: str, *, rounds_done: int) -> bool:
         if not self.enabled or rounds_done >= self.max_rounds:
             return False
-        # 空回答与只有寒暄的回答不值得花一次调用去查
+        
         return len((answer or "").strip()) >= _MIN_ANSWER_CHARS
 
     async def review(
@@ -80,7 +80,7 @@ class Reflector:
         answer: str,
         tool_summary: str = "",
     ) -> Reflection:
-        """自检一轮。任何异常都按"通过"处理。"""
+
         payload = [f"用户的要求：\n{user_input}"]
         if tool_summary:
             payload.append(f"\n已经做过的操作：\n{tool_summary}")
@@ -95,7 +95,7 @@ class Reflector:
                 None,
                 temperature=0.0,
             )
-        except Exception as exc:  # noqa: BLE001 - 自检是增强，不该阻塞交付
+        except Exception as exc:  
             logger.warning("回答自检失败，按通过处理: %s", exc)
             return Reflection()
 
@@ -107,7 +107,7 @@ class Reflector:
 
 
 def revision_hint(feedback: str) -> str:
-    """把自检意见包装成内部提示，注入后让模型重答一次。"""
+
     from ..memory.short_term import internal_hint
 
     return internal_hint(

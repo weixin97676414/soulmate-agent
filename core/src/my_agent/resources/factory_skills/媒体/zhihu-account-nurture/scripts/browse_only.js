@@ -1,10 +1,10 @@
-// browse_only.js — 禁言期只读浏览（不点赞/不收藏/不关注/不评论/不发布）
-// 用途：账号被限流或禁言期间维持真实活跃度，只做「看」的动作。
-// 用法：ego-browser nodejs < scripts/browse_only.js
-// 可选参数文件 /tmp/zhihu_browse_params.json：
-//   { "minutes": 6, "pages": 4, "keywords": ["历史","心理"] }
-//   默认：6 分钟、读 4 个问题页、关键词取趣味历史/人文心理常用词
-// 安全约束（写死）：全程零点击互动——只 openOrReuseTab / 滚动 / 停留。
+
+
+
+
+
+
+
 (async () => {
   const fs = require('fs')
   let P = {}
@@ -20,7 +20,7 @@
   const task = await useOrCreateTaskSpace(space)
   cliLog('BROWSE_START minutes=' + minutes + ' pages=' + maxPages + ' mode=READ_ONLY')
 
-  // 1) 热榜：滚动浏览 + 停留
+  
   await openOrReuseTab('https://www.zhihu.com/hot', { wait: true, timeout: 25 })
   await wait(6)
   for (let i = 0; i < 3; i++) {
@@ -29,7 +29,7 @@
   }
   cliLog('BROWSE_STEP hot-list done, url=' + (await js('location.href')))
 
-  // 2) 选与垂直领域相关的问题（只看标题，不点任何互动按钮）
+  
   const picks = await js('((kws) => {'
     + ' const items = Array.from(document.querySelectorAll(".HotItem"));'
     + ' const out = [];'
@@ -63,7 +63,7 @@
     cliLog('BROWSE_PAGE ' + (i + 1) + '/' + urls.length + ' dwell≈' + dwell + 's url=' + u)
   }
 
-  // 3) 回首页信息流再看一会儿
+  
   if (Date.now() < deadline) {
     await openOrReuseTab('https://www.zhihu.com/', { wait: true, timeout: 25 })
     await wait(8)

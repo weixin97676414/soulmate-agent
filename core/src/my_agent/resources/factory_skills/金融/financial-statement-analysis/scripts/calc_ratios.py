@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-财报解读 · 核心指标计算器
 
-输入一个 JSON（结构见 assets/input_template.json，支持中英文键名），
-输出：平衡校验 / 盈利能力 / 回报与杜邦分解 / 营运效率 / 偿债与资本结构 /
-      现金流质量 / 多期同比对照，全部为 Markdown 表格。
 
-用法：
-    python calc_ratios.py --input data.json
-    python calc_ratios.py --input data.json --out result.md
 
-设计原则：
-    - 只做确定性算术，不做任何推断；缺数据输出「未披露」，绝不补值、绝不估算。
-    - 有期初值就用平均口径，没有就退回期末口径并在表里标注口径。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
 
 import argparse
 import json
@@ -23,10 +23,10 @@ from pathlib import Path
 
 NA = "未披露"
 
-# ---------------------------------------------------------------- 科目别名表
-# 规范键 -> 允许的输入键（英文 / 中文 / 常见财报措辞）
+
+
 ALIASES = {
-    # 利润表
+    
     "revenue": ["revenue", "营业收入", "营业总收入", "营收", "主营业务收入"],
     "cost": ["cost", "cogs", "营业成本", "主营业务成本"],
     "gross_profit": ["gross_profit", "毛利", "毛利润"],
@@ -44,7 +44,7 @@ ALIASES = {
                             "扣非归母净利润", "归属于上市公司股东的扣除非经常性损益的净利润"],
     "nonrecurring": ["nonrecurring", "非经常性损益"],
     "eps": ["eps", "每股收益", "基本每股收益"],
-    # 资产负债表
+    
     "cash": ["cash", "货币资金"],
     "trading_fin_assets": ["trading_fin_assets", "交易性金融资产"],
     "ar": ["ar", "应收账款", "应收账款净额"],
@@ -69,13 +69,13 @@ ALIASES = {
     "equity_parent": ["equity_parent", "归母股东权益", "归属于母公司股东权益合计",
                       "归属母公司所有者权益"],
     "minority_equity": ["minority_equity", "少数股东权益"],
-    # 期初值（用于平均口径）
+    
     "begin_total_assets": ["begin_total_assets", "期初总资产", "上年末总资产"],
     "begin_equity_parent": ["begin_equity_parent", "期初归母权益", "上年末归母权益"],
     "begin_ar": ["begin_ar", "期初应收账款", "上年末应收账款"],
     "begin_inventory": ["begin_inventory", "期初存货", "上年末存货"],
     "begin_ap": ["begin_ap", "期初应付账款", "上年末应付账款"],
-    # 现金流量表
+    
     "ocf": ["ocf", "经营活动产生的现金流量净额", "经营活动现金流净额", "经营现金流"],
     "icf": ["icf", "投资活动产生的现金流量净额", "投资活动现金流净额"],
     "fcf_fin": ["fcf_fin", "筹资活动产生的现金流量净额", "筹资活动现金流净额"],
@@ -87,7 +87,7 @@ ALIASES = {
 
 
 def build_lookup(period_dict):
-    """把任意键名归一化到规范键。"""
+
     norm = {}
     flat = {}
     for section in ("income", "balance", "cashflow", "extra", "other"):
@@ -110,9 +110,9 @@ def build_lookup(period_dict):
     return out
 
 
-# ---------------------------------------------------------------- 工具
+
 def g(d, key):
-    """取值，缺失返回 None。"""
+
     v = d.get(key)
     return None if v is None else float(v)
 
@@ -124,7 +124,7 @@ def div(a, b):
 
 
 def avg(a, b):
-    """平均口径：有期初取平均，无期初退回期末。返回 (值, 口径说明)。"""
+
     if b is None:
         return a, "期末"
     if a is None:
@@ -149,7 +149,7 @@ def days(x, digits=1):
 
 
 def chg(cur, prev):
-    """同比变化：(本期-上期)/|上期|。返回 (文本, 数值)。"""
+
     if cur is None or prev is None or prev == 0:
         return NA, None
     d = (cur - prev) / abs(prev)
@@ -157,7 +157,7 @@ def chg(cur, prev):
 
 
 def delta_pp(cur, prev):
-    """比率型指标的变动，用百分点。"""
+
     if cur is None or prev is None:
         return NA
     return f"{(cur - prev) * 100:+.2f}pp"
@@ -180,7 +180,7 @@ def fmt_cell(v, fmt_kind):
 
 
 def chg_cell(cur, prev, fmt_kind):
-    """期间变动：比率型用百分点(pp)，绝对/倍数型用百分比。"""
+
     if prev is None or cur is None:
         return "—"
     if fmt_kind == "pct":
@@ -189,12 +189,12 @@ def chg_cell(cur, prev, fmt_kind):
     return c
 
 
-# ---------------------------------------------------------------- 计算
+
 def compute_period(d):
-    """算出单期全部指标。"""
+
     r = {"_raw": d}
 
-    # --- 规模
+    
     rev = g(d, "revenue")
     r["revenue"] = rev
     cost = g(d, "cost")
@@ -208,7 +208,7 @@ def compute_period(d):
     r["net_profit_deducted"] = g(d, "net_profit_deducted")
     r["eps"] = g(d, "eps")
 
-    # --- 盈利
+    
     r["gross_margin"] = div(gp, rev)
     r["net_margin"] = div(r["net_profit"], rev)
     r["parent_margin"] = div(r["net_profit_parent"], rev)
@@ -219,7 +219,7 @@ def compute_period(d):
     r["finance_ratio"] = div(g(d, "finance_exp"), rev)
     r["op_margin"] = div(g(d, "op_profit"), rev)
 
-    # --- 回报
+    
     ta = g(d, "total_assets")
     ta_b = g(d, "begin_total_assets")
     eqp = g(d, "equity_parent")
@@ -249,7 +249,7 @@ def compute_period(d):
     else:
         r["equity_multiplier"] = None
 
-    # ROIC ≈ 息前税后经营利润 / (有息负债 + 归母权益) 平均
+    
     ib = 0.0
     ib_parts = [g(d, "st_debt"), g(d, "lt_debt"), g(d, "bonds")]
     if all(p is None for p in ib_parts):
@@ -269,7 +269,7 @@ def compute_period(d):
     r["roic"] = div(nopat, invest_cap)
     r["_roic_note"] = "假设税率 25%，以净利润+财务费用×(1−25%) 近似 NOPAT" if r["roic"] is not None else ""
 
-    # --- 营运
+    
     ar = g(d, "ar")
     inv = g(d, "inventory")
     ap = g(d, "ap")
@@ -287,7 +287,7 @@ def compute_period(d):
     else:
         r["ccc"] = None
 
-    # --- 偿债
+    
     tl = g(d, "total_liab")
     r["total_liab"] = tl
     if tl is None and ta is not None and g(d, "total_equity") is not None:
@@ -309,7 +309,7 @@ def compute_period(d):
     r["goodwill_to_assets"] = div(g(d, "goodwill"), ta)
     r["contract_liab"] = g(d, "contract_liab")
 
-    # --- 现金流
+    
     ocf = g(d, "ocf")
     capex = g(d, "capex")
     r["ocf"] = ocf
@@ -323,7 +323,7 @@ def compute_period(d):
     r["capex_to_ocf"] = div(capex, ocf)
     r["dep_amort"] = g(d, "dep_amort")
 
-    # --- 平衡校验
+    
     ta_v = ta
     te_v = g(d, "total_equity")
     tl_v = g(d, "total_liab")
@@ -335,18 +335,18 @@ def compute_period(d):
         r["balance_diff"] = None
         r["balance_diff_pct"] = None
 
-    # --- 盈利质量
+    
     r["deducted_share"] = div(r["net_profit_deducted"], r["net_profit_parent"])
     r["nonrecurring_share"] = div(g(d, "nonrecurring"), r["net_profit_parent"])
     return r
 
 
-# ---------------------------------------------------------------- 输出
+
 def render(data, periods_r):
-    """
-    约定：periods 数组按时间倒序排列，periods[0] 为「本期」，periods[1] 为「上期」。
-    每一期的「同比变动」列 = 本期 vs 数组中紧随其后的那一期（更早一期）。
-    """
+
+
+
+
     L = []
     company = data.get("company", data.get("公司", "（未填公司名）"))
     currency = data.get("currency", data.get("币种", "未披露"))
@@ -379,7 +379,7 @@ def render(data, periods_r):
         out.append("")
         return out
 
-    # 0 平衡校验
+    
     L.append("## 0. 数据校验")
     L.append("")
     L.append("| 期间 | 资产总计 | 负债合计+权益 | 差额 | 差额占比 | 结论 |")
@@ -399,7 +399,7 @@ def render(data, periods_r):
                      f"{'✅ 勾稽平衡' if ok else '⚠️ 不平，需回查原始报表'} |")
     L.append("")
 
-    # 1 规模与盈利
+    
     L += table("1. 规模与利润表核心（单位：" + str(unit) + "）", [
         ("营业收入", "revenue", "num"),
         ("营业成本", "cost", "num"),
@@ -410,7 +410,7 @@ def render(data, periods_r):
         ("基本每股收益 EPS", "eps", "num"),
     ])
 
-    # 2 盈利能力
+    
     L += table("2. 盈利能力（占营业收入比重）", [
         ("毛利率 = 毛利/营业收入", "gross_margin", "pct"),
         ("营业利润率 = 营业利润/营业收入", "op_margin", "pct"),
@@ -423,7 +423,7 @@ def render(data, periods_r):
         ("财务费用率", "finance_ratio", "pct"),
     ])
 
-    # 3 回报与杜邦
+    
     L.append("## 3. 回报水平与杜邦分解")
     L.append("")
     basis_note = "；".join(f"{p['label']}：总资产取{p['r'].get('ta_basis')}口径、归母权益取{p['r'].get('eq_basis')}口径"
@@ -443,7 +443,7 @@ def render(data, periods_r):
         ("→ 相乘还原 ROE", "roe", "pct"),
     ])
 
-    # 4 营运效率
+    
     L += table("4. 营运效率（天）", [
         ("应收账款周转天数 = 365/(营业收入/平均应收)", "ar_days", "days"),
         ("存货周转天数 = 365/(营业成本/平均存货)", "inv_days", "days"),
@@ -451,7 +451,7 @@ def render(data, periods_r):
         ("现金转换周期 CCC = 应收+存货−应付", "ccc", "days"),
     ])
 
-    # 5 偿债与资本结构
+    
     L.append("## 5. 偿债能力与资本结构（单位：" + str(unit) + "，比率除外）")
     L.append("")
     L += table("5.1 偿债指标", [
@@ -469,7 +469,7 @@ def render(data, periods_r):
         ("合同负债", "contract_liab", "num"),
     ])
 
-    # 6 现金流质量
+    
     L += table("6. 现金流质量（单位：" + str(unit) + "，比率除外）", [
         ("经营活动现金流净额 OCF", "ocf", "num"),
         ("投资活动现金流净额", "icf", "num"),
@@ -482,17 +482,17 @@ def render(data, periods_r):
         ("资本开支/OCF", "capex_to_ocf", "pct"),
     ])
 
-    # 7 盈利质量
+    
     L += table("7. 盈利质量", [
         ("扣非净利润/归母净利润", "deducted_share", "pct"),
         ("非经常性损益/归母净利润", "nonrecurring_share", "pct"),
     ])
 
-    # 8 提示
+    
     L.append("## 8. 自动提示")
     L.append("")
     tips = []
-    p = periods_r[0]["r"]          # 本期 = 数组第一项
+    p = periods_r[0]["r"]          
     lab = periods_r[0]["label"]
     if p.get("ocf_to_np") is not None and p["ocf_to_np"] < 0.8:
         tips.append(f"- ⚠️ {lab} OCF/净利润 = {ratio(p['ocf_to_np'])}，低于 0.8，净利润含金量偏弱，需查应收/存货占用。")

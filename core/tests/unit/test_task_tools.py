@@ -1,12 +1,12 @@
-"""定时任务技能（搭子自己建 / 查 / 改 / 删 / 立刻跑）。
 
-用户要求里的"搭子自建技能"就是这组用例守的东西。它们比普通技能更需要测试，
-因为**错了不会报错**：任务建出来但字段没落上、修改时把没提的字段清空、
-删掉的是另一个任务 —— 这些在界面上看起来都"正常"，只有到点不跑才会暴露。
 
-这里用的是真实 ``ScheduledTaskStore`` + 假 runtime：门面那一层的字段合并逻辑
-（"只改传进来的字段"）正是最容易写错的地方，拿假 store 测等于没测。
-"""
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ from my_agent.skill.builtin.task_tools import (
 
 
 class FakeRuntime:
-    """只提供任务门面需要的那几样。"""
+
 
     def __init__(self) -> None:
         self.agent_settings = SimpleNamespace(scheduled_tasks=[])
@@ -56,9 +56,9 @@ def make_ctx(runtime: FakeRuntime) -> SkillContext:
     )
 
 
-# --------------------------------------------------------------------------- #
-# 时间描述
-# --------------------------------------------------------------------------- #
+
+
+
 class TestDescribeSchedule:
     def _spec(self, **overrides) -> ScheduledTaskSpec:
         payload = {"id": "t1", "name": "任务", "prompt": "做事"}
@@ -77,6 +77,17 @@ class TestDescribeSchedule:
         assert describe_schedule(self._spec(interval_minutes=120)) == "每 2 小时"
         assert describe_schedule(self._spec(interval_minutes=30)) == "每 30 分钟"
 
+    def test_interval_renders_days_when_it_divides(self):
+
+
+
+
+
+        assert describe_schedule(self._spec(interval_minutes=43200)) == "每 30 天"
+        assert describe_schedule(self._spec(interval_minutes=10080)) == "每 7 天"
+        
+        assert describe_schedule(self._spec(interval_minutes=27 * 60)) == "每 27 小时"
+
     def test_condition_is_spelled_out(self):
         text = describe_schedule(
             self._spec(condition="url_changed", condition_target="https://example.com/a")
@@ -89,9 +100,9 @@ class TestDescribeSchedule:
         assert "D:/a/report.xlsx" in text and "更新" in text
 
 
-# --------------------------------------------------------------------------- #
-# 建 / 改 / 删 / 跑
-# --------------------------------------------------------------------------- #
+
+
+
 class TestTaskCreateSkill:
     @pytest.mark.asyncio
     async def test_creates_enabled_task_and_uses_current_buddy(self):
@@ -110,16 +121,16 @@ class TestTaskCreateSkill:
         stored = runtime.agent_settings.scheduled_tasks
         assert len(stored) == 1
         assert stored[0].id == result["id"]
-        # 没指定搭子时应当落到"当前这个搭子"，而不是留空
+        
         assert stored[0].assistant_id == "buddy-1"
 
     @pytest.mark.asyncio
     async def test_created_task_is_marked_as_created_by_the_buddy(self):
-        """技能建的任务要标成 ``origin="agent"``。
 
-        少了这一句，给**内置搭子**建的任务会被当成"用户建的"—— 用户随手就能
-        关掉或删掉它在用的那条，而这道锁的整个意义就是"这几条不能手动改"。
-        """
+
+
+
+
         runtime = FakeRuntime()
 
         await ScheduledTaskCreateSkill().run(
@@ -148,7 +159,7 @@ class TestTaskCreateSkill:
 
     @pytest.mark.asyncio
     async def test_bad_time_is_reported_as_task_error(self):
-        """25:00 这种时刻必须当场被拒，而不是建好之后永远不触发。"""
+
         runtime = FakeRuntime()
 
         with pytest.raises(SkillExecutionError):
@@ -180,7 +191,7 @@ class TestTaskUpdateSkill:
 
         stored = runtime.agent_settings.scheduled_tasks[0]
         assert stored.at_time == "07:00"
-        # 没提的字段必须原样保留 —— 覆盖式更新会把用户的指令悄悄清空
+        
         assert stored.prompt == "汇总新闻"
         assert stored.name == "早报"
         assert result["changed"] == ["at_time"]
@@ -277,5 +288,5 @@ class TestTaskListSkill:
         assert result["count"] == 1
         item = result["tasks"][0]
         assert item["schedule"] == "每天 09:00"
-        # 给模型的必须是**完整**指令（零省略原则），preview 只是顺手给的摘要
+        
         assert item["prompt"] == long_prompt

@@ -1,43 +1,43 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""总览图生成：A) 分区总地图（参考小红书"地图总览"） B) 路线卡片图（参考小红书"吃货路线"）。
 
-用法:
-  python3 make_overview.py spec.json out.html
 
-spec JSON:
-{
-  "kind": "map" | "cards",
 
-  // kind=map 时:
-  "title": "重庆4天3晚·景点分布图",
-  "subtitle": "按板块就近安排 · 少跑路",
-  "basemap": "basemap_z13.png", "map_w": 1536, "map_h": 1280,
-  "zones": [   // 分区虚线圈
-    {"cx":1125,"cy":615,"rx":170,"ry":110,"day":1,"label_dx":1248,"label_dy":512,"label":"Day1"}
-  ],
-  "spots": [   // 图钉+标签；cls 用 day 数字（颜色）或 "hub"（枢纽绿）
-    {"x":1095,"y":586,"name":"洪崖洞","desc":"绝美夜景","tag":"免费·需预约","pay":false,
-     "cls":1,"pos":"t","dx":0,"dy":-6,"icon":"🍜"}
-  ],
-  "legend": [  // 右侧图例
-    {"day":1,"title":"Day1（红圈·渝中核心）","desc":"解放碑/洪崖洞/索道——步行可达"}
-  ],
-  "corner": {"arrow":"↘","text":"Day3 武隆方向"},   // 图外目的地指示（可选）
-  "note": "备注：……",                               // 底部注释（可选）
 
-  // kind=cards 时:
-  "title_prefix": "重庆", "title_hl": "4天3晚", "title_suffix": "保姆级路线",
-  "headline": "住宿选解放碑 · 轻轨+打车组合出行 · 国庆记得提前预约！",
-  "cols": [   // 每列一天
-    {"day":1,"date":"10.3","sub":"解放碑 · 索道过江 · 洪崖洞夜景",
-     "nodes":[{"name":"解放碑","desc":"市中心地标 · 免费","photo":"p_jiefangbei","via":"步行5分钟"}],
-     "summary":"🍲 晚餐：防空洞火锅"}
-  ],
-  "photos": {"p_jiefangbei": "/abs/path/photo.jpg"},   // 本地照片路径（自动转 base64）
-  "credit": "📸 图片来源：Wikimedia Commons（CC协议）｜ 底图：高德地图"
-}
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import base64, json, sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from xhs_style import COMMON_CSS, LABEL_JS, DAY_COLORS, SOFT, HUB, esc
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     spec_path = os.path.abspath(sys.argv[1])
     spec = json.load(open(spec_path))
     spec_dir = os.path.dirname(spec_path)
-    # basemap / photos 若相对，则相对于 spec.json 所在目录解析
+    
     if spec.get('basemap') and not os.path.isabs(spec['basemap']):
         spec['basemap'] = os.path.normpath(os.path.join(spec_dir, spec['basemap']))
     if spec.get('photos'):

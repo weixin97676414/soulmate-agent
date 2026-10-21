@@ -1,18 +1,18 @@
-"""Chart generation CLI entry point.
 
-参数解析统一走 argparse（未知 flag / 缺参 / 类型错误均以结构化 JSON 报错，
-不再静默跳过）；所有错误路径输出 SmartChartsError.to_dict() 结构。
-"""
+
+
+
+
 
 import sys
 import json
 import argparse
 from pathlib import Path
 
-# P1-8：依赖兼容区间（单一事实来源，--doctor 与文档共用，避免两处漂移）
-# 精确锁死 == 会在共享环境里静默重写他人依赖，且版本漂移没有诊断入口。
+
+
 REQUIREMENTS = (
-    # (import 名, 兼容区间说明, 最低版本)
+    
     ('pandas', '3.0.1'),
     ('numpy', '2.4.3'),
     ('openpyxl', '3.1.5'),
@@ -21,10 +21,10 @@ REQUIREMENTS = (
 
 
 def doctor_report() -> dict:
-    """环境预检：打印版本矩阵与本技能就绪状态（P1-8）。
 
-    用 --doctor 单独运行，不读数据文件、不生成图表，纯只读。
-    """
+
+
+
     import platform
     mods = []
     ok_all = True
@@ -58,7 +58,7 @@ def doctor_report() -> dict:
 
 
 def _version_ok(installed: str, minimum: str) -> bool:
-    """比较版本：只比数字段，忽略 rc/dev 等后缀。"""
+
     def parts(v):
         out = []
         for seg in str(v).split('.')[:4]:
@@ -81,7 +81,7 @@ def _version_ok(installed: str, minimum: str) -> bool:
 
 
 if __name__ == '__main__' and __package__ is None:
-    import _bootstrap  # noqa: F401 — 单点 sys.path 引导，见 _bootstrap.py
+    import _bootstrap  
     from scripts.data_parser import DataParser
     from scripts.chart_generator import ChartGenerator
     from scripts.data_transformer import DataTransformer
@@ -120,11 +120,11 @@ def _non_negative_int(value: str) -> int:
 
 
 def _parse_drop_rows(value: str) -> list:
-    """把 --drop-rows 的逗号分隔整数串解析为去重后的位置列表（0-based）。
 
-    非法值（非整数）抛 ChartError；负值也报错（越界校验统一在 DataParser 做，
-    这里只保证语法合法）。空串/纯空白返回 []。
-    """
+
+
+
+
     if value is None:
         return []
     parts = [p.strip() for p in str(value).split(',') if p.strip()]
@@ -216,14 +216,14 @@ def build_parser() -> JSONArgumentParser:
 
 
 def _parse_charts_json(charts_json: str):
-    """校验 --charts 参数：必须是 JSON 数组，每项为含 type 字段的对象。
 
-    每项可用字段：type(必填), title, subtitle, x_axis, y_axis(字符串或数组),
-    transform_code(单图级), label_col, color_by, annotation(单图级),
-    sort, y_scale, label, width, height, x_name, y_name(字符串或数组),
-    series_name, series_names(数组), geo, geo_path。
-    校验失败抛 ChartError（结构化错误，含 suggestion）。
-    """
+
+
+
+
+
+
+
     try:
         charts_cfg = json.loads(charts_json)
     except json.JSONDecodeError as e:
@@ -261,21 +261,21 @@ def _parse_charts_json(charts_json: str):
 
 def main(argv=None):
     argv = list(sys.argv[1:]) if argv is None else list(argv)
-    # P1-8：--doctor 是纯环境预检，必须在 argparse 之前拦下——
-    # 否则必填的 file_path 位置参数会先把它挡掉，预检入口形同虚设。
+    
+    
     if '--doctor' in argv:
         print(json.dumps(doctor_report(), ensure_ascii=False, indent=2))
         return 0
-    # --profile 同样先于 argparse 分流：它是"还没决定出什么图"的阶段，
-    # 不能被必填的 chart_type 挡在门外（否则先画像再选型的工作流走不通）
+    
+    
     if '--profile' in argv:
         return run_profile(argv)
     parser = build_parser()
     try:
         ns = parser.parse_args(argv)
     except SmartChartsError as e:
-        # argparse 的未知 flag / 非法取值 / 类型错误经 JSONArgumentParser.error
-        # 抛出 ChartError，这里统一转结构化 JSON 输出
+        
+        
         _emit_error(e)
         sys.exit(1)
 
@@ -291,13 +291,13 @@ def main(argv=None):
     if sheet_name is not None and sheet_name.lstrip('-').isdigit():
         sheet_name = int(sheet_name)
 
-    # 兼容 --y-axis "revenue profit"（引号内空格分隔）与 --y-axis revenue profit（独立参数）两种传参；
-    # 规范化后的列名不含空格，按空白拆分是安全的
+    
+    
     y_axis_cols = None
     if ns.y_axis:
         y_axis_cols = [c for item in ns.y_axis for c in item.split()]
-    # 轴名/系列名同样兼容引号内空格拆分（显示名允许含空格，故只在单值且含空白时拆分，
-    # 与 --y-axis 语义一致：多词视为多项）
+    
+    
     y_names = None
     if ns.y_name:
         y_names = [c for item in ns.y_name for c in item.split()]
@@ -317,12 +317,12 @@ def main(argv=None):
         df = dp.parse_file(ns.file_path, skiprows=ns.skiprows, header_row=ns.header_row,
                            sheet_name=sheet_name, drop_rows=_parse_drop_rows(ns.drop_rows))
         gen = ChartGenerator(output_dir=ns.output_dir, theme=ns.theme)
-        # 解析期产生的可观测性提醒（合计行排除、数值列降级等）透传给图表输出，
-        # 避免"改了数据却不告诉调用方"
+        
+        
         parse_advisories = list(dp.advisories)
 
         if charts_json is not None:
-            # 多图模式：一次解析，批量生成；全局 transform 先应用，再执行各图配置
+            
             charts_cfg = _parse_charts_json(charts_json)
             if ns.transform_code:
                 df = DataTransformer().transform(df, ns.transform_code)
@@ -355,9 +355,9 @@ def main(argv=None):
         _emit_error(e)
         sys.exit(1)
     except Exception as e:
-        # P0-5：唯一兜底路径此前没有 suggestion，而它恰恰是撞名崩溃等未预期
-        # 异常唯一会走到的分支——其余 24 处 raise 都逐一配了 suggestion，
-        # 于是"最需要恢复指引的地方最没有指引"。
+        
+        
+        
         _emit_error(ChartError(f"未知错误: {e}", ErrorCode.UNKNOWN_ERROR,
                                details={'error': str(e), 'type': type(e).__name__,
                                         'suggestion': '先不带任何 flags 运行一次 '
@@ -369,15 +369,15 @@ def main(argv=None):
 
 
 def run_profile(argv) -> int:
-    """数据画像：解析文件 → （可选 transform）→ build_profile → JSON。
 
-    只读不写盘，不需要图表类型。解析期的可观测性提醒（数值列降级）一并透出，
-    避免"改了数据却不告诉调用方"。
 
-    --profile 模式下只认白名单参数；出图专用的参数（--x-axis/--title/...）在此
-    阶段无意义，出现即报结构化错误，绝不静默忽略（否则 agent 传了参数却
-    拿到与预期不符的画像，还以为参数生效了）。
-    """
+
+
+
+
+
+
+
     invalid = _profile_invalid_flags(argv)
     if invalid:
         _emit_error(ChartError(
@@ -404,12 +404,12 @@ def run_profile(argv) -> int:
         df = dp.parse_file(ns.file_path, skiprows=ns.skiprows,
                            header_row=ns.header_row, sheet_name=sheet_name,
                            drop_rows=_parse_drop_rows(ns.drop_rows))
-        # 取证前先清洗：--transform-code 在画像阶段同样生效（与出图路径同款调用），
-        # 否则 profile 看到的是脏帧，grain/signals 全被污染
+        
+        
         if ns.transform_code:
             df = DataTransformer().transform(df, ns.transform_code)
         prof = build_profile(df)
-        # 合并而非覆盖：build_profile 若未来自己也产出 advisories，不能被解析层的清掉
+        
         prof['advisories'] = list(prof.get('advisories', [])) + list(dp.advisories)
         print(json.dumps(prof, ensure_ascii=False, indent=2, default=str))
         return 0
@@ -424,7 +424,7 @@ def run_profile(argv) -> int:
         return 1
 
 
-# --profile 模式下合法的 flag（出图专用参数一律报错，不静默忽略）
+
 _PROFILE_WHITELIST = frozenset({
     '--profile', '--skiprows', '--header-row', '--sheet',
     '--transform-code', '--drop-rows',
@@ -432,12 +432,12 @@ _PROFILE_WHITELIST = frozenset({
 
 
 def _profile_invalid_flags(argv) -> list:
-    """扫描原始 argv，找出 --profile 白名单之外、但 CLI 认识的 flag。
 
-    不能靠 getattr(ns, dest) is not None 判断——很多参数有默认值（--theme 'default'、
-    --sort 'none'、--width 900），显式传默认值也会被误判为「没传」。因此直接对
-    argv 里的 flag 名做比对（build_parser()._actions 的 option_strings）。
-    """
+
+
+
+
+
     parser = build_parser()
     known = set()
     for action in parser._actions:
@@ -462,7 +462,7 @@ def FileNotFoundError_e(path: str, e: OSError) -> ChartError:
 
 
 if __name__ == '__main__':
-    # main() 的返回值（0 成功 / 1 失败）必须透传到退出码：--profile 错误路径
-    # 返回 1 而非 sys.exit(1)，此前这里不 sys.exit(main()) 会让画像错误也以 0 退出，
-    # 与出图路径的 sys.exit(1) 不一致，调用方无法用退出码判真。
+    
+    
+    
     sys.exit(main())

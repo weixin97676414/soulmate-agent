@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression test for assets/intake-form.html using local headless Chrome."""
+
 
 from __future__ import annotations
 

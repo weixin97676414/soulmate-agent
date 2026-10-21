@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-生成文献综述摘要
-汇总指定时间段内的文献，生成综述报告
-"""
+
+
+
+
 
 import argparse
 import json
 import os
 from datetime import datetime, timedelta
 
-# 配置路径
+
 CONFIG_DIR = os.path.expanduser("~/.openclaw/research-monitor")
 INDEX_FILE = os.path.join(CONFIG_DIR, "literature-index.json")
 REPORTS_DIR = os.path.expanduser("~/.openclaw/research-monitor/daily-reports")
 
 
 def load_index():
-    """加载文献索引"""
+
     if not os.path.exists(INDEX_FILE):
         return {"papers": []}
     
@@ -26,7 +26,7 @@ def load_index():
 
 
 def get_papers_in_date_range(days):
-    """获取指定日期范围内的论文"""
+
     index = load_index()
     cutoff_date = datetime.now() - timedelta(days=days)
     
@@ -45,20 +45,20 @@ def get_papers_in_date_range(days):
 
 
 def generate_digest(papers, days):
-    """生成综述报告"""
+
     now = datetime.now()
     start_date = now - timedelta(days=days)
     
-    # 分类统计
+    
     by_source = {}
     by_score = {'high': [], 'medium': [], 'low': []}
     
     for paper in papers:
-        # 按信源分类
+        
         source = paper.get('source', 'unknown')
         by_source.setdefault(source, []).append(paper)
         
-        # 按评分分类
+        
         score = paper.get('score', 0)
         if score >= 80:
             by_score['high'].append(paper)
@@ -67,7 +67,7 @@ def generate_digest(papers, days):
         else:
             by_score['low'].append(paper)
     
-    # 构建报告
+    
     report = f"""# 文献综述报告
 
 **报告周期**: {start_date.strftime('%Y-%m-%d')} 至 {now.strftime('%Y-%m-%d')}  
@@ -129,16 +129,16 @@ def main():
     
     args = parser.parse_args()
     
-    # 获取论文
+    
     print(f"获取过去 {args.days} 天的论文...")
     papers = get_papers_in_date_range(args.days)
     print(f"找到 {len(papers)} 篇论文")
     
-    # 生成综述
+    
     print("生成综述报告...")
     report = generate_digest(papers, args.days)
     
-    # 保存报告
+    
     with open(args.output, 'w', encoding='utf-8') as f:
         f.write(report)
     

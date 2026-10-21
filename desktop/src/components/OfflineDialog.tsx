@@ -3,15 +3,15 @@ import { CloudOff } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { useAccountStore } from '@/stores/accountStore'
 
-/**
- * 断网提示（文档 §6.1 S2）。
- *
- * 这是**全应用唯一一处**会拦一下用户的账号相关提示 —— 因为断网时账号/充值
- * 确实不可用，必须让人知道。但它不是模态死锁：两个按钮都能进主界面，区别只在于
- * 「跳过检测」会让本次运行不再每 60 秒静默重试（否则会反复弹）。
- *
- * 一个会话只弹一次：引擎侧用 `offlinePrompt` 控制，弹完回答一次就收起。
- */
+
+
+
+
+
+
+
+
+
 export function OfflineDialog() {
   const snapshot = useAccountStore((state) => state.snapshot)
   const answerOffline = useAccountStore((state) => state.answerOffline)

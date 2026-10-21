@@ -1,4 +1,4 @@
-"""持久化层：SQLite 连接、会话/消息仓储、审计日志、工作区文件。"""
+
 
 from .audit import AuditRepository
 from .db import Database, DatabaseError

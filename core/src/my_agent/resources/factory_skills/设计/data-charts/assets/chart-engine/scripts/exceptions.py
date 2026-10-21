@@ -1,4 +1,4 @@
-"""统一错误处理"""
+
 
 import argparse
 from enum import Enum
@@ -62,11 +62,11 @@ class TransformError(SmartChartsError):
 
 
 class JSONArgumentParser(argparse.ArgumentParser):
-    """argparse 错误也走结构化 JSON（替代默认的 usage 纯文本 + exit 2）。
 
-    cli.py 与 data_parser.py 的 __main__ 入口共用：未知 flag / 缺参 / 非法取值
-    一律抛 ChartError（由调用方 to_dict() 输出 JSON 后以退出码 1 结束）。
-    """
+
+
+
+
 
     def error(self, message):
         raise ChartError(

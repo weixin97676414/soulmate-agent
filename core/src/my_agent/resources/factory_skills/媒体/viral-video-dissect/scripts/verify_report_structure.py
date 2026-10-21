@@ -1,44 +1,44 @@
-"""verify_report_structure.py — 拆解报告本地结构硬门禁（纯标准库，不上网）。
 
-在 agent 写完 Markdown 报告到磁盘后调用，读磁盘文件做本地结构判定：
-  · 必含章节是否齐全（结论摘要 / 本次运行证据 / ASR 语义校正 / 屏幕文字台账 /
-    拍摄脚本 / 语气与表情分析 / 钩子与核心观点 / 内容结构框架 /
-    8 维量化评分 / 二创方向草案）；
-  · 8 维评分表头是否含「维度 / 得分 / 说明」列；
-  · 8 个维度行是否齐全；
-  · 各必含章节是否非空。
-  · 软检查（仅告警）：8 维表建议含「证据」列（P1⑤ 目标）；
-    拍摄脚本表头建议含镜头表标准列。
 
-沿用本门禁体系的「硬门禁」思想，但章节与列
-要求全部对齐本技能真实报告骨架。结构不达标时
-退出码 12，agent 必须据此补写缺漏章节后重跑，未通过不得宣布完成。
-本脚本只判定结构，不评判内容质量。
 
-用法:
-    python scripts/verify_report_structure.py <report_md_path>
-    # 或从 stdin 读：
-    cat report.md | python scripts/verify_report_structure.py -
 
-stdout 输出（始终输出，供 agent 解析）:
-    === VSD_REPORT_STRUCTURE_START ===
-    { "ok": true|false, "section_count": N, "missing_sections": [...],
-      "missing_columns": {...}, "missing_dimensions": [...],
-      "soft_issues": [...], "issues": [...],
-      "human_readable": { "status": "ok"|"needs_fix"|"ok_with_warnings",
-                          "summary": "人话结论", "fixes": [...] } }
-    === VSD_REPORT_STRUCTURE_END ===
 
-  v2.21 新增 human_readable：把每条结构问题翻译成普通人话（缺什么 + 为什么需要 + 怎么补），
-  agent 可直接转写为对话提示给用户，不再只丢「missing_sections / missing_dimensions」这种技术字段。
 
-退出码:
-    0   结构达标（ok=true）
-    12  结构不达标（ok=false）——agent 须按 missing_*/issues 补写后重跑
-    2   输入错误 / 文件不存在 / 读取失败
-    3   权限 / 设备异常
-    4   依赖缺失（罕见，本脚本纯标准库）
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 from __future__ import annotations
 
 import argparse
@@ -48,33 +48,33 @@ import re
 import sys
 from pathlib import Path
 
-# 统一错误友好化层（v2.21 新增）
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import _friendly_error as _fe  # noqa: E402
+import _friendly_error as _fe  
 
 
 RESULT_START = "=== VSD_REPORT_STRUCTURE_START ==="
 RESULT_END = "=== VSD_REPORT_STRUCTURE_END ==="
 
-# 必含章节：用「标题子串关键名」匹配（标题可带「一、」「九、」等前缀与图标）。
-# 关键名全部沿用本技能真实报告骨架，确保对齐而非照搬其他模板。
+
+
 REQUIRED_SECTIONS = [
-    "结论摘要",        # 开篇 3 行结论摘要
-    "运行证据",        # 一、本次运行证据
-    "ASR",             # 二、ASR 语义校正
-    "台账",            # 三、屏幕文字台账
-    "拍摄脚本",        # 四、拍摄脚本（基于真实画面）
-    "语气与表情",      # 五、语气与表情分析
-    "钩子与核心观点",  # 六、钩子与核心观点
-    "内容结构框架",    # 七、内容结构框架
-    "量化评分",        # 八、8 维量化评分
-    "二创方向草案",    # 九、二创方向草案
+    "结论摘要",        
+    "运行证据",        
+    "ASR",             
+    "台账",            
+    "拍摄脚本",        
+    "语气与表情",      
+    "钩子与核心观点",  
+    "内容结构框架",    
+    "量化评分",        
+    "二创方向草案",    
 ]
 
-# 8 维评分表头硬要求（对齐真实报告骨架的「维度 | 得分 | 说明」）。
+
 EXPECTED_SCORE_COLUMNS = ["维度", "得分", "说明"]
 
-# 8 维评分「维度」列必须出现的八行。
+
 EXPECTED_DIMENSIONS = [
     "钩子强度",
     "信息结构清晰度",
@@ -86,8 +86,8 @@ EXPECTED_DIMENSIONS = [
     "适用赛道与边界",
 ]
 
-# 软检查（不满足仅告警，不阻塞宣布完成）。
-SOFT_CHECK_SCORE_COLUMNS = ["证据"]  # P1⑤：建议 8 维表补充「证据」列
+
+SOFT_CHECK_SCORE_COLUMNS = ["证据"]  
 SOFT_CHECK_TABLES = {
     "拍摄脚本": ["镜号", "时间", "景别", "运镜", "画面内容", "台词", "字幕", "BGM", "备注"],
 }
@@ -104,13 +104,13 @@ def emit(payload: dict) -> None:
 
 
 def _norm(s: str) -> str:
-    """归一化单元格/标题文本用于匹配：去空白、转小写、统一分隔符。
 
-    把 `·` `/` `／` 都标准化为 `/`，并把所有空白去掉，这样
-    `互动 / 转化设计` / `互动·转化设计` 都能命中预期 `互动/转化设计`。
-    采用「子串包含」语义，避免 `评分(1–5)` 的括号、`台词/字幕` 的斜杠
-    被误判为缺失。
-    """
+
+
+
+
+
+
     if not s:
         return ""
     s = s.replace("·", "/").replace("／", "/")
@@ -120,7 +120,7 @@ def _norm(s: str) -> str:
 
 
 def _cell_has(cells: list[str], expected: str) -> bool:
-    """cells 中是否存在某个单元格，其归一化后包含 expected 的归一化串。"""
+
     ne = _norm(expected)
     return any(ne in c for c in cells)
 
@@ -129,7 +129,7 @@ def read_content(src: str) -> "str | None":
     if src == "-":
         try:
             return sys.stdin.read()
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  
             _fe.print_error(e, context="读取 stdin", hints=[
                 "如用 PowerShell 管道，确认上一步命令正常输出",
                 "若 .md 文件很大，可直接传文件路径而非 stdin",
@@ -155,18 +155,18 @@ def read_content(src: str) -> "str | None":
             "如从 Office / Word 复制，先粘贴到记事本再去格式",
         ])
         return None
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  
         _fe.print_error(e, context="读取报告")
         return None
 
 
 def _heading_re() -> re.Pattern:
-    # 匹配任意 `## xxx` 二级标题行（行首可有空格）。
+    
     return re.compile(r"^[^\S\n]*##[^\S\n]+(?P<title>.+?)[^\S\n]*$", re.MULTILINE)
 
 
 def _find_sections(content: str) -> dict:
-    """返回 {关键名: 标题行起始位置}；用子串包含匹配。"""
+
     positions = {}
     for m in _heading_re().finditer(content):
         title = m.group("title").strip()
@@ -177,7 +177,7 @@ def _find_sections(content: str) -> dict:
 
 
 def _section_block(content: str, start: int) -> str:
-    """取某节标题之后到下一个 ## 标题之前的文本。"""
+
     after = content[start:]
     nl = after.find("\n")
     body = after[nl + 1:] if nl != -1 else ""
@@ -188,7 +188,7 @@ def _section_block(content: str, start: int) -> str:
 
 
 def _split_table_rows(block: str) -> list[list[str]]:
-    """从一节文本里抽出所有表格行的单元格列表（已 strip），跳过分隔行。"""
+
     rows = []
     for line in block.splitlines():
         line = line.strip()
@@ -210,14 +210,14 @@ def verify(content: str) -> dict:
 
     positions = _find_sections(content)
 
-    # 1) 必含章节齐全
+    
     for key in REQUIRED_SECTIONS:
         if key not in positions:
             missing_sections.append(key)
 
     section_count = len(positions)
 
-    # 2) 8 维量化评分：表头含硬要求列 + 8 维度齐全 + 证据列软检查
+    
     if "量化评分" in positions:
         block = _section_block(content, positions["量化评分"])
         rows = _split_table_rows(block)
@@ -240,13 +240,13 @@ def verify(content: str) -> dict:
             ]
             if missing_dimensions:
                 issues.append("8 维评分缺少维度行：" + "、".join(missing_dimensions))
-            # 软检查：证据列（P1⑤）
+            
             if not any(_cell_has(header_cells, c) for c in SOFT_CHECK_SCORE_COLUMNS):
                 soft_issues.append("「量化评分」表头建议补充「证据」列（P1⑤ 目标）")
     elif "量化评分" not in missing_sections:
-        pass  # 已在 missing_sections 记录
+        pass  
 
-    # 3) 软检查：拍摄脚本表头（仅告警）
+    
     for sec, expected in SOFT_CHECK_TABLES.items():
         if sec not in positions:
             continue
@@ -263,7 +263,7 @@ def verify(content: str) -> dict:
         if missing:
             soft_issues.append(f"「{sec}」表头建议包含列：{'、'.join(missing)}")
 
-    # 4) 必含章节非空
+    
     for key in REQUIRED_SECTIONS:
         if key not in positions:
             continue
@@ -272,7 +272,7 @@ def verify(content: str) -> dict:
             issues.append(f"「{key}」节内容为空")
 
     ok = not (missing_sections or missing_columns or missing_dimensions or issues)
-    # v2.21 新增：人话解释（普通用户也能看懂）
+    
     human_readable = _humanize(missing_sections, missing_columns, missing_dimensions, issues, soft_issues)
     return {
         "ok": ok,
@@ -287,8 +287,8 @@ def verify(content: str) -> dict:
 
 
 def _humanize(missing_sections, missing_columns, missing_dimensions, issues, soft_issues) -> dict:
-    """把结构问题翻译成普通人话：缺什么 + 为什么 + 怎么补。"""
-    # 每个章节的「为什么需要 + 怎么补」速查表
+
+    
     SECTION_GUIDE = {
         "结论摘要": ("开篇 3 行人话结论，普通用户只看摘要就够", "在报告最前面加一段 ## 结论摘要，3 行内说清：① 为啥火 ② 最该偷师的 1 个手法 ③ 给用户的一条建议"),
         "运行证据": ("本次运行的可信度自检（输入/执行/降级/置信度），让用户一眼判断结论是否靠谱", "在 ## 结论摘要 之后加 ## 一、本次运行证据 节，按 输入路径/执行路径/降级原因/依赖齐备度/推测步骤清单/置信度总评 六子项写齐"),

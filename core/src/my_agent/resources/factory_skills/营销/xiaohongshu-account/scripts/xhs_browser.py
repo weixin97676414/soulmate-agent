@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""浏览器会话管理：持久化登录态 / 接管本机 Chrome(CDP) / 反自动化指纹。
 
-三级通道统一入口：
-    BrowserSession(mode="persistent", headless=False)   # 复用本机 profile，已扫码则免登录
-    BrowserSession(mode="cdp", cdp_port=9222)           # 接管用户手动启动的 Chrome
-"""
+
+
+
+
+
 from __future__ import annotations
 
 import json
@@ -60,11 +60,11 @@ def port_open(port: int, host: str = "127.0.0.1", timeout: float = 1.0) -> bool:
 
 
 def is_password_protected(page) -> bool:
-    """判断是否撞上登录墙 / 风控拦截页。"""
+
     try:
         url = page.url or ""
         text = page.inner_text("body")[:800] if page.query_selector("body") else ""
-    except Exception:  # noqa: BLE001
+    except Exception:  
         return False
     if "/website-login" in url or "login" in url:
         return True
@@ -75,7 +75,7 @@ def is_password_protected(page) -> bool:
 
 
 class BrowserSession:
-    """上下文管理器：统一封装三种浏览器启动方式。"""
+
 
     def __init__(self, mode: str = "persistent", headless: bool = False,
                  cdp_port: int = 9222, slow_mo: int = 0):
@@ -125,14 +125,14 @@ class BrowserSession:
         self.context.add_init_script(STEALTH_JS)
         try:
             self.page.set_default_timeout(45_000)
-        except Exception:  # noqa: BLE001
+        except Exception:  
             pass
         return self
 
     def __exit__(self, exc_type, exc, tb):
         try:
             self.save_state()
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:  
             log.warning("保存登录态失败：%s", err)
         try:
             if self.mode == "cdp":
@@ -140,12 +140,12 @@ class BrowserSession:
                     self.browser.close()
             elif self.context:
                 self.context.close()
-        except Exception:  # noqa: BLE001
+        except Exception:  
             pass
         try:
             if self._pw:
                 self._pw.stop()
-        except Exception:  # noqa: BLE001
+        except Exception:  
             pass
         return False
 
@@ -159,17 +159,17 @@ class BrowserSession:
             cookies = self.context.cookies()
             COOKIE_FILE.parent.mkdir(parents=True, exist_ok=True)
             COOKIE_FILE.write_text(json.dumps(cookies, ensure_ascii=False, indent=2), encoding="utf-8")
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:  
             log.warning("storage_state 保存跳过：%s", err)
 
 
 def cookie_header() -> str:
-    """把已保存的 cookie 拼成请求头字符串，供 HTTP 通道使用。"""
+
     if not COOKIE_FILE.exists():
         return ""
     try:
         cookies = json.loads(COOKIE_FILE.read_text(encoding="utf-8"))
-    except Exception:  # noqa: BLE001
+    except Exception:  
         return ""
     parts = []
     for c in cookies:
@@ -182,45 +182,45 @@ def cookie_header() -> str:
 
 
 def has_login() -> bool:
-    """是否已登录。
 
-    只认 `web_session`。注意 `a1` / `webId` / `acw_tc` 是**访客 cookie**，
-    每次打开小红书都会下发，把它们当登录凭证会导致「未登录却判定为已登录」，
-    进而让扫码等待瞬间假成功。
-    """
+
+
+
+
+
     return "web_session" in cookie_header()
 
 
 def human_scroll(page, times: int = 3, min_px: int = 600, max_px: int = 1400,
                  recenter: bool = True) -> None:
-    """模拟真人滚动，触发懒加载与分页接口。
 
-    滚轮事件只作用于**光标所在元素**。Playwright 的光标默认停在 (0,0)，
-    而小红书主页/详情页的滚动都发生在内部容器（.feeds-container / .note-scroller）
-    而非窗口 —— 光标不在容器上时，滚轮滚不动、接口不翻页，会造成
-    「列表抓不全 / 评论只有第一页」的数据偏差。所以每次滚动前先把光标
-    移到视口中央（真人浏览时光标本来就在内容上）。
 
-    `recenter=False` 供调用方**已经把光标定位到特定容器**（如详情页右侧评论面板）
-    的场景 —— 此时不能把光标拉回中央，否则滚动又落在媒体面板上，翻页失效。
-    """
+
+
+
+
+
+
+
+
+
     for _ in range(times):
         if recenter:
             try:
                 vp = page.viewport_size or {"width": 1440, "height": 900}
                 page.mouse.move(vp["width"] * random.uniform(0.4, 0.6),
                                 vp["height"] * random.uniform(0.45, 0.65))
-            except Exception:  # noqa: BLE001
+            except Exception:  
                 pass
         try:
             page.mouse.wheel(0, random.randint(min_px, max_px))
-        except Exception:  # noqa: BLE001
+        except Exception:  
             page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
         time.sleep(random.uniform(0.8, 1.8))
 
 
 def launch_chrome_debug(cdp_port: int = 9222) -> subprocess.Popen:
-    """尝试为用户启动带调试端口的 Chrome（找不到时抛出明确指引）。"""
+
     candidates = [
         Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
         Path(r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"),

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""af_draw — 核心图型生成器+统计标注助手（v4.0.0 模块化第四刀，自 gen_figure 拆出）。
 
-拆分后 gen_figure 主文件保留：参数解析/校验/统计推断/流水线/文档；
-本模块只做绘制。公开名经 gen_figure 再导出，`import gen_figure` 用法不变。
-"""
+
+
+
+
 import sys
 
 import matplotlib
@@ -14,13 +14,13 @@ import numpy as np
 
 try:
     import af_v23_stats as _afstats
-except ImportError:  # 统计模块不在同目录时降级（标注函数自行判 None 提示）
+except ImportError:  
     _afstats = None
 from af_shared import has_cjk, HATCH_PATTERNS, _STYLE_NO_GRID, _ensure_ylabel_clear
 
 
 def _darken_color(color, factor=0.55):
-    """Return a darker shade of the given color. (Legacy; hatch now uses black.)"""
+
     import matplotlib.colors as mcolors
     try:
         rgb = mcolors.to_rgb(color)
@@ -29,16 +29,16 @@ def _darken_color(color, factor=0.55):
         return (0.2, 0.2, 0.2)
 
 
-# ── Auto significance annotations (v2.2) ──────────────────────────────
+
 
 def _sig_stars(p):
     return "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else "NS"
 
 
 def pairwise_vs_first(series):
-    """Compare each series against the first one: Shapiro normality test,
-    then Welch t-test (both normal) or Mann-Whitney U (otherwise).
-    Returns [(name, p_or_None, stars, method)]. Requires scipy."""
+
+
+
     from scipy import stats as _st
     names = list(series.keys())
     if len(names) < 2:
@@ -70,7 +70,7 @@ def pairwise_vs_first(series):
 
 
 def draw_bootstrap_brackets(ax, positions, results, data_top, font_size=8):
-    """v3.5：bootstrap 均值差 95%CI 括号（文本=Δ 与 CI 区间，非 p 星号）。"""
+
     span = max(abs(data_top) * 0.08, 1e-9)
     for j, (name, diff, lo, hi) in enumerate(results):
         if diff is None:
@@ -88,8 +88,8 @@ def draw_bootstrap_brackets(ax, positions, results, data_top, font_size=8):
 
 
 def annotate_bootstrap_stats(ax, series, positions, theme, chart_type):
-    """--stats bootstrap 入口（box/violin）：每组均值 bootstrap CI 误差棒
-    + 组间均值差 CI 括号 + stderr 报告（确定性：固定种子）。"""
+
+
     names = list(series.keys())
     if len(names) < 2:
         print(f"WARNING: --stats bootstrap needs >= 2 series ({chart_type}); skipped",
@@ -108,7 +108,7 @@ def annotate_bootstrap_stats(ax, series, positions, theme, chart_type):
     except ValueError as e:
         print(f"WARNING: --stats bootstrap: {e}", file=sys.stderr)
         return
-    # 每组均值 ± bootstrap CI 误差棒（画在组位置上）
+    
     for (name, stat, lo, hi), x_pos in zip(per_group, positions):
         err_lo, err_hi = stat - lo, hi - stat
         ax.errorbar(x_pos, stat, yerr=[[max(err_lo, 0)], [max(err_hi, 0)]],
@@ -136,8 +136,8 @@ def annotate_bootstrap_stats(ax, series, positions, theme, chart_type):
 
 
 def draw_stat_brackets(ax, positions, results, data_top, font_size=8):
-    """Draw one comparison bracket per result (each group vs group 0), stacked
-    above the tallest data point. Returns the new suggested ylim top."""
+
+
     span = max(abs(data_top) * 0.08, 1e-9)
     for j, (name, p, stars, method) in enumerate(results):
         if p is None:
@@ -153,7 +153,7 @@ def draw_stat_brackets(ax, positions, results, data_top, font_size=8):
 
 
 def annotate_auto_stats(ax, series, positions, theme, chart_type):
-    """--stats auto entry point for box/violin: compute + draw + report."""
+
     names = list(series.keys())
     if len(names) < 2:
         print(f"WARNING: --stats auto needs >= 2 series ({chart_type}); skipped",
@@ -179,7 +179,7 @@ def annotate_auto_stats(ax, series, positions, theme, chart_type):
 
 
 def annotate_multi_stats(ax, series, positions, theme, chart_type):
-    """--stats multi 入口：全两两比较（正态→Tukey；否则 Kruskal-Wallis+Dunn+Hochberg）。"""
+
     if _afstats is None:
         print("WARNING: --stats multi 需要 af_v23_stats.py 与 gen_figure.py 同目录",
               file=sys.stderr)
@@ -223,11 +223,11 @@ def annotate_multi_stats(ax, series, positions, theme, chart_type):
               file=sys.stderr)
 
 
-# ── Alt text generation (v2.2, accessibility) ─────────────────────────
+
 
 
 def _hatch_edgecolor(theme, fill_color):
-    """斜纹描边色：主题声明 hatch_edge=auto 时用填充同系深色，否则黑色（历史行为）。"""
+
     if not isinstance(theme, dict) or theme.get("hatch_edge") != "auto":
         return "black"
     fills = fill_color if isinstance(fill_color, list) else [fill_color]
@@ -236,7 +236,7 @@ def _hatch_edgecolor(theme, fill_color):
 
 
 def apply_base_style(ax, theme):
-    """Apply common styling to axes."""
+
     for spine in theme["spines"]:
         ax.spines[spine].set_visible(False)
     if _STYLE_NO_GRID[0]:
@@ -248,7 +248,7 @@ def apply_base_style(ax, theme):
 
 
 def gen_bar(data, ax, theme, cjk_fp, **kwargs):
-    """Grouped bar chart with horizontal mode, hatching, error bars, significance, and ratio annotations."""
+
     labels = data.get("labels", data.get("x", []))
     series = data.get("series", data.get("datasets", {}))
 
@@ -260,13 +260,13 @@ def gen_bar(data, ax, theme, cjk_fp, **kwargs):
     horizontal = kwargs.get("horizontal", False)
     use_hatch = kwargs.get("hatch", False)
     show_ratio = kwargs.get("show_ratio", False)
-    ratio_base = kwargs.get("ratio_base", 0)  # index of base series for ratio
+    ratio_base = kwargs.get("ratio_base", 0)  
 
     error_data = data.get("errors", {})
     significance = data.get("significance", {})
 
     bar_func = ax.barh if horizontal else ax.bar
-    all_bars = []  # store for ratio calculation
+    all_bars = []  
 
     for i, (name, values) in enumerate(series.items()):
         offset = (i - (n_series - 1) / 2) * w
@@ -274,19 +274,19 @@ def gen_bar(data, ax, theme, cjk_fp, **kwargs):
         if name in error_data and error_data[name]:
             errs = error_data[name]
             if isinstance(errs, list) and all(isinstance(e, (int, float)) for e in errs):
-                pass  # per-bar error
+                pass  
             elif isinstance(errs, (int, float)):
                 errs = [errs] * n_groups
 
         hatch_val = HATCH_PATTERNS[i % len(HATCH_PATTERNS)] if use_hatch else None
-        # v3.10 单系列视觉增强（真金链路反馈"默认出图朴素"）：
-        # ①Top-N 强调层级——最大条(含并列)主题主色，其余同色淡化（focus+context）
-        # ②斜纹豁免——斜纹是"系列区分"工具，单系列铺满=噪声
-        # ③图例抑制——单系列图例=系列名复读（label 不设，图例自然消失）
+        
+        
+        
+        
         _single_enh = (n_series == 1 and len(values) >= 3
                        and not kwargs.get("alternate", False))
         if kwargs.get("alternate", False) and n_series == 1:
-            # GLM-5.2 blog style: alternate first two theme colors per bar
+            
             bar_colors = [colors[j % 2] for j in range(len(values))]
         elif _single_enh:
             from matplotlib.colors import to_rgba
@@ -295,12 +295,12 @@ def gen_bar(data, ax, theme, cjk_fp, **kwargs):
             _accent = colors[i % len(colors)]
             _muted = to_rgba(_accent, 0.42)
             bar_colors = [_accent if abs(v - _vmax) < 1e-12 else _muted for v in _vals]
-            hatch_val = None  # 单系列斜纹豁免
+            hatch_val = None  
         else:
             bar_colors = colors[i % len(colors)]
         if use_hatch and not (n_series == 1 and hatch_val is None):
-            # GLM-5.2 blog style: ALL bars get hatching. glm-brand: 同系深色纹+边
-            #（视觉精修）；其他主题保持黑色纹（历史行为）。
+            
+            
             bars = bar_func(x + offset, values, w, yerr=errs,
                             color=bar_colors,
                             edgecolor=_hatch_edgecolor(theme, bar_colors), linewidth=0.6,
@@ -314,9 +314,9 @@ def gen_bar(data, ax, theme, cjk_fp, **kwargs):
                             label=name if n_series > 1 else None)
         all_bars.append((name, values, bars, offset))
 
-        # v4.2 --peak-label：最大值点自动注记（数据事实，单/多系列均取全局峰）
+        
         if kwargs.get("peak_label", False) and i == n_series - 1:
-            _gl = next(iter(series))  # 全局峰所在系列
+            _gl = next(iter(series))  
             _best, _bv = None, None
             for _n, _vals in series.items():
                 for _j, _v in enumerate(_vals):
@@ -327,7 +327,7 @@ def gen_bar(data, ax, theme, cjk_fp, **kwargs):
                                horizontal, theme, cjk_fp,
                                series_name=_best[0] if n_series > 1 else None)
 
-        # Value labels on bars
+        
         if kwargs.get("show_values", False):
             for j, v in enumerate(values):
                 err = errs[j] if errs and j < len(errs) else 0
@@ -341,7 +341,7 @@ def gen_bar(data, ax, theme, cjk_fp, **kwargs):
                             _fv, ha='center', va='bottom', fontsize=7,
                             color=colors[i % len(colors)])
 
-    # Ratio annotations (e.g., "4.96x" above second series bars)
+    
     if show_ratio and n_series >= 2:
         base_name = list(series.keys())[ratio_base]
         base_values = list(series.values())[ratio_base]
@@ -363,7 +363,7 @@ def gen_bar(data, ax, theme, cjk_fp, **kwargs):
                                 ratio_str, ha='center', va='bottom', fontsize=8,
                                 fontweight='bold', color=ratio_color)
 
-    # Significance brackets
+    
     if significance:
         for key, label in significance.items():
             parts = key.split(":")
@@ -403,10 +403,10 @@ def gen_bar(data, ax, theme, cjk_fp, **kwargs):
 
 
 def gen_heatmap(data, ax, theme, cjk_fp, **kwargs):
-    """Heatmap with text annotations."""
+
     matrix = data.get("matrix", data.get("data", data.get("values", None)))
     if matrix is None:
-        # Fallback: build matrix from series (C2 fix — CSV heatmap support)
+        
         series = data.get("series", {})
         if series:
             matrix = np.array(list(series.values()))
@@ -423,13 +423,13 @@ def gen_heatmap(data, ax, theme, cjk_fp, **kwargs):
 
     if matrix.size == 0:
         raise ValueError("heatmap: matrix is empty — provide 'matrix' (2D list) or 'series'")
-    ax._af_category_axis = True  # 行列标签是数据：豁免 fix_tick_overlaps 降级
+    ax._af_category_axis = True  
 
     has_neg = bool((matrix < 0).any())
-    # Data-driven default: all-positive data uses a warm sequential colormap
-    # (YlOrRd) — RdBu_r's white midpoint makes low positive values look like
-    # a "broken band" (断层). Diverging colormaps are only sensible when the
-    # data actually spans negative values.
+    
+    
+    
+    
     if cmap == "RdBu_r" and not has_neg and kwargs.get("cmap") is None:
         cmap = "YlOrRd"
 
@@ -444,7 +444,7 @@ def gen_heatmap(data, ax, theme, cjk_fp, **kwargs):
 
     im = ax.imshow(matrix, cmap=cmap, vmin=vmin, vmax=vmax, aspect='auto')
 
-    # Text annotations
+    
     for i in range(matrix.shape[0]):
         for j in range(matrix.shape[1]):
             v = matrix[i, j]
@@ -464,11 +464,11 @@ def gen_heatmap(data, ax, theme, cjk_fp, **kwargs):
     ax.set_yticklabels(row_labels, fontsize=theme["font_size"],
                        fontproperties=cjk_fp if use_cjk_rows else None)
 
-    return im  # for colorbar
+    return im  
 
 
 def gen_scatter(data, ax, theme, cjk_fp, **kwargs):
-    """Scatter plot with optional trend line and grouping."""
+
     x_data = np.array(data.get("x", data.get("xs", [])))
     y_data = np.array(data.get("y", data.get("ys", [])))
     groups = data.get("groups", data.get("colors", None))
@@ -477,11 +477,11 @@ def gen_scatter(data, ax, theme, cjk_fp, **kwargs):
         ax.scatter(x_data, y_data, s=60, color=theme["colors"][0],
                    edgecolors='white', linewidth=0.5, alpha=0.7, zorder=3)
     else:
-        # Validate groups length matches x/y data length
+        
         n = min(len(x_data), len(y_data))
         if len(groups) > n:
             groups = groups[:n]
-        unique_groups = list(dict.fromkeys(groups))  # preserve order
+        unique_groups = list(dict.fromkeys(groups))  
         for i, g in enumerate(unique_groups):
             mask = [j for j in range(len(groups)) if groups[j] == g]
             c = theme["colors"][i % len(theme["colors"])]
@@ -489,15 +489,15 @@ def gen_scatter(data, ax, theme, cjk_fp, **kwargs):
                        edgecolors='white', linewidth=0.5, alpha=0.7,
                        label=g, zorder=3)
 
-    # Point labels (data["labels"] — one per (x, y) point)
+    
     point_labels = data.get("labels", [])
     if point_labels and len(point_labels) == len(x_data):
         use_cjk = cjk_fp and any(has_cjk(str(l)) for l in point_labels)
         n_pts = len(x_data)
         for i, (xi, yi, lab) in enumerate(zip(x_data, y_data, point_labels)):
-            # Alternate above/below to keep neighbors readable; offset grows
-            # with index so clustered points (e.g. years 1950/1953/1955) don't collide.
-            row = i // 2  # every other point flips side
+            
+            
+            row = i // 2  
             dy = 10 + 3 * row if i % 2 == 0 else -13 - 3 * row
             ax.annotate(str(lab), xy=(xi, yi), xytext=(0, dy),
                         textcoords='offset points', fontsize=6.5,
@@ -505,7 +505,7 @@ def gen_scatter(data, ax, theme, cjk_fp, **kwargs):
                         fontproperties=cjk_fp if use_cjk else None,
                         color='#444444', alpha=0.9)
 
-    # Trend line
+    
     if kwargs.get("trend", True) and len(x_data) >= 3:
         z = np.polyfit(x_data, y_data, 1)
         p = np.poly1d(z)
@@ -517,7 +517,7 @@ def gen_scatter(data, ax, theme, cjk_fp, **kwargs):
                 ha='right', va='bottom', fontsize=9, fontstyle='italic', color='gray',
                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='lightgray'))
 
-    # Mean points
+    
     if groups and kwargs.get("show_mean", False):
         unique_groups = list(dict.fromkeys(groups))
         for i, g in enumerate(unique_groups):
@@ -531,7 +531,7 @@ def gen_scatter(data, ax, theme, cjk_fp, **kwargs):
 
 
 def gen_line(data, ax, theme, cjk_fp, **kwargs):
-    """Line chart with optional error bands."""
+
     labels = data.get("labels", data.get("x", []))
     series = data.get("series", data.get("datasets", {}))
     error_data = data.get("errors", {})
@@ -539,14 +539,14 @@ def gen_line(data, ax, theme, cjk_fp, **kwargs):
 
     x = np.arange(len(labels)) if not any(isinstance(l, (int, float)) for l in labels) else np.array(labels)
 
-    _line_ends = []  # v3.4 直接标注收集器
+    _line_ends = []  
     for i, (name, values) in enumerate(series.items()):
         c = theme["colors"][i % len(theme["colors"])]
         mk = markers[i % len(markers)]
         lw = kwargs.get("linewidth", 2)
         ax.plot(x, values, c=c, marker=mk, markersize=6, linewidth=lw, label=name, zorder=3)
 
-        # Error band/fill
+        
         if name in error_data and error_data[name]:
             errs = error_data[name]
             if isinstance(errs, list) and len(errs) == len(values):
@@ -556,7 +556,7 @@ def gen_line(data, ax, theme, cjk_fp, **kwargs):
         if kwargs.get("direct_label"):
             _line_ends.append((str(name), values[-1], c))
 
-    # ── v3.4：直接标注（线末端系列名，自动上下避让，替代图例框）──
+    
     if kwargs.get("direct_label") and _line_ends:
         _span = (max(v for _, v, _ in _line_ends) - min(v for _, v, _ in _line_ends)) or 1.0
         _gap = _span * 0.08
@@ -575,7 +575,7 @@ def gen_line(data, ax, theme, cjk_fp, **kwargs):
                         fontproperties=cjk_fp if _any_cjk else None,
                         annotation_clip=False)
 
-    # ── v4.2 --peak-label：全局最大值点注记（数据事实）──
+    
     if kwargs.get("peak_label") and series:
         _best_n, _best_i = None, None
         for _n, _vals in series.items():
@@ -595,7 +595,7 @@ def gen_line(data, ax, theme, cjk_fp, **kwargs):
 
 
 def gen_box(data, ax, theme, cjk_fp, **kwargs):
-    """Box plot with optional jitter points."""
+
     labels = data.get("labels", data.get("x", []))
     series = data.get("series", data.get("datasets", {}))
 
@@ -607,7 +607,7 @@ def gen_box(data, ax, theme, cjk_fp, **kwargs):
         patch.set_facecolor(theme["colors"][i % len(theme["colors"])])
         patch.set_alpha(0.6)
 
-    # Jitter points
+    
     rng = np.random.default_rng(42)
     for i, (name, values) in enumerate(series.items()):
         vals = np.array(values, dtype=float)
@@ -629,28 +629,28 @@ def gen_box(data, ax, theme, cjk_fp, **kwargs):
 
 
 def gen_forest(data, ax, theme, cjk_fp, **kwargs):
-    """Forest plot for meta-analysis with weights, heterogeneity, and events."""
-    ax._af_category_axis = True  # 研究名 y 轴是数据：豁免防重叠抽稀（与热图同机制）
+
+    ax._af_category_axis = True  
     labels = data.get("labels", data.get("studies", []))
     estimates = data.get("estimates", data.get("values", []))
     ci_low = data.get("ci_low", data.get("lower", []))
     ci_high = data.get("ci_high", data.get("upper", []))
-    weights = data.get("weights", None)  # Study weights for bubble size
+    weights = data.get("weights", None)  
     overall = data.get("overall", None)
-    measure = data.get("measure", "OR")  # Effect measure label: OR, RR, HR, MD, SMD
-    # v2.6.0 审核修复：缺省无效线按效应尺度自动取值——比率尺度（OR/RR/HR）无效线
-    # 是 1.0，差值尺度（MD/SMD）是 0.0；旧默认恒取 0 会把自然尺度 OR/HR 的
-    # "CI 是否跨过 1"画错位置，误导显著性判读。显式 ref_line 永远优先。
+    measure = data.get("measure", "OR")  
+    
+    
+    
     ref_line = data.get("ref_line", None)
     if ref_line is None:
         ref_line = 0.0 if str(measure).upper() in ("MD", "SMD") else 1.0
         print(f"forest: 未指定 ref_line，按效应尺度 {measure} 自动取无效线 {ref_line:g}"
               f"（log 尺度数据请显式传 ref_line=0）", file=sys.stderr)
-    heterogeneity = data.get("heterogeneity", None)  # {"Q": float, "df": int, "I2": float, "p": float}
-    events = data.get("events", None)  # [{"events": int, "total": int}, ...] per study
+    heterogeneity = data.get("heterogeneity", None)  
+    events = data.get("events", None)  
     use_hatch = kwargs.get("hatch", False)
 
-    # ── v2.4.0：留一法敏感性分析（--sensitivity）──
+    
     if kwargs.get("sensitivity") and _afstats is not None:
         se_per_study = data.get("se_list", data.get("ses", None))
         if se_per_study is None and len(ci_low) == len(ci_high) == len(estimates) and len(estimates) >= 4:
@@ -694,33 +694,33 @@ def gen_forest(data, ax, theme, cjk_fp, **kwargs):
     n_studies = len(labels)
     y_pos = list(range(n_studies))
 
-    # Calculate weight-based bubble sizes if weights provided
+    
     if weights and len(weights) == n_studies:
         w_arr = np.array(weights, dtype=float)
         w_min, w_max = w_arr.min(), w_arr.max()
         if w_max > w_min:
-            bubble_sizes = 40 + (w_arr - w_min) / (w_max - w_min) * 160  # 40-200 range
+            bubble_sizes = 40 + (w_arr - w_min) / (w_max - w_min) * 160  
         else:
             bubble_sizes = np.full(n_studies, 80.0)
     else:
         bubble_sizes = np.full(n_studies, 80.0)
 
-    # Column layout: leave space for events column on left
+    
     plot_x_start = 0.0
     events_col_x = None
     if events and len(events) == n_studies:
-        events_col_x = -0.3  # Relative position in axes coords, handled via text
+        events_col_x = -0.3  
 
     for i, (est, lo, hi) in enumerate(zip(estimates, ci_low, ci_high)):
-        # CI whisker line
+        
         ax.plot([lo, hi], [i, i], '-', color=theme["colors"][0], linewidth=1.5, zorder=2)
-        # Weighted point estimate (bubble)
+        
         ax.scatter(est, i, c=theme["colors"][0], s=bubble_sizes[i], zorder=3,
                    edgecolors='black', linewidth=0.5)
-        # Effect estimate annotation on right
+        
         ax.text(hi + (ax.get_xlim()[1] - ax.get_xlim()[0]) * 0.02, i,
                 f'{est:.2f} [{lo:.2f}, {hi:.2f}]', va='center', fontsize=8)
-        # Events/Total on left (if provided)
+        
         if events and i < len(events):
             ev = events[i]
             ev_str = f"{ev.get('events', '?')}/{ev.get('total', '?')}" if isinstance(ev, dict) else str(ev)
@@ -728,14 +728,14 @@ def gen_forest(data, ax, theme, cjk_fp, **kwargs):
                         textcoords=('axes fraction', 'data'),
                         ha='right', va='center', fontsize=7, color='#555555')
 
-    # Reference line
+    
     ax.axvline(x=ref_line, color='gray', linestyle='--', linewidth=1, alpha=0.6)
 
-    # Separator line before overall
+    
     if overall:
         ax.axhline(y=n_studies - 0.5, color='#333333', linewidth=0.8, alpha=0.5)
 
-    # Overall diamond
+    
     if overall:
         oy = n_studies
         est_o = overall["estimate"]
@@ -749,7 +749,7 @@ def gen_forest(data, ax, theme, cjk_fp, **kwargs):
                 f'Overall: {est_o:.2f} [{lo_o:.2f}, {hi_o:.2f}]', va='center',
                 fontsize=9, fontweight='bold')
 
-    # Heterogeneity annotation
+    
     if heterogeneity:
         i2 = heterogeneity.get("I2", None)
         q_val = heterogeneity.get("Q", None)
@@ -767,10 +767,10 @@ def gen_forest(data, ax, theme, cjk_fp, **kwargs):
             ax.text(0.5, -0.12, het_text, transform=ax.transAxes,
                     ha='center', va='top', fontsize=7, fontstyle='italic', color='#555555')
 
-    # X-axis label with measure type
+    
     ax.set_xlabel(measure, fontsize=theme["font_size"])
 
-    # Column header for events
+    
     if events and len(events) > 0:
         ax.annotate("Events/Total", xy=(0, 0), xytext=(-0.15, -0.8),
                     textcoords=('axes fraction', 'data'),
@@ -785,7 +785,7 @@ def gen_forest(data, ax, theme, cjk_fp, **kwargs):
 
 
 def gen_violin(data, ax, theme, cjk_fp, **kwargs):
-    """Violin plot with optional inner box and jitter points."""
+
     labels = data.get("labels", data.get("x", []))
     series = data.get("series", data.get("datasets", {}))
 
@@ -797,14 +797,14 @@ def gen_violin(data, ax, theme, cjk_fp, **kwargs):
                        showmedians=kwargs.get("show_medians", True),
                        showextrema=kwargs.get("show_extrema", True))
 
-    # Color the violin bodies
+    
     for i, body in enumerate(vp['bodies']):
         body.set_facecolor(theme["colors"][i % len(theme["colors"])])
         body.set_alpha(0.6)
         body.set_edgecolor(theme["colors"][i % len(theme["colors"])])
         body.set_linewidth(1)
 
-    # Style internal lines
+    
     for part in ['cmeans', 'cmedians', 'cmins', 'cmaxes', 'cbars']:
         if part in vp:
             vp[part].set_color('#333333')
@@ -824,8 +824,8 @@ def gen_violin(data, ax, theme, cjk_fp, **kwargs):
 
 
 def _km_note_box(ax, text, cjk_fp=None):
-    """KM 右上角注释框（log-rank/中位生存）：实测宽度自适应字号，
-    保证不越出坐标区、不压 y 轴刻度；不透明底+高 zorder 防曲线横穿文字。"""
+
+
     fs = 8.0
     t = None
     for _ in range(7):
@@ -848,16 +848,16 @@ def _km_note_box(ax, text, cjk_fp=None):
 
 
 def gen_km(data, ax, theme, cjk_fp, **kwargs):
-    """Kaplan-Meier 生存曲线（v2.3：自动风险表 + 自动 log-rank）。
 
-    原始数据格式（每样本 [时间, 事件]）>=2 组时自动做 Mantel-Haenszel
-    log-rank 检验并在图内标注；主图下方以独立坐标轴渲染"Number at risk"
-    风险表（主流程经 --no-risk-table 可关闭，--risk-times 自定义显示时间点）。
-    仍兼容：用户直接提供 risk_table/log_rank（优先采用，不重复计算）、
-    预计算 survival 曲线格式（无原始数据时跳过自动统计并提示）。
-    """
+
+
+
+
+
+
+
     groups = data.get("groups", data.get("series", {}))
-    risk_table = data.get("risk_table", None)      # 兼容 v2.2 用户供表
+    risk_table = data.get("risk_table", None)      
     log_rank = data.get("log_rank", None)
     median_survival = data.get("median_survival", None)
     risk_axes = kwargs.get("risk_axes", None)
@@ -884,7 +884,7 @@ def gen_km(data, ax, theme, cjk_fp, **kwargs):
         group_names = []
         groups = {}
 
-    raw_groups = {}     # 组名 -> (times, events)
+    raw_groups = {}     
     precomputed = False
     if not groups and "time" in data and "survival" in data:
         precomputed = True
@@ -912,16 +912,16 @@ def gen_km(data, ax, theme, cjk_fp, **kwargs):
             if isinstance(raw[0], (list, tuple)):
                 times = np.array([p[0] for p in raw], dtype=float)
                 second = np.array([p[1] for p in raw], dtype=float)
-                # v3.7：竞争风险编码（整数且含 ≥2）优先于预计算判定——
-                # 此前含 2 的原始数据被误当预计算生存概率静默绘制
+                
+                
                 _is_int_code = np.all(second == np.floor(second)) and np.any(second >= 2)
                 if np.all(np.isin(second, (0.0, 1.0))):
-                    raw_groups[gname] = (times, second)   # [时间, 事件0/1]
+                    raw_groups[gname] = (times, second)   
                 elif _is_int_code:
-                    raw_groups[gname] = (times, second)   # [时间, 事件0/1/2+竞争风险]
+                    raw_groups[gname] = (times, second)   
                 else:
-                    # [时间, 预计算生存概率]：直接阶梯绘制（v2.2 曾误当事件数，
-                    # 曲线数学错误；v2.3 起正确识别），不计入自动统计
+                    
+                    
                     c = theme["colors"][group_names.index(gname) % len(theme["colors"])]
                     ax.step(times, second, where='post', color=c, linewidth=2,
                             label=gname, zorder=3)
@@ -931,7 +931,7 @@ def gen_km(data, ax, theme, cjk_fp, **kwargs):
             times = np.array(raw, dtype=float)
             raw_groups[gname] = (times, np.ones(len(times)))
 
-        # ── v3.7：竞争风险检测（任一组 events 含 ≥2 编码 → Aalen-Johansen CIF 模式）──
+        
         _competing = any(
             np.any(np.asarray(ev) >= 2)
             for (_t, ev) in raw_groups.values() if len(ev) == len(_t))
@@ -960,7 +960,7 @@ def gen_km(data, ax, theme, cjk_fp, **kwargs):
             ax.set_ylabel("累计发生率 Cumulative Incidence",
                           fontsize=theme["font_size"] - 1,
                           fontproperties=cjk_fp if cjk_fp else None)
-            return  # AJ 模式独立渲染，不走 KM 主循环
+            return  
 
         for i, gname in enumerate(group_names):
             if gname not in raw_groups:
@@ -992,10 +992,10 @@ def gen_km(data, ax, theme, cjk_fp, **kwargs):
                 ax.axvline(x=float(median_survival[gname]), color=c, linestyle=':',
                            alpha=0.4, linewidth=1)
 
-    # 参考线（中位生存 0.5）
+    
     ax.axhline(y=0.5, color='gray', linestyle='--', alpha=0.3, linewidth=0.8)
 
-    # ── 自动 log-rank（原始数据 >=2 组且用户未提供时）──
+    
     if log_rank is None and len(raw_groups) >= 2 and _afstats is not None:
         try:
             chi2_v, p_lr, df_lr = _afstats.logrank_test(raw_groups)
@@ -1005,7 +1005,7 @@ def gen_km(data, ax, theme, cjk_fp, **kwargs):
         except Exception as e:
             print(f"WARNING: km: log-rank 自动计算失败（{e}），跳过标注", file=sys.stderr)
 
-    # ── 自动中位生存（原始数据组；用户传 median_survival 仍画竖线，互不冲突）──
+    
     median_notes = []
     if kwargs.get("median_auto", True) and raw_groups and _afstats is not None:
         for gname in group_names:
@@ -1046,7 +1046,7 @@ def gen_km(data, ax, theme, cjk_fp, **kwargs):
         if median_notes:
             _km_note_box(ax, "中位生存（95%CI）\n" + "\n".join(median_notes[:4]), cjk_fp)
 
-    # ── 风险表（自动计算；独立坐标轴与主图共享 x 轴）──
+    
     rendered = False
     if want_risk and raw_groups and risk_axes is not None and _afstats is not None:
         try:
@@ -1084,7 +1084,7 @@ def gen_km(data, ax, theme, cjk_fp, **kwargs):
                     fontsize=max(7, theme["font_size"] - 1), fontweight="bold",
                     color="#333333", ha="left", va="center", fontproperties=_fp_hdr,
                     clip_on=False)
-            # 组名实测定位（修复组名与首列数字黏连）：右缘 = 首列数字左缘 - 间距
+            
             ra.figure.canvas.draw()
             _renderer = ra.figure.canvas.get_renderer()
             _inv_data = ra.transData.inverted()
@@ -1113,7 +1113,7 @@ def gen_km(data, ax, theme, cjk_fp, **kwargs):
         except Exception as e:
             print(f"WARNING: km: 自动风险表渲染失败（{e}）", file=sys.stderr)
 
-    # ── 兼容 v2.2：用户直接提供 risk_table 且无自动表时的文本模式 ──
+    
     if not rendered and risk_table and isinstance(risk_table, dict):
         rt_times = risk_table.get("times", [])
         ax.text(0.02, -0.08, "Number at risk", transform=ax.transAxes,
@@ -1131,29 +1131,29 @@ def gen_km(data, ax, theme, cjk_fp, **kwargs):
 
 
 def gen_roc(data, ax, theme, cjk_fp, **kwargs):
-    """ROC curve with AUC value, confidence interval, and optimal cutoff."""
-    curves = data.get("curves", None)  # list of curve objects
+
+    curves = data.get("curves", None)  
     single_fpr = data.get("fpr", data.get("x", None))
     single_tpr = data.get("tpr", data.get("y", None))
     single_auc = data.get("auc", None)
-    ci = data.get("ci", None)  # {"low": 0.82, "high": 0.94}
-    cutoff = data.get("cutoff", None)  # {"fpr": 0.15, "tpr": 0.88, "threshold": 2.35}
-    diagonal = data.get("diagonal", True)  # show diagonal reference line
+    ci = data.get("ci", None)  
+    cutoff = data.get("cutoff", None)  
+    diagonal = data.get("diagonal", True)  
 
-    # Support single curve (fpr/tpr arrays) or multiple curves
+    
     if curves is None and single_fpr is not None and single_tpr is not None:
         fpr_arr = np.array(single_fpr, dtype=float)
         tpr_arr = np.array(single_tpr, dtype=float)
         auc_val = single_auc
 
-        # Compute AUC if not provided
+        
         if auc_val is None:
             auc_val = np.trapezoid(tpr_arr, fpr_arr) if hasattr(np, 'trapezoid') else np.trapz(tpr_arr, fpr_arr)
 
         ax.plot(fpr_arr, tpr_arr, color=theme["colors"][0], linewidth=2.5, zorder=3,
                 label=f'AUC = {auc_val:.3f}')
 
-        # CI annotation
+        
         if ci:
             ci_low = ci.get("low", ci.get("ci_low", None))
             ci_high = ci.get("high", ci.get("ci_high", None))
@@ -1163,7 +1163,7 @@ def gen_roc(data, ax, theme, cjk_fp, **kwargs):
                         fontsize=8, color='#555555',
                         bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.9, edgecolor='lightgray'))
 
-        # Optimal cutoff point
+        
         if cutoff:
             co_fpr = cutoff.get("fpr", None)
             co_tpr = cutoff.get("tpr", None)
@@ -1180,7 +1180,7 @@ def gen_roc(data, ax, theme, cjk_fp, **kwargs):
                             arrowprops=dict(arrowstyle='->', color='gray', lw=0.8))
 
     elif curves:
-        # Multiple ROC curves
+        
         _seen_labels = set()
         for i, curve in enumerate(curves):
             fpr_c = np.array(curve.get("fpr", curve.get("x", [])), dtype=float)
@@ -1193,8 +1193,8 @@ def gen_roc(data, ax, theme, cjk_fp, **kwargs):
 
             c = theme["colors"][i % len(theme["colors"])]
             label = f'{name} (AUC={auc_c:.3f})'
-            # B3(v2.7)：两条曲线 AUC 相同（或同名）时图例标签会完全重复——
-            # 自动加序号消歧并 stderr 告知，避免图例两条一模一样无法区分
+            
+            
             if label in _seen_labels:
                 uniq = f'{label} #{i + 1}'
                 k = 2
@@ -1207,7 +1207,7 @@ def gen_roc(data, ax, theme, cjk_fp, **kwargs):
             _seen_labels.add(label)
             ax.plot(fpr_c, tpr_c, color=c, linewidth=2, zorder=3, label=label)
 
-    # ── v2.3：配对 DeLong 多模型 AUC 比较（--compare，需原始分数）──
+    
     if kwargs.get("roc_compare") and _afstats is not None:
         labels_raw = data.get("labels", None)
         curves_cmp = data.get("curves", None)
@@ -1236,7 +1236,7 @@ def gen_roc(data, ax, theme, cjk_fp, **kwargs):
                   "scores 数组（同一样本多模型）——只有 fpr/tpr 曲线时无法做 DeLong",
                   file=sys.stderr)
 
-    # Diagonal reference line
+    
     if diagonal:
         ax.plot([0, 1], [0, 1], '--', color='gray', alpha=0.5, linewidth=1, zorder=1)
 
@@ -1247,12 +1247,12 @@ def gen_roc(data, ax, theme, cjk_fp, **kwargs):
 
 
 def gen_stacked_bar(data, ax, theme, cjk_fp, **kwargs):
-    """Stacked bar chart for compositional data (e.g., subgroup proportions)."""
+
     labels = data.get("labels", data.get("x", []))
     series = data.get("series", data.get("datasets", {}))
-    percentage = data.get("percentage", False)  # normalize to 100%
-    show_total = data.get("show_total", False)  # show total on top of each bar
-    errors = data.get("errors", None)  # optional error bars for totals
+    percentage = data.get("percentage", False)  
+    show_total = data.get("show_total", False)  
+    errors = data.get("errors", None)  
     use_hatch = kwargs.get("hatch", False)
 
     n_groups = len(labels)
@@ -1269,17 +1269,17 @@ def gen_stacked_bar(data, ax, theme, cjk_fp, **kwargs):
                       linewidth=0.6 if use_hatch else 0.5,
                       hatch=hatch_val, label=name, zorder=2)
 
-        # Value labels inside bars (only for segments > 5% of total)
+        
         totals = sum(np.array(s, dtype=float) for s in series.values())
         for j, (v, total) in enumerate(zip(vals, totals)):
-            if total > 0 and v / total > 0.05:  # only label segments > 5%
+            if total > 0 and v / total > 0.05:  
                 ax.text(x[j], bottoms[j] + v / 2, f'{v:.1f}' if not percentage else f'{v/total*100:.1f}%',
                         ha='center', va='center', fontsize=7, color='white', fontweight='bold',
                         zorder=3)
 
         bottoms += vals
 
-    # Total labels on top
+    
     if show_total:
         for j in range(n_groups):
             total = bottoms[j]
@@ -1299,7 +1299,7 @@ def _fmt_num(v):
 
 
 def _annotate_peak(ax, xs, labels, values, horizontal, theme, cjk_fp, series_name=None):
-    """v4.2 --peak-label：最大值点自动注记（纯数据事实：峰值+所在类目）。"""
+
     vals = [float(v) for v in values]
     if len(vals) < 2:
         return
@@ -1318,13 +1318,13 @@ def _annotate_peak(ax, xs, labels, values, horizontal, theme, cjk_fp, series_nam
 
 
 def gen_slope(data, ax, theme, cjk_fp, **kwargs):
-    """Slope chart（v4.2，第 23 种图型）：两时点比较——每项一条左→右连线，
-    两端直接标注"名称+数值"，最大上升项主题色强调、最大下降项暖橙。
-    期刊 pre/post 标准形态（如治疗前后、基线→随访）。
 
-    JSON: {"left_label": "基线", "right_label": "12 周",
-           "items": {"药物A": [72, 85], "药物B": [65, 61]}}  # 每项恰好 2 个数值
-    """
+
+
+
+
+
+
     items = data.get("items")
     if not isinstance(items, dict) or len(items) < 2:
         raise ValueError("slope: 需要 'items'（至少 2 项，每项 [左值, 右值]）")
@@ -1360,7 +1360,7 @@ def gen_slope(data, ax, theme, cjk_fp, **kwargs):
         for a in range(1, len(order)):
             p, q = order[a - 1], order[a]
             out[q] = max(out[p] + gap, vals[q]) if vals[q] >= vals[p] else vals[q]
-        # 自下而上推开后，若顶到底顺序错位再自上而下收一遍
+        
         for a in range(len(order) - 2, -1, -1):
             p, q = order[a], order[a + 1]
             if out[q] - out[p] < gap:
@@ -1400,13 +1400,13 @@ def gen_slope(data, ax, theme, cjk_fp, **kwargs):
 
 
 def gen_volcano(data, ax, theme, cjk_fp, **kwargs):
-    """Volcano plot（v4.4，第 24 种图型）：组学差异表达标准形态——
-    x=log2(倍数变化)，y=-log10(p 值)；上调暖橙/下调蓝/非显著灰；
-    阈值虚线（|log2FC| 与 p）+ 显著性 Top-N 自动名称标注（确定性偏移避让）。
 
-    JSON: {"log2fc": [2.1, -1.3, ...], "pvalue": [1e-6, 0.03, ...],
-           "names": ["GeneA", ...](可选), "fc_cut": 1.0, "p_cut": 0.05, "top": 10}
-    """
+
+
+
+
+
+
     import math
     l2 = data.get("log2fc")
     pv = data.get("pvalue")
@@ -1440,19 +1440,19 @@ def gen_volcano(data, ax, theme, cjk_fp, **kwargs):
             cls.append("ns")
     colors = {"up": "#D55E00", "down": "#0072B2", "ns": "#B8B8B8"}
     sizes = {"up": 16, "down": 16, "ns": 9}
-    for c in ("ns", "down", "up"):  # 显著点后画（置顶）
+    for c in ("ns", "down", "up"):  
         xs = [x for x, k in zip(l2v, cls) if k == c]
         ys = [y for y, k in zip(yv, cls) if k == c]
         ax.scatter(xs, ys, s=sizes[c], c=colors[c], alpha=0.85 if c != "ns" else 0.7,
                    linewidths=0, zorder=3 if c != "ns" else 2)
 
-    # 阈值参考线
+    
     ax.axvline(fc_cut, color="#999999", ls="--", lw=0.9, zorder=1)
     ax.axvline(-fc_cut, color="#999999", ls="--", lw=0.9, zorder=1)
     ax.axhline(sig_cut, color="#999999", ls="--", lw=0.9, zorder=1)
 
-    # 显著性 Top-N 名称标注（按 p 升序 = y 降序，确定性交错偏移）
-    import matplotlib.pyplot as plt  # noqa: F401
+    
+    import matplotlib.pyplot as plt  
     idx_sig = [i for i, k in enumerate(cls) if k in ("up", "down")]
     idx_sig.sort(key=lambda i: yv[i], reverse=True)
     n_up = sum(1 for k in cls if k == "up")
@@ -1468,13 +1468,13 @@ def gen_volcano(data, ax, theme, cjk_fp, **kwargs):
                     color=colors[cls[i]],
                     fontproperties=cjk_fp if cjk_fp and has_cjk(str(names[i])) else None)
 
-    # 计数事实框（纯计数，零推断）
+    
     ax.text(0.02, 0.98, f"↑{n_up}  ↓{n_down}  ns {len(cls) - n_up - n_down}",
             transform=ax.transAxes, va="top", ha="left",
             fontsize=theme["font_size"], color="#555555",
             fontproperties=cjk_fp if cjk_fp and has_cjk("上调") else None)
 
-    # 坐标轴语义（类型专属默认；CLI --xlabel/--ylabel 可覆盖）
+    
     xl = str(data.get("x_label", "") or "log2 fold change")
     yl = str(data.get("y_label", "") or "-log10(p-value)")
     ax.set_xlabel(xl, fontsize=theme["font_size"],
@@ -1486,14 +1486,14 @@ def gen_volcano(data, ax, theme, cjk_fp, **kwargs):
 
 
 def gen_dual_axis(data, ax, theme, cjk_fp, **kwargs):
-    """Dual Y-axis chart, canonical 左柱右线 form (v3.10): left-axis series draw
-    as BARS, right-axis series as dashed LINES — override per side with data keys
-    left_type/right_type ("bar"|"line"). The merged legend covers BOTH axes and is
-    drawn frameless inside a reserved top band so it never occludes peaks (v3.10
-    A2/A4 修复); --legend-loc / --legend-outside still honored."""
+
+
+
+
+
     labels = data.get("labels", data.get("x", []))
-    left_series = data.get("left", data.get("y1", {}))  # {"CRP (mg/L)": [5, 8, 12, ...]}
-    right_series = data.get("right", data.get("y2", {}))  # {"DAS28": [3.2, 4.1, 5.6, ...]}
+    left_series = data.get("left", data.get("y1", {}))  
+    right_series = data.get("right", data.get("y2", {}))  
     left_errors = data.get("left_errors", data.get("y1_errors", {}))
     right_errors = data.get("right_errors", data.get("y2_errors", {}))
     left_ylabel = data.get("left_ylabel", "")
@@ -1520,13 +1520,13 @@ def gen_dual_axis(data, ax, theme, cjk_fp, **kwargs):
     markers = ['o', 's', 'D', '^', 'v', 'p', '*', 'h']
     x = np.arange(len(labels)) if not any(isinstance(l, (int, float)) for l in labels) else np.array(labels, dtype=float)
 
-    # Create second axis
+    
     ax2 = ax.twinx()
 
-    # Plot left axis series（v3.10：默认柱状——经典左柱右线形态）
+    
     n_left = len(left_series)
     n_right = len(right_series)
-    _label_all = (n_left + n_right) > 1  # 唯一系列不设 label（图例抑制）
+    _label_all = (n_left + n_right) > 1  
     if left_type == "bar":
         w_left = 0.72 / max(n_left, 1)
         for i, (name, values) in enumerate(left_series.items()):
@@ -1551,10 +1551,10 @@ def gen_dual_axis(data, ax, theme, cjk_fp, **kwargs):
                 upper = [v + e for v, e in zip(values, errs)]
                 ax.fill_between(x, lower, upper, color=c, alpha=0.15, zorder=2)
 
-    # Plot right axis series
-    right_colors = ['#D55E00', '#CC79A7', '#0072B2', '#009E73', '#F0E442']  # distinct from left
+    
+    right_colors = ['#D55E00', '#CC79A7', '#0072B2', '#009E73', '#F0E442']  
     if theme.get("colorblind_safe"):
-        # Use different Okabe-Ito colors for right axis
+        
         offset = len(left_series)
         right_colors = [theme["colors"][(offset + j) % len(theme["colors"])] for j in range(5)]
 
@@ -1582,19 +1582,19 @@ def gen_dual_axis(data, ax, theme, cjk_fp, **kwargs):
                 upper = [v + e for v, e in zip(values, errs)]
                 ax2.fill_between(x, lower, upper, color=c, alpha=0.15, zorder=2)
 
-    # Style right axis
+    
     ax2.spines['right'].set_visible(True)
     ax2.tick_params(axis='y', labelsize=theme["font_size"] - 1)
-    ax2.grid(False)  # no grid on right axis
+    ax2.grid(False)  
 
-    # Set x-axis labels
+    
     if not any(isinstance(l, (int, float)) for l in labels):
         ax.set_xticks(x)
         use_cjk = cjk_fp and any(has_cjk(l) for l in labels)
         ax.set_xticklabels(labels, fontsize=theme["font_size"] - 1,
                            fontproperties=cjk_fp if use_cjk else None)
 
-    # Axis labels
+    
     if left_ylabel:
         ax.set_ylabel(left_ylabel, fontsize=theme["font_size"],
                       fontproperties=cjk_fp if cjk_fp and has_cjk(left_ylabel) else None)
@@ -1604,11 +1604,11 @@ def gen_dual_axis(data, ax, theme, cjk_fp, **kwargs):
                        fontproperties=cjk_fp if cjk_fp and has_cjk(right_ylabel) else None)
         _ensure_ylabel_clear(ax2)
 
-    # Combine legends from both axes（v3.10 A2/A4：显式合并+不遮挡）
+    
     lines1, labels1 = ax.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
     handles, lbls = lines1 + lines2, labels1 + labels2
-    # v3.10：可选轴下限覆盖（如 right_floor=35 让百分比右轴整数起算——投稿规范；默认保持 5% 边距）
+    
     for _key, _ax in (("left_floor", ax), ("right_floor", ax2)):
         _fl = data.get(_key)
         if isinstance(_fl, (int, float)) and not isinstance(_fl, bool):
@@ -1629,7 +1629,7 @@ def gen_dual_axis(data, ax, theme, cjk_fp, **kwargs):
                       loc=kwargs["legend_loc"], framealpha=0.9,
                       prop=cjk_fp if cjk_fp else None)
         else:
-            # 默认：左右轴各留顶部预留带，图例嵌入预留区（无边框，物理不遮数据）
+            
             for _a in (ax, ax2):
                 _lo, _hi = _a.get_ylim()
                 if _hi > _lo:
@@ -1638,28 +1638,28 @@ def gen_dual_axis(data, ax, theme, cjk_fp, **kwargs):
                       loc='upper center', ncol=min(len(lbls), 4), frameon=False,
                       prop=cjk_fp if cjk_fp else None)
 
-    # Store ax2 reference for downstream use
+    
     return ax2
 
 
 def gen_composite(data, ax, theme, cjk_fp, **kwargs):
-    """Multi-panel composite figure (e.g., Panel A + B + C for journal figures).
 
-    JSON format:
-    {
-      "layout": [rows, cols],  // e.g. [1, 3] or [2, 2]
-      "panels": [
-        {
-          "title": "Panel A: ...",
-          "type": "bar",        // any chart type from GENERATORS
-          "data": { ... },      // data for that chart type
-          "xlabel": "...", "ylabel": "...",
-          "pos": [row, col]     // grid position (0-indexed)
-        },
-        ...
-      ]
-    }
-    """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     import matplotlib.gridspec as gridspec
 
     layout = data.get("layout", [1, 2])
@@ -1670,16 +1670,16 @@ def gen_composite(data, ax, theme, cjk_fp, **kwargs):
         return None
 
     fig = ax.figure
-    # Clear the default axis created by plt.subplots
+    
     ax.remove()
 
     gs = gridspec.GridSpec(n_rows, n_cols, figure=fig,
                            hspace=0.35, wspace=0.3,
                            left=0.08, right=0.95, top=0.92, bottom=0.08)
 
-    # v4.1 自动面板标签（期刊 A/B/C 规范自动化）："panel_labels": true → 按
-    # pos 行序自动加粗 A/B/C…；传数组（如 ["I","II"]）自定义序列；缺省 false
-    # （兼容既有图，避免与手写 "Panel A:" 类标题重复标注）。
+    
+    
+    
     panel_labels = data.get("panel_labels", False)
     _pl_seq = panel_labels if isinstance(panel_labels, list) else None
     _pl_on = bool(panel_labels)
@@ -1702,19 +1702,19 @@ def gen_composite(data, ax, theme, cjk_fp, **kwargs):
         _cs = max(1, min(_cs, n_cols - pos[1]))
         sub_ax = fig.add_subplot(gs[pos[0]:pos[0] + _rs, pos[1]:pos[1] + _cs])
 
-        # Get the generator function
+        
         gen_func = GENERATORS.get(panel_type)
         if gen_func is None:
             sub_ax.text(0.5, 0.5, f"Unknown type: {panel_type}",
                         ha='center', va='center', transform=sub_ax.transAxes)
             continue
 
-        # Pass through relevant kwargs
+        
         panel_kwargs = {
             "show_values": panel.get("show_values", kwargs.get("show_values", False)),
             "trend": panel.get("trend", kwargs.get("trend", True)),
-            # B3(v2.7)：hbar/horizontal_bar 面板自动横排（与主入口同规则；实战坑：composite
-            # 内 hbar 被当竖 bar 渲染，用户被迫改用 bar+horizontal 绕行）
+            
+            
             "horizontal": panel.get("horizontal", False)
                           or panel_type in ("hbar", "horizontal_bar"),
             "hatch": panel.get("hatch", False),
@@ -1722,8 +1722,8 @@ def gen_composite(data, ax, theme, cjk_fp, **kwargs):
             "show_ratio": panel.get("show_ratio", False),
             "cmap": panel.get("cmap", kwargs.get("cmap")),
             "vmin": panel.get("vmin", kwargs.get("vmin")),
-            # v3.4.1（55 线发现+82 等效移植）：KM 面板 median_auto 面板级透传——
-            # 此前白名单缺失，composite 里 median_auto:false 被静默忽略（单位错标复发）
+            
+            
             "median_auto": panel.get("median_auto", kwargs.get("median_auto", True)),
             "stats_bootstrap": panel.get("stats_bootstrap", kwargs.get("stats_bootstrap", False)),
             "direct_label": panel.get("direct_label", kwargs.get("direct_label", False)),
@@ -1733,7 +1733,7 @@ def gen_composite(data, ax, theme, cjk_fp, **kwargs):
         extra = gen_func(panel_data, sub_ax, theme, cjk_fp, **panel_kwargs)
         apply_base_style(sub_ax, theme)
 
-        # v4.1 自动面板标签：左上角加粗 A/B/C…（轴外，永不压数据）
+        
         if _pl_on:
             _lab = (_pl_seq[_pl_of[_pi]] if _pl_seq
                     else chr(65 + _pl_of[_pi]))
@@ -1742,7 +1742,7 @@ def gen_composite(data, ax, theme, cjk_fp, **kwargs):
                         ha="right", va="bottom",
                         fontproperties=cjk_fp if cjk_fp and has_cjk(str(_lab)) else None)
 
-        # Panel-specific labels
+        
         ptitle = panel.get("title", "")
         if ptitle:
             sub_ax.set_title(ptitle, fontsize=theme["font_size"], fontweight='bold', pad=8,
@@ -1755,44 +1755,44 @@ def gen_composite(data, ax, theme, cjk_fp, **kwargs):
                               fontproperties=cjk_fp if cjk_fp and has_cjk(panel["ylabel"]) else None)
             _ensure_ylabel_clear(sub_ax)
 
-        # Legend for panel
+        
         show_legend = panel.get("legend", True)
         if show_legend and sub_ax.get_legend_handles_labels()[1]:
             sub_ax.legend(fontsize=theme["font_size"] - 2, loc='best', framealpha=0.9,
                           prop=cjk_fp if cjk_fp else None)
 
-        # Colorbar for heatmap panels
+        
         if extra is not None and hasattr(extra, 'get_cmap'):
             cbar = fig.colorbar(extra, ax=sub_ax, shrink=0.8)
 
-    return "composite"  # signal to main() that figure is already built
+    return "composite"  
 
 
 def gen_diagram(data, ax, theme, cjk_fp, **kwargs):
-    """Architecture/flow diagram with colored blocks, arrows, and groupings.
 
-    JSON format:
-    {
-      "background": "light",  // always light (white) for publication
-      "blocks": [
-        {"id": "A", "label": "Input", "x": 0, "y": 0, "w": 2, "h": 1,
-         "color": "#56B4E9", "shape": "round"},  // shape: "round" (default) or "rect"
-        ...
-      ],
-      "arrows": [
-        {"from": "A", "to": "B", "label": "flow", "style": "->"},
-        ...
-      ],
-      "groups": [
-        {"blocks": ["A", "B"], "label": "Phase 1", "color": "#009E73", "style": "dashed"},
-        ...
-      ],
-      "annotations": [
-        {"text": "Step 1: predict", "x": 1, "y": -1, "fontsize": 9, "color": "#E69F00"},
-        ...
-      ]
-    }
-    """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     from matplotlib.patches import FancyBboxPatch, FancyArrowPatch, Rectangle
     from matplotlib.lines import Line2D
 
@@ -1805,17 +1805,17 @@ def gen_diagram(data, ax, theme, cjk_fp, **kwargs):
     text_color = '#1a1a1a'
     arrow_color = '#555555'
 
-    # Build block lookup
+    
     block_map = {}
     for b in blocks:
         block_map[b["id"]] = b
 
-    # Draw group backgrounds first (behind blocks)
+    
     for grp in groups:
         grp_blocks = grp.get("blocks", [])
         if not grp_blocks:
             continue
-        # Calculate bounding box of grouped blocks
+        
         xs_min, xs_max = [], []
         ys_min, ys_max = [], []
         for bid in grp_blocks:
@@ -1836,21 +1836,21 @@ def gen_diagram(data, ax, theme, cjk_fp, **kwargs):
                          edgecolor=grp_color, facecolor='none',
                          linestyle=grp_style, alpha=0.8)
         ax.add_patch(rect)
-        # Group label
+        
         if grp.get("label"):
             ax.text(gx + 0.15, gy + gh - 0.15, grp["label"],
                     fontsize=theme["font_size"] - 1, color=grp_color,
                     fontweight='bold', va='top', ha='left',
                     fontproperties=cjk_fp if cjk_fp and has_cjk(grp["label"]) else None)
 
-    # Draw blocks
+    
     for b in blocks:
         bx, by = b["x"], b["y"]
         bw, bh = b["w"], b["h"]
         bc = b.get("color", theme["colors"][0])
         label = b.get("label", b["id"])
         shape = b.get("shape", "round")
-        sub_label = b.get("sublabel", None)  # smaller text below main label
+        sub_label = b.get("sublabel", None)  
 
         if shape == "rect":
             patch = FancyBboxPatch((bx, by), bw, bh,
@@ -1864,7 +1864,7 @@ def gen_diagram(data, ax, theme, cjk_fp, **kwargs):
                                    linewidth=1.2, alpha=0.9)
         ax.add_patch(patch)
 
-        # Block label (centered)
+        
         label_y = by + bh / 2
         if sub_label:
             label_y = by + bh * 0.65
@@ -1878,7 +1878,7 @@ def gen_diagram(data, ax, theme, cjk_fp, **kwargs):
                     color='white', alpha=0.85,
                     fontproperties=cjk_fp if cjk_fp and has_cjk(sub_label) else None)
 
-    # Draw arrows
+    
     for arr in arrows:
         from_id = arr["from"]
         to_id = arr["to"]
@@ -1886,15 +1886,15 @@ def gen_diagram(data, ax, theme, cjk_fp, **kwargs):
             continue
         fb, tb = block_map[from_id], block_map[to_id]
 
-        # Calculate connection points (edge of blocks facing each other)
+        
         fx_center = fb["x"] + fb["w"] / 2
         fy_center = fb["y"] + fb["h"] / 2
         tx_center = tb["x"] + tb["w"] / 2
         ty_center = tb["y"] + tb["h"] / 2
 
-        # Determine arrow start/end at block edges
+        
         if abs(fx_center - tx_center) > abs(fy_center - ty_center):
-            # Horizontal connection
+            
             if fx_center < tx_center:
                 start = (fb["x"] + fb["w"], fy_center)
                 end = (tb["x"], ty_center)
@@ -1902,7 +1902,7 @@ def gen_diagram(data, ax, theme, cjk_fp, **kwargs):
                 start = (fb["x"], fy_center)
                 end = (tb["x"] + tb["w"], ty_center)
         else:
-            # Vertical connection
+            
             if fy_center < ty_center:
                 start = (fx_center, fb["y"] + fb["h"])
                 end = (tx_center, tb["y"])
@@ -1921,7 +1921,7 @@ def gen_diagram(data, ax, theme, cjk_fp, **kwargs):
                                 mutation_scale=15)
         ax.add_patch(arrow)
 
-        # Arrow label
+        
         if arr.get("label"):
             mid_x = (start[0] + end[0]) / 2
             mid_y = (start[1] + end[1]) / 2
@@ -1932,7 +1932,7 @@ def gen_diagram(data, ax, theme, cjk_fp, **kwargs):
                               alpha=0.8, edgecolor='none'),
                     fontproperties=cjk_fp if cjk_fp and has_cjk(arr["label"]) else None)
 
-    # Draw annotations
+    
     for ann in annotations:
         ax.text(ann["x"], ann["y"], ann["text"],
                 ha=ann.get("ha", 'center'), va=ann.get("va", 'center'),
@@ -1941,7 +1941,7 @@ def gen_diagram(data, ax, theme, cjk_fp, **kwargs):
                 fontweight=ann.get("weight", 'normal'),
                 fontproperties=cjk_fp if cjk_fp and has_cjk(ann["text"]) else None)
 
-    # Set up axis limits
+    
     all_x = [b["x"] + b["w"] for b in blocks] + [b["x"] for b in blocks]
     all_y = [b["y"] + b["h"] for b in blocks] + [b["y"] for b in blocks]
     if all_x and all_y:
@@ -1954,7 +1954,7 @@ def gen_diagram(data, ax, theme, cjk_fp, **kwargs):
     return "diagram"
 
 
-# ── PRISMA 2020 flow diagram (v2.1) ───────────────────────────────────
+
 
 PRISMA_LABELS = {
     "en": {
@@ -1985,24 +1985,24 @@ PRISMA_LABELS = {
 
 
 def gen_prisma(data, ax, theme, cjk_fp, **kwargs):
-    """PRISMA 2020 systematic-review flow diagram.
 
-    JSON format (counts must add up; validate_data() gates arithmetic):
-    {
-      "records_identified": 128,       // required
-      "duplicates_removed": 23,
-      "records_screened": 105,         // default: identified - duplicates
-      "records_excluded": 61,
-      "reports_sought": 44,            // default: screened - excluded
-      "reports_not_retrieved": 3,
-      "reports_assessed": 41,          // default: sought - not_retrieved
-      "exclusion_reasons": {"Wrong population": 5, "Wrong intervention": 7},
-      "studies_included": 25,          // required
-      "lang": "en"                     // or "zh" (standard Chinese wording)
-    }
-    Layout: PRISMA 2020 three-phase spine (Identification / Screening /
-    Included) with exclusion boxes to the right, per the official template.
-    """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
 
     lang = data.get("lang", "en")
@@ -2034,13 +2034,13 @@ def gen_prisma(data, ax, theme, cjk_fp, **kwargs):
     def _fp(*texts):
         return cjk_fp if cjk_fp and any(has_cjk(t) for t in texts) else None
 
-    # ── geometry (data units; aspect equal) ──
-    SW, BW = 4.6, 4.4                 # spine / side box widths
-    SX, XX = 0.0, 7.4                 # x origins
-    GAP = 0.78                        # vertical gap
+    
+    SW, BW = 4.6, 4.4                 
+    SX, XX = 0.0, 7.4                 
+    GAP = 0.78                        
     n_reasons = max(1, len(reasons))
-    # 内容感知盒高：双行中文标签+计数行在固定盒高下会溢出框体——
-    # 盒高 = 标签行数×行高 + 计数行 + 内边距，行高随字号缩放
+    
+    
     _lh = 0.62 * max(0.8, fs / 8.0)
     def _box_h(label):
         return max(1.15, (label.count(chr(10)) + 1) * _lh + 0.85)
@@ -2067,13 +2067,13 @@ def gen_prisma(data, ax, theme, cjk_fp, **kwargs):
     }
     show_dup = not (dup == 0 and "duplicates_removed" not in data)
     show_notret = not (not_ret == 0 and "reports_not_retrieved" not in data)
-    # reasons box: top-anchored to the assessed row's midline, growing
-    # downward — this leaves the sought/assessed slot free for the
-    # not-retrieved side box (official PRISMA 2020 arrangement)
+    
+    
+    
     y_reasons = ys["assessed"] + BH_BY["assessed"] * 0.5 - RH
     implied_excluded = max(assessed - included, 0)
 
-    # ── limits (set early so side-box text can be measured in data units) ──
+    
     xmin, ymin = SX - 2.3, min(ys["included"], y_reasons) - 1.1
     ymax = top + 0.75
     ax.set_xlim(xmin, XX + BW + 0.5)
@@ -2081,8 +2081,8 @@ def gen_prisma(data, ax, theme, cjk_fp, **kwargs):
     ax.set_aspect("equal")
     ax.axis("off")
     fig = ax.get_figure()
-    # 主框文字实测自愈：盒高系数是估算可能低估——以最终几何实测文字高度，
-    # 超出盒体就放大该盒并整体重排，迭代到全部装下（同侧框 auto-fit 思路）
+    
+    
     if fig is not None:
         for _round in range(4):
             fig.canvas.draw()
@@ -2112,10 +2112,10 @@ def gen_prisma(data, ax, theme, cjk_fp, **kwargs):
             ax.set_ylim(ymin, ymax)
 
 
-    # ── side-box auto-fit: measure the real rendered width of every side-box
-    # line, widen the boxes to fit, and wrap reason lines only as a last
-    # resort (growing the box height to match). The old fixed-width box let
-    # long exclusion reasons spill outside the frame.
+    
+    
+    
+    
     BW_MAX = 7.2
     reason_items = [(str(r), n) for r, n in reasons.items()]
     item_display = {r: [f"· {r} (n = {n})"] for r, n in reason_items}
@@ -2130,10 +2130,10 @@ def gen_prisma(data, ax, theme, cjk_fp, **kwargs):
         specs.append((item_display[r][0], fs - 1.5, _fp(r, str(n))))
 
     if specs and fig is not None:
-        # Iterate to a fixed point: set the final geometry FIRST, then
-        # measure, because data-unit widths depend on xlim. Widening BW
-        # changes the span, which changes the measurement — so each pass
-        # measures under the span it proposes, until the width stops moving.
+        
+        
+        
+        
         widths = {}
         need = BW
         for _pass in range(3):
@@ -2187,9 +2187,9 @@ def gen_prisma(data, ax, theme, cjk_fp, **kwargs):
         ax.set_xlim(xmin, XX + BW + 0.5)
         ax.set_ylim(ymin, ymax)
 
-    # grow two-line side boxes vertically if label + count overflow BH
-    # (a wider canvas squeezes data-unit heights). Boxes grow symmetrically
-    # around their center, so the arrow anchors (_scy) stay aligned.
+    
+    
+    
     side_two = []
     if show_dup:
         side_two.append(("duplicates", L["duplicates"]))
@@ -2215,8 +2215,8 @@ def gen_prisma(data, ax, theme, cjk_fp, **kwargs):
                     + _text_h("n = 0", fs - 1.5, _fp("0")) + 0.52)
             side_h[key] = max(BH, need)
 
-    # phase bands + rotated phase labels (canonical three-phase template,
-    # left-rail style: zero collision with the vertical flow)
+    
+    
     phases = [("identification", ["identified"]),
               ("screening", ["screened", "sought", "assessed"]),
               ("included", ["included"])]
@@ -2272,7 +2272,7 @@ def gen_prisma(data, ax, theme, cjk_fp, **kwargs):
                                      color=arrow_color, linewidth=lw,
                                      mutation_scale=14, zorder=2))
 
-    # spine boxes + arrows
+    
     _main_box("identified", L["identified"], identified)
     _main_box("screened", L["screened"], screened)
     _main_box("sought", L["sought"], sought)
@@ -2281,7 +2281,7 @@ def gen_prisma(data, ax, theme, cjk_fp, **kwargs):
     for a, b in zip(order, order[1:]):
         _arrow(SX + SW / 2, ys[a], SX + SW / 2, ys[b] + BH)
 
-    # side boxes + arrows
+    
     def _scy(key):
         return side[key] + BH / 2
 
@@ -2303,8 +2303,8 @@ def gen_prisma(data, ax, theme, cjk_fp, **kwargs):
         _side_box(y_reasons, BH, (L["reasons"], implied_excluded))
     _arrow(SX + SW, ys["assessed"] + BH_BY["assessed"] * 0.35, XX, ys["assessed"] + BH_BY["assessed"] * 0.35, lw=1.4)
 
-    # content-aware figure proportions (limits were set pre-draw for the
-    # side-box auto-fit; BW/y_reasons carry the auto-fitted values)
+    
+    
     xmax = XX + BW + 0.5
     ymin = min(ys["included"], y_reasons) - 1.1
     if fig is not None:

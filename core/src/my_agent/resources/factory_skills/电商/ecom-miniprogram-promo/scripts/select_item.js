@@ -1,20 +1,20 @@
-/**
- * select_item.cjs —— 通用小程序每日推广
- * 读取任意内容文档(content.js / .json) → 按去重+穿插策略选当日 1 条 → 输出结构化事实
- *
- * 用法:
- *   node select_item.cjs [contentPath] [statePath] [--dry]
- *   --dry : 只预览选取结果，不写状态文件
- *
- * 文档约定(标准格式，同时兼容任意结构):
- *   module.exports = {
- *     APP: { name, slogan, audience, platforms },          // 小程序元信息（缺则运行时询问）
- *     ITEMS: [                                             // 内容数组（兼容 CAMPSITES/items/list/data 等键名）
- *       { id, title, content, images:[], cover, tags:[], category, ...任意扩展字段 }
- *     ]
- *   }
- *   字段自动探测: title/name、content/description、images/gallery/pics、cover、tags、category。
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const fs = require("fs");
 const path = require("path");
 
@@ -27,7 +27,7 @@ const positional = args.filter(a => !a.startsWith("--"));
 const contentPath = positional[0] || DEFAULT_CONTENT;
 const statePath = positional[1] || DEFAULT_STATE;
 
-// ---------- 加载文档 ----------
+
 let mod;
 try {
   mod = require(contentPath);
@@ -35,10 +35,10 @@ try {
   console.error("LOAD_FAIL:" + e.message);
   process.exit(2);
 }
-// 支持直接导出数组的情况
+
 if (Array.isArray(mod)) mod = { ITEMS: mod };
 
-// ---------- 探测 APP 元信息 ----------
+
 const appRaw = mod.APP || mod.app || mod.meta || mod.META || null;
 const app = appRaw ? {
   name: appRaw.name || appRaw.名称 || "",
@@ -47,7 +47,7 @@ const app = appRaw ? {
   platforms: appRaw.platforms || appRaw.平台 || []
 } : null;
 
-// ---------- 探测 ITEMS 数组 ----------
+
 const itemsArr =
   mod.ITEMS || mod.items || mod.CAMPSITES || mod.campsites ||
   mod.list || mod.LIST || mod.data || mod.DATA || mod.posts || mod.articles || null;
@@ -56,7 +56,7 @@ if (!itemsArr || !Array.isArray(itemsArr) || !itemsArr.length) {
   process.exit(2);
 }
 
-// ---------- 字段自动探测 ----------
+
 function normImg(x) {
   if (!x) return "";
   if (typeof x === "string") return x;
@@ -77,7 +77,7 @@ function detectImages(it) {
   for (const f of arrFields) {
     if (Array.isArray(it[f])) imgs = imgs.concat(it[f].map(normImg));
   }
-  // 兜底1：扫描所有数组字段，找 http(s) 图片串
+  
   if (!imgs.length) {
     for (const k in it) {
       if (Array.isArray(it[k])) {
@@ -86,7 +86,7 @@ function detectImages(it) {
       }
     }
   }
-  // 兜底2：扫描所有字符串字段，找图片后缀 url
+  
   if (!imgs.length) {
     for (const k in it) {
       if (typeof it[k] === "string" && /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)/i.test(it[k])) imgs.push(it[k]);
@@ -109,14 +109,14 @@ function isPitfall(it) {
 }
 function itemId(it, idx) { return it.id || it._id || it.ID || detectTitle(it) || ("item-" + idx); }
 
-// ---------- 状态 / 去重 ----------
+
 let state = { runCount: 0, covered: [], realIndex: 0, pitIndex: 0 };
 if (fs.existsSync(statePath)) {
   try {
     const raw = fs.readFileSync(statePath, "utf8");
     if (raw) {
       const loaded = JSON.parse(raw);
-      // 兼容旧版状态键名（fakeIndex → pitIndex）
+      
       if (loaded.fakeIndex != null && loaded.pitIndex == null) loaded.pitIndex = loaded.fakeIndex;
       state = Object.assign(state, loaded);
     }
@@ -144,7 +144,7 @@ function nextPits() {
   return null;
 }
 
-// 每 3 次运行穿插 1 篇避坑（runCount 从 0 起，第 2/5/8... 次选避坑）
+
 let chosen = null, chosenIsPit = false, chosenIdx = -1;
 if (pits.length && state.pitIndex < pits.length && state.runCount % 3 === 2) {
   const p = nextPits(); chosen = p ? p.c : null; chosenIsPit = !!p; chosenIdx = p ? p.i : -1;
@@ -163,7 +163,7 @@ if (chosenIsPit) state.pitIndex++; else state.realIndex++;
 state.covered.push(itemId(chosen, chosenIdx));
 state.runCount++;
 
-// ---------- 渲染通用事实 ----------
+
 const images = detectImages(chosen);
 const facts = {
   app,

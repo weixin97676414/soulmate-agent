@@ -13,13 +13,13 @@ function formatSize(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
-/**
- * 图片与 SVG 用 blob URL 渲染。
- *
- * 不直接把 SVG 文本塞进 innerHTML：那等于把上传的文件当 HTML 执行，
- * 一个带 <script> 的 SVG 就能拿到 preload 暴露的 IPC 桥。
- * 走 `<img>` 的话浏览器不会执行其中的脚本。
- */
+
+
+
+
+
+
+
 function ImagePreview({ file, kind }: { file: FileRecord; kind: 'upload' | 'artifact' }) {
   const api = useAppStore((state) => state.api)
   const [url, setUrl] = useState<string | null>(null)
@@ -63,7 +63,7 @@ function ImagePreview({ file, kind }: { file: FileRecord; kind: 'upload' | 'arti
 
   return (
     <div className="flex justify-center bg-canvas p-3">
-      {/* 图表是 SVG，需要撑满宽度才能看清；照片类则限制高度避免撑爆布局 */}
+      {}
       <img
         src={url}
         alt={file.original_name}
@@ -134,19 +134,19 @@ export function ArtifactPreview({
   const [sheetIndex, setSheetIndex] = useState(0)
   const [saving, setSaving] = useState(false)
 
-  /**
-   * 「另存为」：交给**主进程**弹系统对话框并落盘。
-   *
-   * 渲染层只说清"要存哪一个"，不给也不拿本地路径（见 shared/bridge.ts 的说明）。
-   * 三条分支的处理口径：
-   * - 用户取消 → **什么都不做**，不报错（取消不是失败）；
-   * - 成功 → 说清保存到了哪里（否则用户不知道去哪儿找那个文件）；
-   * - 失败 → 把原因原样说出来，不吞。
-   */
+  
+
+
+
+
+
+
+
+
   const saveAs = useCallback(async () => {
     const bridge = window.agentBridge
     if (!bridge?.saveArtifactAs) {
-      // 桥不可用（极少数环境）时必须明说，否则就是"点了没反应"
+      
       useNotificationStore.getState().push({
         level: 'warning',
         title: '当前窗口不支持另存为',

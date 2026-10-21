@@ -1,7 +1,7 @@
-"""Test Reporter Module
 
-Provides test report generation capabilities.
-"""
+
+
+
 
 import json
 import xml.etree.ElementTree as ET
@@ -69,9 +69,9 @@ HTML_REPORT_TEMPLATE = """
 
 @dataclass
 class TestResult:
-    """Single test result."""
+
     name: str
-    status: str  # passed, failed, skipped
+    status: str  
     duration: float = 0.0
     message: Optional[str] = None
     output: Optional[str] = None
@@ -79,7 +79,7 @@ class TestResult:
 
 @dataclass
 class TestReport:
-    """Complete test report."""
+
     timestamp: datetime
     results: List[TestResult]
     total_duration: float = 0.0
@@ -108,14 +108,14 @@ class TestReport:
 
 
 class TestReporter:
-    """Test report generator."""
+
     
     def __init__(self, output_dir: str = "./reports"):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
     
     def generate_html_report(self, report: TestReport, filename: Optional[str] = None) -> str:
-        """Generate HTML report."""
+
         if filename is None:
             filename = f"test_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
         
@@ -147,7 +147,7 @@ class TestReporter:
         return str(filepath)
     
     def generate_json_report(self, report: TestReport, filename: Optional[str] = None) -> str:
-        """Generate JSON report."""
+
         if filename is None:
             filename = f"test_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         
@@ -181,7 +181,7 @@ class TestReporter:
         return str(filepath)
     
     def generate_junit_xml(self, report: TestReport, filename: Optional[str] = None) -> str:
-        """Generate JUnit XML report."""
+
         if filename is None:
             filename = f"junit_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xml"
         
@@ -214,7 +214,7 @@ class TestReporter:
         return str(filepath)
     
     def generate_allure_report(self, report: TestReport) -> None:
-        """Generate Allure compatible results."""
+
         allure_dir = self.output_dir / "allure-results"
         allure_dir.mkdir(exist_ok=True)
         
@@ -245,5 +245,5 @@ class TestReporter:
                 json.dump(allure_result, f, indent=2)
 
 
-# Import dataclass
+
 from dataclasses import dataclass

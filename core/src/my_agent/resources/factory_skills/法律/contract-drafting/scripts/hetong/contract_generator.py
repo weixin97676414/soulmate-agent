@@ -1,13 +1,13 @@
-"""
-合同生成脚本
-Contract Generator Script
 
-功能：支持多种方式生成合同
-1. 模板选择模式：从100+模板库选择
-2. AI智能起草：根据需求描述自动生成
-3. 对话引导填写：逐步引导用户输入合同信息
-4. 条款建议：针对特定场景提供专业条款
-"""
+
+
+
+
+
+
+
+
+
 
 import json
 import re
@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 @dataclass
 class ContractTemplate:
-    """合同模板"""
+
     id: str
     name: str
     category: str
@@ -33,7 +33,7 @@ class ContractTemplate:
 
 @dataclass
 class GeneratedContract:
-    """生成的合同"""
+
     template_id: str
     contract_type: str
     sections: Dict[str, str]
@@ -43,28 +43,28 @@ class GeneratedContract:
 
 
 class ContractGenerator:
-    """合同生成器"""
+
     
     def __init__(self):
         self.template_library = self._init_template_library()
     
     def generate_from_template(self, template_id: str, 
                                fields: Dict[str, Any]) -> GeneratedContract:
-        """
-        从模板生成合同
-        
-        Args:
-            template_id: 模板ID
-            fields: 填充字段
-            
-        Returns:
-            生成的合同对象
-        """
+
+
+
+
+
+
+
+
+
+
         template = self.template_library.get(template_id)
         if not template:
             raise ValueError(f"模板不存在: {template_id}")
         
-        # 填充模板
+        
         filled_text = template.content
         filled_fields = {}
         
@@ -73,15 +73,15 @@ class ContractGenerator:
             filled_text = filled_text.replace(placeholder, str(field_value))
             filled_fields[field_name] = field_value
         
-        # 生成合同编号
+        
         import datetime
         contract_no = f"HT-{datetime.datetime.now().strftime('%Y%m%d')}-{template_id}"
         filled_text = filled_text.replace("{合同编号}", contract_no)
         
-        # 提取章节
+        
         sections = self._extract_sections(filled_text)
         
-        # 检查警告
+        
         warnings = self._check_warnings(filled_text, template)
         
         return GeneratedContract(
@@ -94,16 +94,16 @@ class ContractGenerator:
         )
     
     def suggest_clauses(self, scenario: str, clause_type: str) -> List[Dict]:
-        """
-        提供条款建议
-        
-        Args:
-            scenario: 使用场景
-            clause_type: 条款类型
-            
-        Returns:
-            条款建议列表
-        """
+
+
+
+
+
+
+
+
+
+
         suggestions = {
             "保密条款": {
                 "推荐版本": {
@@ -183,23 +183,23 @@ class ContractGenerator:
     
     def generate_with_ai(self, requirements: str, 
                          contract_type: str) -> Dict[str, Any]:
-        """
-        AI智能起草合同框架
+
+
+
+
+
+
+
+
+
+
         
-        Args:
-            requirements: 需求描述
-            contract_type: 合同类型
-            
-        Returns:
-            合同框架和建议
-        """
-        # 分析需求，提取关键信息
         key_info = self._extract_key_info(requirements)
         
-        # 生成推荐结构
+        
         structure = self._generate_structure(contract_type, key_info)
         
-        # 生成关键条款建议
+        
         key_clauses = self._generate_key_clauses(contract_type, key_info)
         
         return {
@@ -210,10 +210,10 @@ class ContractGenerator:
         }
     
     def _init_template_library(self) -> Dict[str, ContractTemplate]:
-        """初始化模板库"""
+
         templates = {}
         
-        # 劳动合同模板
+        
         templates["labor_standard"] = ContractTemplate(
             id="labor_standard",
             name="标准劳动合同",
@@ -311,7 +311,7 @@ class ContractGenerator:
             ]
         )
         
-        # 买卖合同模板
+        
         templates["sale_standard"] = ContractTemplate(
             id="sale_standard",
             name="标准商品买卖合同",
@@ -381,7 +381,7 @@ class ContractGenerator:
             ]
         )
         
-        # 租赁合同模板
+        
         templates["rental_standard"] = ContractTemplate(
             id="rental_standard",
             name="房屋租赁合同",
@@ -446,10 +446,10 @@ class ContractGenerator:
         return templates
     
     def _extract_sections(self, text: str) -> Dict[str, str]:
-        """提取合同章节"""
+
         sections = {}
         
-        # 按条款分割
+        
         clause_pattern = r'第[零一二三四五六七八九十百\d]+条\s*[^\n]+'
         matches = list(re.finditer(clause_pattern, text))
         
@@ -464,15 +464,15 @@ class ContractGenerator:
         return sections
     
     def _check_warnings(self, text: str, template: ContractTemplate) -> List[str]:
-        """检查警告信息"""
+
         warnings = []
         
-        # 检查未填充的占位符
+        
         unfilled = re.findall(r'\{[^}]+\}', text)
         if unfilled:
             warnings.append(f"存在未填充字段: {', '.join(unfilled)}")
         
-        # 检查关键条款是否缺失
+        
         key_clauses = ["违约责任", "争议解决", "保密"]
         for clause in key_clauses:
             if clause not in text:
@@ -481,25 +481,25 @@ class ContractGenerator:
         return warnings
     
     def _extract_key_info(self, requirements: str) -> Dict[str, Any]:
-        """从需求中提取关键信息"""
+
         info = {}
         
-        # 提取金额
+        
         amount_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:万|亿|元)', requirements)
         if amount_match:
             info["金额"] = amount_match.group(0)
         
-        # 提取期限
+        
         period_match = re.search(r'(\d+)\s*(?:年|个月?|日)', requirements)
         if period_match:
             info["期限"] = period_match.group(0)
         
-        # 提取人员姓名
+        
         name_match = re.search(r'(?:叫|姓|名为|姓名)[:：]?\s*([^\s，,。]+)', requirements)
         if name_match:
             info["姓名"] = name_match.group(1)
         
-        # 提取公司名称
+        
         company_match = re.search(r'([^\s公司企业厂社]+(?:公司|企业|厂|合作社))', requirements)
         if company_match:
             info["公司名称"] = company_match.group(1)
@@ -508,7 +508,7 @@ class ContractGenerator:
     
     def _generate_structure(self, contract_type: str, 
                             key_info: Dict) -> List[str]:
-        """生成推荐合同结构"""
+
         structures = {
             "劳动合同": [
                 "第一条 合同期限",
@@ -549,7 +549,7 @@ class ContractGenerator:
     
     def _generate_key_clauses(self, contract_type: str, 
                               key_info: Dict) -> List[Dict]:
-        """生成关键条款建议"""
+
         suggestions = []
         
         if contract_type == "劳动合同":
@@ -567,7 +567,7 @@ class ContractGenerator:
         return suggestions
     
     def _generate_customization_notes(self, key_info: Dict) -> List[str]:
-        """生成定制注意事项"""
+
         notes = []
         
         if "金额" in key_info:
@@ -581,7 +581,7 @@ class ContractGenerator:
         return notes
     
     def list_templates(self, category: Optional[str] = None) -> List[Dict]:
-        """列出模板库"""
+
         result = []
         
         for template_id, template in self.template_library.items():
@@ -599,16 +599,16 @@ class ContractGenerator:
 
 
 def main():
-    """测试函数"""
+
     generator = ContractGenerator()
     
-    # 列出模板
+    
     print("=== 可用模板 ===")
     templates = generator.list_templates()
     for t in templates:
         print(f"- {t['name']} ({t['category']})")
     
-    # 从模板生成
+    
     print("\n=== 从模板生成合同 ===")
     fields = {
         "甲方名称": "深圳市XX科技有限公司",
@@ -649,7 +649,7 @@ def main():
     except Exception as e:
         print(f"生成失败：{e}")
     
-    # 条款建议
+    
     print("\n=== 保密条款建议 ===")
     suggestions = generator.suggest_clauses("技术岗位", "保密条款")
     for s in suggestions:

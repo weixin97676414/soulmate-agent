@@ -13,9 +13,9 @@ import {
 import { resolveTheme, useAppStore } from '@/stores/appStore'
 import type { ThemeId } from '@shared/bridge'
 
-/** 与 index.css 各皮肤的变量一一对应；预览色只用于设置页展示。
- *  **数组顺序即配对顺序**：第 i 个日间与第 i 个夜间是同一风格取向（产品要求
- *  "日间有的夜间也要有，且排序相同"）。两行渲染分别 filter，相对顺序保持。 */
+
+
+
 const SKINS: Array<{
   id: ThemeId
   name: string
@@ -23,25 +23,25 @@ const SKINS: Array<{
   brand: string
   group: 'light' | 'dark'
 }> = [
-  // 1. 通用蓝调
+  
   { id: 'light', name: '明亮', canvas: '#ffffff', brand: '#2563eb', group: 'light' },
   { id: 'dark', name: '夜间', canvas: '#16171a', brand: '#4d84f5', group: 'dark' },
-  // 2. 粉紫
+  
   { id: 'sakura', name: '樱粉', canvas: '#fffafc', brand: '#db2777', group: 'light' },
   { id: 'plum', name: '暮紫', canvas: '#14101b', brand: '#a78bfa', group: 'dark' },
-  // 3. 绿系
+  
   { id: 'mint', name: '薄荷', canvas: '#f7fdfa', brand: '#059669', group: 'light' },
   { id: 'forest', name: '森野', canvas: '#0f1512', brand: '#34d399', group: 'dark' },
-  // 4. 蓝绿系
+  
   { id: 'sky', name: '天空', canvas: '#f7fbff', brand: '#0284c7', group: 'light' },
   { id: 'ocean', name: '深海', canvas: '#0d131b', brand: '#38bdf8', group: 'dark' },
-  // 5. 暖色系
+  
   { id: 'warm', name: '暖阳', canvas: '#fdf8f1', brand: '#c2410c', group: 'light' },
   { id: 'pine', name: '墨绿', canvas: '#0e1311', brand: '#2dd4bf', group: 'dark' },
-  // 6. 大地/极简
+  
   { id: 'apricot', name: '杏黄', canvas: '#fffdf6', brand: '#d97706', group: 'light' },
   { id: 'charcoal', name: '炭黑', canvas: '#141414', brand: '#94a3b8', group: 'dark' },
-  // 7. 深蓝夜空
+  
   { id: 'deepday', name: '晨蓝', canvas: '#f4f7ff', brand: '#4d6bfe', group: 'light' },
   { id: 'deepnight', name: '深空', canvas: '#06080f', brand: '#7b93ff', group: 'dark' },
 ]
@@ -95,13 +95,13 @@ function SkinRow({
   )
 }
 
-/**
- * 「外观」设置页（产品要求单独成栏，专门 DIY 界面）。
- *
- * 核心是**日夜双槽位**：用户分别为日间、夜间选一套皮肤并记住 ——
- * 右上角的切换按钮只在这两个槽位之间走，不再把用户选的皮肤覆盖成
- * 固定的 light/dark（那是用户明确抱怨过的行为）。
- */
+
+
+
+
+
+
+
 export function AppearanceSettings() {
   const theme = useAppStore((state) => state.theme)
   const setTheme = useAppStore((state) => state.setTheme)
@@ -114,30 +114,30 @@ export function AppearanceSettings() {
   const profileInputRef = useRef<HTMLInputElement>(null)
   useEffect(() => subscribeUserProfile(() => setProfile(loadUserProfile())), [])
 
-  /**
-   * 当前**生效**的那套皮肤（日/夜两行都拿它比对）。
-   *
-   * ⚠️ 第 91 批（L-02）修的两处：
-   * ① 原来传的是 `slots.day === theme ? theme : slots.day` —— 两个分支**恒等**，
-   *    实际就等于 `slots.day`。于是夜间皮肤生效时，「日间皮肤」那一行也标着「当前」
-   *    （它比对的是"日间槽位里存的那套"，不是"现在用的那套"）。
-   * ② 直接用 `theme` 也不对：它可能是 `'system'`，而 `'system'` 不是一个具体皮肤，
-   *    `SkinRow` 里两处查找都会落空 —— 系统跟随模式下**两行都不显示**「当前」。
-   *    解析之后必然是 `light` / `dark` 这类具体皮肤，两种模式都能正确指认。
-   */
+  
+
+
+
+
+
+
+
+
+
+
   const activeSkin = resolveTheme(theme)
 
-  // 当前皮肤属于哪一组，决定高亮哪一行
-  //
-  // ⚠️ 原来这里还有一份 `slots` state（`readDayNightThemes()` 读出来的日/夜双槽位），
-  // 它唯一的用途就是喂给下面两行 `current={slots.day === theme ? ... }` —— 而那个写法
-  // 恒等于 `slots.day`，正是 L-02 修掉的死逻辑。改成按"当前生效的皮肤"高亮之后，
-  // `slots` 就彻底没人读了，所以这轮一并删掉（`tsc` 的 noUnusedLocals 会立刻报出来）。
+  
+  
+  
+  
+  
+  
   const pick = (id: ThemeId) => {
     setTheme(id)
   }
 
-  /** 只压缩宽度，**不再裁剪**（产品明确要求壁纸保持完整，拉伸自适应窗口） */
+  
   const pickWallpaper = async (file: File) => {
     const raw = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader()
@@ -184,14 +184,14 @@ export function AppearanceSettings() {
       </p>
 
       <div className="mt-5 flex flex-col gap-5">
-        {/* 两行都拿**当前生效的皮肤**去比：只有它真正属于哪一组，哪一行才显示「当前」 */}
+        {}
         <SkinRow title="日间皮肤" group="light" current={activeSkin} onPick={pick} />
         <SkinRow title="夜间皮肤" group="dark" current={activeSkin} onPick={pick} />
         <p className="text-[11px] leading-relaxed text-ink-faint">
           提示：点击上面任意一套皮肤即把它设为当前外观，并记住到对应的日/夜槽位。
         </p>
 
-        {/* ---- 壁纸：不裁剪，自适应窗口缩放 -------------------------------- */}
+        {}
         <div>
           <div className="text-[12.5px] text-ink-soft">壁纸（可选）</div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -222,7 +222,7 @@ export function AppearanceSettings() {
           />
         </div>
 
-        {/* ---- 我的资料 ---------------------------------------------------- */}
+        {}
         <div>
           <div className="text-[12.5px] text-ink-soft">我的资料</div>
           <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -245,8 +245,8 @@ export function AppearanceSettings() {
                   saveUserProfile(next)
                 }}
                 placeholder="昵称（对话界面里显示的称呼）"
-                // ⚠️ placeholder 不能当标签（第 90 批，M-34）：一输入就消失，读屏也不念它。
-                // 这里补 aria-label（视觉零变化）。
+                
+                
                 aria-label="昵称（对话界面里显示的称呼）"
                 className="h-8 w-[200px] text-[12.5px]"
               />

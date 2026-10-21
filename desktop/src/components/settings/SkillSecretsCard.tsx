@@ -5,22 +5,22 @@ import { useNotificationStore } from '@/stores/notificationStore'
 import type { SkillSecretsView } from '@shared/bridge'
 import { KeyRound, Loader2, ShieldAlert, ShieldCheck, Trash2 } from 'lucide-react'
 
-/**
- * 「给技能的密钥」管理面板。
- *
- * ## 为什么必须有它
- *
- * 没有删除入口 = 用户**无法撤销**自己交出去的东西。这在别的设置里只是不便，
- * 在这里是安全问题：他可能把一把**用错地方**的私钥粘了进来，
- * 而唯一的补救办法是去翻应用数据目录手删文件 —— 那不该是给普通用户的答案。
- *
- * ## ⚠️ 这里**看不到明文**，而且是刻意的
- *
- * `getSkillSecrets` 只返回名字与脱敏预览。要换一把就重新提供（覆盖同名即可）：
- * "能看"和"能被偷看"是同一件事，而这些是用户主动粘进来的私钥。
- * 这一条与已有的模型密钥库**故意不一致**（那边有"小眼睛"）——
- * 那边是用户自己申请的 API Key、需要核对有没有粘全；这边通常是复制来的长串。
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export function SkillSecretsCard() {
   const [view, setView] = useState<SkillSecretsView | null>(null)
   const [busy, setBusy] = useState(false)
@@ -32,7 +32,7 @@ export function SkillSecretsCard() {
     try {
       setView(await bridge.getSkillSecrets())
     } catch {
-      // 读不到就当"没有"：这只是个展示面板，不该因为它把设置页搞崩
+      
       setView(null)
     }
   }, [])
@@ -92,8 +92,8 @@ export function SkillSecretsCard() {
             <ShieldCheck size={13} /> 本地加密已启用
           </span>
         ) : (
-          // ⚠️ 明文降级必须**显眼**：那一刻这些私钥就是磁盘上的明文文件，
-          // 而用户完全没有别的途径知道这件事。
+          
+          
           <span className="flex items-center gap-1.5 text-[11.5px] font-medium text-warning">
             <ShieldAlert size={13} /> 系统未提供加密，这些内容以明文保存在本机
           </span>

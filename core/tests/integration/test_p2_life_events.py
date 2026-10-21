@@ -1,8 +1,8 @@
-"""P2 集成测试：生活数据接口、全局事件推送、路径白名单。
 
-事件推送是**长连接**，测试里用后台任务收集，主线程去触发，再等条件满足；
-直接 `async for` 会在没有事件时永久挂住。
-"""
+
+
+
+
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from my_agent.security.paths import PathPolicy
 from my_agent.skill.base import SkillContext
 from my_agent.skill.builtin.office.excel import ExcelReadSkill
 
-# event_collector / wait_for 是长连接测试的公共工具，放在 integration/conftest.py
+
 from .conftest import (
     FakeLLM,
     event_collector,
@@ -27,9 +27,9 @@ from .conftest import (
 )
 
 
-# --------------------------------------------------------------------------- #
-# 提醒
-# --------------------------------------------------------------------------- #
+
+
+
 @pytest.mark.asyncio
 async def test_reminder_crud(runtime, client):
     created = await runtime.reminder_repo.create(
@@ -39,7 +39,7 @@ async def test_reminder_crud(runtime, client):
     listed = (await client.get("/v1/reminders")).json()
     assert listed["pending"] == 1
     assert listed["reminders"][0]["content"] == "交周报"
-    # 界面需要可直接展示的时间文本，不该让它自己格式化时间戳
+    
     assert listed["reminders"][0]["remind_at_text"]
 
     assert (await client.delete(f"/v1/reminders/{created.id}")).json()["ok"] is True
@@ -49,7 +49,7 @@ async def test_reminder_crud(runtime, client):
 
 @pytest.mark.asyncio
 async def test_due_reminder_is_pushed_to_event_stream(runtime, client):
-    """提醒到点必须主动推给客户端 —— 这正是不走 /v1/chat 的原因。"""
+
     async with event_collector(client) as events:
         await runtime.reminder_repo.create(
             content="该喝水了", remind_at=time.time() - 5, base_at=time.time()
@@ -82,9 +82,9 @@ async def test_event_stream_requires_auth(base_url):
         assert response.status_code == 401
 
 
-# --------------------------------------------------------------------------- #
-# 记账
-# --------------------------------------------------------------------------- #
+
+
+
 @pytest.mark.asyncio
 async def test_expense_endpoints(runtime, client):
     await runtime.expense_repo.add(amount=35, note="午饭")
@@ -111,28 +111,28 @@ async def test_expense_endpoint_rejects_bad_period(client):
 
 @pytest.mark.asyncio
 async def test_life_endpoints_report_memory_mode(runtime, client, monkeypatch):
-    """数据库不可用时应给出可理解的说明，而不是 500。"""
+
     runtime.db_ready = False
     response = await client.get("/v1/reminders")
     assert response.status_code == 503
     assert "内存模式" in response.json()["detail"]
 
 
-# --------------------------------------------------------------------------- #
-# 路径白名单（HTTP 层）
-# --------------------------------------------------------------------------- #
+
+
+
 @pytest.mark.asyncio
 async def test_paths_endpoint_exposes_whitelist(client, tmp_path):
     body = (await client.get("/v1/paths")).json()
     assert body["allowed_dirs"]
     assert "workspace" in body["allowed_dirs"][0] or body["workspace"] in body["allowed_dirs"]
-    # 默认没有额外配置白名单 → 不限制
+    
     assert body["restricted"] is False
 
 
 @pytest.mark.asyncio
 async def test_whitelist_blocks_skill_file_access(runtime, client, tmp_path):
-    """配了白名单后，技能读写范围之外的文件必须被拒绝，且报错要能指导用户。"""
+
     runtime.skills.register(ExcelReadSkill)
 
     restricted = tmp_path / "只允许这里"
@@ -145,8 +145,8 @@ async def test_whitelist_blocks_skill_file_access(runtime, client, tmp_path):
     outside = tmp_path / "机密.xlsx"
     outside.write_bytes(b"not a real xlsx")
 
-    # ⚠️ `excel_read` 属「通用技能」：搭子要**勾选**才可见、才可调（四分类）。
-    # 不勾的话它会先被"不在本会话启用的技能范围内"拦下，测到的就不是文件白名单了。
+    
+    
     created = await client.post(
         "/v1/assistants",
         json={
@@ -183,7 +183,7 @@ async def test_whitelist_blocks_skill_file_access(runtime, client, tmp_path):
     result = next(data for name, data in events if name == "tool_result")
     assert result["status"] == "error"
     assert "白名单之外" in result["result"]
-    # 报错要能指导用户去改设置，而不是一句"失败了"
+    
     assert "设置" in result["result"]
 
 

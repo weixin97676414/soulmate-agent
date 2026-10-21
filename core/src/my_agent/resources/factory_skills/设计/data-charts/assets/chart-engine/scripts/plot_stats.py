@@ -1,17 +1,17 @@
-"""plot_stats 统计摘要层：基于绘图数据（transform 后、x/y 选列后）计算统计摘要。
 
-覆盖全部 32 类图表，归入 7 个家族：
-A 类别×数值: line / bar / area / stacked_bar / combo / pareto / pictorial_bar / theme_river
-B name×value: pie / treemap / funnel / sunburst / wordcloud / venn
-C 关系流:    graph / sankey / mindmap / orgchart / lines
-D 分布:      histogram / boxplot
-E 相关:      scatter / bubble / effect_scatter
-F 专项:      radar / heatmap / waterfall / gauge / liquid / map / calendar
-G 表格:      spreadsheet
 
-所有共享算法（分箱/IQR/瀑布/帕累托/量程）一律引用 stats_kernels，
-与 renderers 渲染侧同源——报告的事实必须与图形呈现的事实一致，任何一侧不得私改公式。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
 
 import re
 import warnings
@@ -36,13 +36,13 @@ def compute_plot_stats(
     geo_names: Optional[set] = None,
     geo_aliases: Optional[Dict[str, str]] = None,
 ) -> Optional[Dict[str, Any]]:
-    """统计摘要入口。chart_type 不在已知家族时返回 None。
 
-    target: gauge/liquid 的目标值（业务口径）。不传时"达成率"不可计算，
-    对应字段置 null（见 P1-7）——自动推断的量程不是业务目标。
-    geo_names/geo_aliases: map 图表的地图区域名集合与简称别名（由 chart_generator
-    解析 --geo/--geo-path 后传入）；None 时回退到中国省级地图（向后兼容）。
-    """
+
+
+
+
+
+
     if chart_type == 'spreadsheet':
         return stats_spreadsheet(df)
     try:
@@ -65,10 +65,10 @@ def compute_plot_stats(
     return None
 
 
-# ---- A 家族：类别 × 数值 ----
+
 
 def _series_stat(df: pd.DataFrame, x_col: str, y_col: str) -> Dict[str, Any]:
-    """单个数值系列的基础统计（max/min/mean/sum/top3/bottom3，带 x 标签）。"""
+
     s = df[y_col]
     x = df[x_col]
     out: Dict[str, Any] = {'name': y_col}
@@ -86,17 +86,17 @@ def _series_stat(df: pd.DataFrame, x_col: str, y_col: str) -> Dict[str, Any]:
     return out
 
 
-# x 列可解析为时间/数值的比例下限：达到该比例才认为"这是一条有序轴"
+
 _ORDER_PARSE_MIN_RATIO = 0.8
-# 中文月份标签（1月 … 12月）：to_datetime 解析不了，但显然是有序轴
+
 _MONTH_LABEL_RE = re.compile(r'^(\d{1,2})\s*月$')
 
 
 def _natural_order(df: pd.DataFrame, x_col: Optional[str]):
-    """按 x 列的自然序（时间/数值/中文月份）返回位置索引数组。
 
-    无法判定为有序轴时返回 None —— 此时调用方保持数据原序，绝不臆测排序。
-    """
+
+
+
     if x_col is None or x_col not in df.columns:
         return None
     x = df[x_col]
@@ -105,18 +105,18 @@ def _natural_order(df: pd.DataFrame, x_col: Optional[str]):
         key = x
     else:
         s = x.astype(str).str.strip()
-        # ① 中文月份标签 1月…12月（最常见，且 to_datetime 解析不了）
+        
         month = s.str.extract(_MONTH_LABEL_RE, expand=False)
         if month.notna().mean() >= _ORDER_PARSE_MIN_RATIO:
             key = pd.to_numeric(month, errors='coerce')
         else:
-            # ② 纯数值字符串（'1'…'12'，避免按字典序把 10 排在 2 前面）
+            
             num = pd.to_numeric(s, errors='coerce')
             if num.notna().mean() >= _ORDER_PARSE_MIN_RATIO:
                 key = num
             else:
-                # ③ 可解析日期（2024-01 / 2024/01/01 …）。dateutil 逐元素解析较慢，
-                # 放最后；且必须静音其格式推断告警，否则会污染 CLI 的 stderr 契约
+                
+                
                 try:
                     with warnings.catch_warnings():
                         warnings.simplefilter('ignore')
@@ -134,15 +134,15 @@ def _natural_order(df: pd.DataFrame, x_col: Optional[str]):
 
 
 def _trend_stat(df: pd.DataFrame, x_col: Optional[str], y_col: str) -> Optional[Dict[str, Any]]:
-    """趋势：首值、末值、方向、涨跌幅。
 
-    P0-4：首末值按 x 列的**自然序**取，不再按数据行序取。此前同一份数据只要
-    行序不同（升序/倒序/乱序）就会给出三种互相矛盾的结论；x 为字符串月份时
-    还会按字典序而非时间序取点。
 
-    P0-4：首值为 0 时涨跌幅在数学上不可计算，显式标记 direction='undefined' /
-    delta_pct=None，不再静默报成 direction='flat' / delta_pct=0.0。
-    """
+
+
+
+
+
+
+
     s = df[y_col]
     if not pd.api.types.is_numeric_dtype(s) or len(s) < 2:
         return None
@@ -192,7 +192,7 @@ def _stats_family_a(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List
             if s['name'] in sums:
                 s['share'] = round(sums[s['name']] / total, 4)
     if chart_type == 'pareto' and y_axis and y_axis[0] in df.columns:
-        # 与 _pareto 渲染同源：同一 pareto_stats 累计算法
+        
         sub = df[[x_axis, y_axis[0]]].dropna().sort_values(y_axis[0], ascending=False)
         ps = pareto_stats(sub[y_axis[0]].tolist())
         stats['extra'] = {
@@ -204,7 +204,7 @@ def _stats_family_a(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List
     return stats
 
 
-# ---- B 家族：name × value ----
+
 
 def _stats_family_b(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List[str]) -> Dict[str, Any]:
     y_col = y_axis[0] if (y_axis and y_axis[0] in df.columns) else df.columns[-1]
@@ -246,14 +246,14 @@ def _stats_family_b(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List
     return stats
 
 
-# ---- C 家族：关系流 ----
+
 
 def _stats_tree(df: pd.DataFrame, x_axis: str, y_axis: List[str]) -> Dict[str, Any]:
-    """层级图（mindmap/orgchart）统计：节点/边/根数量与最大深度。"""
+
     child_col = y_axis[0] if y_axis and y_axis[0] in df.columns else None
     if child_col is None or x_axis not in df.columns:
         return {'family': 'C', 'x_col': x_axis, 'extra': {}}
-    # 与 renderers._build_tree 同口径：safe_str_list（NaN→''），空名端点的边剔除
+    
     edges = [(p, c) for p, c in zip(safe_str_list(df[x_axis]), safe_str_list(df[child_col]))
              if p and c]
     child_map: Dict[str, List[str]] = {}
@@ -264,7 +264,7 @@ def _stats_tree(df: pd.DataFrame, x_axis: str, y_axis: List[str]) -> Dict[str, A
         nodes.add(c)
     children = {c for _, c in edges}
     roots = [n for n in nodes if n not in children]
-    # BFS 求最大深度（seen 防御环状脏数据导致死循环）
+    
     depth, seen = 0, set(roots)
     queue = [(r, 1) for r in roots]
     while queue:
@@ -285,8 +285,8 @@ def _stats_tree(df: pd.DataFrame, x_axis: str, y_axis: List[str]) -> Dict[str, A
 def _stats_family_c(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List[str]) -> Dict[str, Any]:
     if chart_type in ('mindmap', 'orgchart'):
         return _stats_tree(df, x_axis, y_axis)
-    # source/target 由 x_axis/y_axis 显式指定（x=source，y[0]=target，y[1]=可选值列）。
-    # 未显式指定时渲染器已报错，这里 source/target 缺失则退化为空（防御性）。
+    
+    
     source_col = x_axis
     target_col = y_axis[0] if y_axis else None
     value_col = y_axis[1] if y_axis and len(y_axis) > 1 else None
@@ -327,7 +327,7 @@ def _stats_family_c(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List
     return {'family': 'C', 'x_col': x_axis, 'extra': extra}
 
 
-# ---- D 家族：分布 ----
+
 
 def _stats_family_d(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List[str]) -> Dict[str, Any]:
     if chart_type == 'histogram':
@@ -335,7 +335,7 @@ def _stats_family_d(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List
         s = df[y_col].dropna() if y_col in df.columns else pd.Series(dtype='float64')
         if s.empty or not pd.api.types.is_numeric_dtype(s):
             return {'family': 'D', 'x_col': x_axis, 'extra': {}}
-        # 与 _histogram 渲染同源：同一 sturges_bins 分箱
+        
         counts, edges = sturges_bins(s)
         labels = bin_labels(edges, counts)
         bin_counts = [{'range': labels[i], 'count': int(counts[i])} for i in range(len(counts))]
@@ -346,7 +346,7 @@ def _stats_family_d(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List
             'bin_counts': bin_counts,
             'peak_bin': {'range': labels[peak_i], 'count': int(counts[peak_i])},
         }}
-    # boxplot：与 _boxplot 渲染同源：同一 box_stats IQR 算法
+    
     cols = [c for c in y_axis if c in df.columns] if y_axis else df.select_dtypes(include=[np.number]).columns[:5].tolist()
     columns = []
     for col in cols:
@@ -361,7 +361,7 @@ def _stats_family_d(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List
     return {'family': 'D', 'x_col': x_axis, 'extra': {'columns': columns}}
 
 
-# ---- E 家族：相关 ----
+
 
 def _stats_family_e(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List[str],
                     label_col: Optional[str] = None) -> Dict[str, Any]:
@@ -391,7 +391,7 @@ def _stats_family_e(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List
     return {'family': 'E', 'x_col': x_col, 'series': series, 'extra': extra}
 
 
-# ---- F 家族：专项 ----
+
 
 def _stats_family_f(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List[str],
                     target: Optional[float] = None,
@@ -402,8 +402,8 @@ def _stats_family_f(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List
         xc = x_axis if x_axis in df.columns else df.columns[0]
         if geo_names is None:
             geo_names = china_region_names()
-        # geo_aliases 保持 None 时，resolve_region_name 内部回退中国省级简称表（向后兼容）；
-        # 自备地图由 chart_generator 显式传入空 dict，不会误用中国简称表。
+        
+        
         agg: Dict[str, float] = {}
         unmatched: List[str] = []
         for n, v in zip(safe_str_list(df[xc]), df[y_col].tolist()):
@@ -450,11 +450,11 @@ def _stats_family_f(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List
             return {'family': 'F', 'x_col': x_axis, 'extra': {}}
         mean = float(df[y_col].mean())
         data_max = float(df[y_col].max())
-        # 与 _gauge/_liquid 渲染同源：同一 gauge_scale 三段量程（≤1→1.0，≤100→100，其余 ×1.05）
+        
         max_val = gauge_scale(data_max)
-        # P1-7：达成率 = 均值 / 业务目标值。没有 --target 时量程只是自动推断的
-        # 刻度（max 取整档），拿它当分母得到的比值没有业务含义，此前却以
-        # "achievement/达成率" 之名进入 plot_stats 并被硬边界要求写进解读。
+        
+        
+        
         extra: Dict[str, Any] = {
             'mean': round(mean, 2), 'max': round(data_max, 2),
             'achievement': round(mean / target, 4) if target else None,
@@ -470,7 +470,7 @@ def _stats_family_f(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List
     if chart_type == 'waterfall':
         y_col = y_axis[0] if (y_axis and y_axis[0] in df.columns) else df.columns[-1]
         xc = x_axis if x_axis in df.columns else df.columns[0]
-        # 与 _waterfall 渲染同源：同一 waterfall_walk 单遍累计
+        
         _base, _heights, _signeds, wstats = waterfall_walk(df[y_col].tolist())
         extra: Dict[str, Any] = {'total_delta': wstats['total_delta'], 'first': wstats['first']}
         if wstats['max_pos_i'] is not None:
@@ -496,7 +496,7 @@ def _stats_family_f(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List
                 entry['min_dim'] = {'indicator': mn[0], 'value': mn[1]}
             series.append(entry)
         return {'family': 'F', 'x_col': x_axis, 'extra': {'indicators': indicators, 'series': series}}
-    # heatmap
+    
     rows = safe_str_list(df[x_axis]) if x_axis in df.columns else []
     cols = [c for c in y_axis if c in df.columns]
     extra: Dict[str, Any] = {'rows': len(rows), 'cols': len(cols)}
@@ -518,10 +518,10 @@ def _stats_family_f(df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List
     return {'family': 'F', 'x_col': x_axis, 'extra': extra}
 
 
-# ---- G 家族：表格 ----
+
 
 def stats_spreadsheet(df: pd.DataFrame) -> Dict[str, Any]:
-    """表格（spreadsheet）统计：行列数 + 各数值列基础统计，供解读引用。"""
+
     numeric = {}
     for col in df.columns:
         if pd.api.types.is_numeric_dtype(df[col]):

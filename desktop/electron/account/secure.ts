@@ -1,24 +1,24 @@
-/**
- * 账号凭据的加密存储（`device_secret` / `session_token`）。
- *
- * ## 为什么不复用 `electron/secrets.ts` 的 SecretsStore
- *
- * 它的键空间是**固定的三类**（`models` / `mcp` / `integrations`），`normalize()`
- * 只重建这三个键、其余顶层键会被直接丢掉。把账号凭据塞进去不会报错，只会被
- * **静默丢弃** —— 而"凭据丢了"这件事要到下次需要用的时候才暴露，那时
- * `device_secret` 已经补不回来了（文档 §4.2：它只在注册响应里出现一次）。
- *
- * 所以这里单开一份文件，沿用与它**完全相同的落盘格式与安全策略**，
- * 只是键空间只有两个：
- *
- * - `safeStorage.encryptString()`（Windows 上是 DPAPI，与当前 Windows 用户绑定）；
- * - 系统不支持加密时降级明文并在日志里明确告警 —— 宁可让人知道风险，
- *   也不要假装安全（与 secrets.ts 同一取舍）；
- * - 先写临时文件再改名：直接覆写时中途断电会留下半截密文，那份凭据就永久解不开了。
- *
- * ⚠️ 这两个值**永远不跨 IPC**：渲染层只拿到"有没有"（`AccountSnapshot.hasDeviceSecret`
- * / `loggedIn`），拿不到值本身。
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -29,7 +29,7 @@ import { logDesktop } from '../desktop-log'
 const SECRETS_FILE = 'account-secrets.bin'
 const FORMAT_VERSION = 1
 
-/** 账号凭据只有这两个键；写成联合类型，防止将来随手往里加东西 */
+
 export type AccountSecretName = 'device_secret' | 'session_token'
 
 interface StoredEnvelope {
@@ -79,8 +79,8 @@ export class AccountSecretStore {
         ),
       )
     } catch (error) {
-      // 常见于换了 Windows 用户 / 重装系统：DPAPI 解不开旧密文。
-      // **不删文件**：留着才有恢复余地（与 secrets.ts 一致）。
+      
+      
       console.error('[account] 账号凭据解密失败（可能换了系统用户），按空处理:', error)
       this.cached = {}
     }
@@ -111,11 +111,11 @@ export class AccountSecretStore {
     return Boolean(this.get(name))
   }
 
-  /**
-   * 写入。**空值等于清除** —— 与密钥库的"空值忽略"语义相反，这里是有意的：
-   * 会话过期时必须能把它清掉（`need_login` 那条路），否则我们会一直拿着一个
-   * 无效 token 去请求，每一次都被拒。
-   */
+  
+
+
+
+
   set(name: AccountSecretName, value: string | null): void {
     const next: AccountSecrets = { ...this.load() }
     if (value) next[name] = value

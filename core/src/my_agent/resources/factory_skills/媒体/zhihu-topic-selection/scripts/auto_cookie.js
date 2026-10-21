@@ -1,27 +1,27 @@
 #!/usr/bin/env node
-/**
- * 知乎 Cookie 自动化提取工具 - Auto Cookie Extractor
- *
- * 模拟人工操作 Edge 浏览器，自动获取知乎登录态 Cookie。
- * Automates Edge browser to extract Zhihu cookies by simulating human operations.
- *
- * 工作流程:
- *   1. 启动 Edge 浏览器（使用现有 Profile，保持登录态）
- *   2. 导航到知乎，检测登录状态
- *   3. 若已登录 → 提取 Cookie → 保存配置
- *   4. 若未登录 → 等待用户扫码/手动登录 → 提取 Cookie
- *
- * 用法:
- *   node auto_cookie.js                  # 交互模式，显示浏览器窗口
- *   node auto_cookie.js --headless       # 无头模式（需要已有登录态）
- *   node auto_cookie.js --save-only      # 只保存 Cookie 不验证
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// ---------- 配置 ----------
+
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const USER_DATA = path.join(os.homedir(), 'AppData', 'Local', 'Microsoft', 'Edge', 'User Data');
@@ -29,10 +29,10 @@ const CONFIG_FILE = path.join(__dirname, '..', 'config', 'fallback-sources.json'
 const ZHIHU_URL = 'https://www.zhihu.com';
 const ZHIHU_API_ME = 'https://www.zhihu.com/api/v4/me';
 
-// 关键 Cookie 字段（知乎认证必需）
+
 const KEY_COOKIES = ['z_c0', '_xsrf', 'd_c0', '_zap', 'q_c1', 'SESSIONID'];
 
-// ---------- 颜色输出 ----------
+
 
 const colors = {
   reset: '\x1b[0m',
@@ -55,7 +55,7 @@ function step(num, msg) {
   log(`${bar}`, 'dim');
 }
 
-// ---------- 浏览器操作 ----------
+
 
 async function launchEdge(headless = false) {
   const puppeteer = require('puppeteer-core');
@@ -98,11 +98,11 @@ async function detectLoginState(page) {
   '检测知乎页面登录状态';
   try {
     const state = await page.evaluate(() => {
-      // 方法1: 检查页面元素
+      
       const hasAvatar = !!document.querySelector('.AppHeader-profile img, .Avatar img, [class*="avatar"]');
-      // 方法2: 检查 cookie
+      
       const hasZc0 = document.cookie.includes('z_c0=');
-      // 方法3: 检查 SSR 数据
+      
       const initialData = document.getElementById('js-initialData');
       let userName = null;
       if (initialData) {
@@ -126,7 +126,7 @@ async function detectLoginState(page) {
 async function extractCookies(page) {
   '提取所有 zhihu.com 域名下的 Cookie（含 HTTPOnly）';
   try {
-    // puppeteer page.cookies() 可获取所有 cookie（含 HTTPOnly）
+    
     const allCookies = await page.cookies();
     const zhihuCookies = allCookies.filter(c =>
       c.domain.includes('zhihu.com') || c.domain === '.zhihu.com'
@@ -150,7 +150,7 @@ function saveCookies(cookies) {
       config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8'));
     }
 
-    // 更新认证优先级：优先使用 file_cookie
+    
     config.auth = config.auth || {};
     config.auth.priority = ['file_cookie', 'browser_profile', 'fallback_source'];
     config.cookie = cookies;
@@ -189,7 +189,7 @@ async function validateCookies(cookies) {
   }
 }
 
-// ---------- 主流程 ----------
+
 
 async function run(options = {}) {
   const { headless = false, saveOnly = false } = options;
@@ -200,7 +200,7 @@ async function run(options = {}) {
   log('║    Auto Cookie Extractor for Edge Browser       ║', 'cyan');
   log('╚══════════════════════════════════════════════════╝', 'cyan');
 
-  // Step 1: 启动浏览器
+  
   step('1/5', '启动 Edge 浏览器');
   const browser = await launchEdge(headless);
   if (!browser) {
@@ -216,17 +216,17 @@ async function run(options = {}) {
     const pages = await browser.pages();
     page = pages[0] || await browser.newPage();
 
-    // 设置 User-Agent 模拟正常浏览器
+    
     await page.setUserAgent(
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0'
     );
 
-    // 移除自动化检测标记
+    
     await page.evaluateOnNewDocument(() => {
       Object.defineProperty(navigator, 'webdriver', { get: () => false });
     });
 
-    // Step 2: 导航到知乎
+    
     step('2/5', '访问知乎页面');
     log('   正在加载 https://www.zhihu.com ...', 'dim');
 
@@ -239,7 +239,7 @@ async function run(options = {}) {
       log('   ⚠️  页面加载超时，继续检测...', 'yellow');
     }
 
-    // Step 3: 检测登录状态
+    
     step('3/5', '检测登录状态');
     const loginState = await detectLoginState(page);
 
@@ -260,7 +260,7 @@ async function run(options = {}) {
         return 1;
       }
 
-      // Step 3b: 等待用户登录
+      
       step('3b/5', '等待手动登录');
       log('   ┌─────────────────────────────────────────┐', 'yellow');
       log('   │  请在浏览器窗口中完成知乎登录:            │', 'yellow');
@@ -270,7 +270,7 @@ async function run(options = {}) {
       log('   └─────────────────────────────────────────┘', 'yellow');
       log('');
 
-      // 等待登录（最多等 2 分钟）
+      
       const maxWait = 120000;
       const checkInterval = 2000;
       let waited = 0;
@@ -285,7 +285,7 @@ async function run(options = {}) {
           break;
         }
 
-        // 每 10 秒显示等待提示
+        
         if (waited % 10000 < checkInterval) {
           const remaining = Math.round((maxWait - waited) / 1000);
           log(`   ⏳ 等待登录... (剩余 ${remaining}s)`, 'dim');
@@ -299,7 +299,7 @@ async function run(options = {}) {
       }
     }
 
-    // Step 4: 提取 Cookie
+    
     step('4/5', '提取 Cookie');
     const cookies = await extractCookies(page);
 
@@ -309,7 +309,7 @@ async function run(options = {}) {
       return 1;
     }
 
-    // 显示 Cookie 摘要
+    
     const totalCount = Object.keys(cookies).length;
     const keyStatus = KEY_COOKIES.map(k => ({
       name: k,
@@ -324,10 +324,10 @@ async function run(options = {}) {
     }
 
     if (!saveOnly) {
-      // Step 5: 验证 & 保存
+      
       step('5/5', '验证并保存');
 
-      // 验证
+      
       const userInfo = await validateCookies(cookies);
       if (userInfo && userInfo.name) {
         log(`   ✅ Cookie 有效! 用户: ${userInfo.name}`, 'green');
@@ -336,28 +336,28 @@ async function run(options = {}) {
         log('   ⚠️  Cookie 验证返回异常，但仍会保存', 'yellow');
       }
 
-      // 保存
+      
       if (saveCookies(cookies)) {
         log(`   ✅ 配置已保存到: ${CONFIG_FILE}`, 'green');
       }
     } else {
-      // 只保存不验证
+      
       if (saveCookies(cookies)) {
         log(`\n   ✅ Cookie 已保存`, 'green');
       }
     }
 
-    // 关闭浏览器（可视模式下询问）
+    
     if (headless) {
       await browser.close();
     } else {
-      // 可视模式：3秒后自动关闭
+      
       log('\n   ⏳ 3秒后关闭浏览器...', 'dim');
       await new Promise(r => setTimeout(r, 3000));
       await browser.close();
     }
 
-    // 最终总结
+    
     log('\n╔══════════════════════════════════════════════════╗', 'cyan');
     log('║  ✅ Cookie 提取完成!                            ║', 'cyan');
     log('║                                                  ║', 'cyan');
@@ -376,7 +376,7 @@ async function run(options = {}) {
   }
 }
 
-// ---------- CLI ----------
+
 
 function parseArgs() {
   const args = process.argv.slice(2);

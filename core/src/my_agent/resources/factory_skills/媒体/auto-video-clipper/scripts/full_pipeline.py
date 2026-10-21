@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-AI视频剪辑 - 全自动剪辑流程
-功能：整合所有模块，实现从素材到成片的全流程自动化
-"""
+
+
+
+
 
 import os
 import json
@@ -12,7 +12,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional
 
-# 导入各模块
+
 from analyze_media import MediaAnalyzer
 from auto_clip import AutoClipper
 from add_subtitles import SubtitleGenerator
@@ -21,20 +21,20 @@ from add_effects import EffectsProcessor
 from export_final import VideoExporter
 
 DEFAULT_CONFIG = {
-    # 素材配置
+    
     "input_dir": "",
     "theme": "auto",
     
-    # 输出配置
+    
     "output_dir": "",
     "storage_path": "",
     
-    # 剪辑配置
+    
     "target_duration": 180,
     "style": "auto",
     "transition": "fade",
     
-    # 音频配置
+    
     "bgm_enabled": True,
     "bgm_path": "",
     "bgm_volume": 0.3,
@@ -42,27 +42,27 @@ DEFAULT_CONFIG = {
     "noise_reduction": True,
     "enhance_voice": True,
     
-    # 字幕配置
+    
     "subtitle_enabled": True,
     "subtitle_language": "zh",
     "subtitle_burn": True,
     
-    # 特效配置
+    
     "filter": "auto",
     "effects": [],
     
-    # 导出配置
+    
     "export_preset": "high",
     "export_format": "mp4",
     "export_resolution": "",
     
-    # 高级配置
+    
     "auto_cleanup": True,
     "generate_preview": False
 }
 
 class VideoPipeline:
-    """全自动视频剪辑流程"""
+
     
     def __init__(self, config: Dict = None):
         self.config = {**DEFAULT_CONFIG, **(config or {})}
@@ -70,7 +70,7 @@ class VideoPipeline:
         self.analysis_file = None
         self.current_file = None
         
-        # 初始化各模块
+        
         self.media_analyzer = MediaAnalyzer()
         self.clipper = AutoClipper()
         self.subtitle_generator = SubtitleGenerator()
@@ -79,7 +79,7 @@ class VideoPipeline:
         self.exporter = VideoExporter()
         
     def setup_workspace(self) -> str:
-        """创建工作空间"""
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         workspace_name = f"clip_{timestamp}"
         
@@ -98,7 +98,7 @@ class VideoPipeline:
         return self.workspace
     
     def step_analyze(self) -> Dict:
-        """Step 1: 素材分析"""
+
         print(f"\n{'='*50}")
         print(f"[流程 Step 1/6] 素材分析")
         print(f"{'='*50}")
@@ -118,7 +118,7 @@ class VideoPipeline:
         return results
     
     def step_clip(self) -> str:
-        """Step 2: 自动剪辑"""
+
         print(f"\n{'='*50}")
         print(f"[流程 Step 2/6] 自动剪辑")
         print(f"{'='*50}")
@@ -142,7 +142,7 @@ class VideoPipeline:
         return self.current_file
     
     def step_audio(self) -> str:
-        """Step 3: 音频处理"""
+
         print(f"\n{'='*50}")
         print(f"[流程 Step 3/6] 音频处理")
         print(f"{'='*50}")
@@ -168,7 +168,7 @@ class VideoPipeline:
         return self.current_file
     
     def step_subtitle(self) -> str:
-        """Step 4: 字幕生成"""
+
         print(f"\n{'='*50}")
         print(f"[流程 Step 4/6] 字幕生成")
         print(f"{'='*50}")
@@ -193,7 +193,7 @@ class VideoPipeline:
         return self.current_file
     
     def step_effects(self) -> str:
-        """Step 5: 特效处理"""
+
         print(f"\n{'='*50}")
         print(f"[流程 Step 5/6] 特效处理")
         print(f"{'='*50}")
@@ -215,7 +215,7 @@ class VideoPipeline:
         return self.current_file
     
     def step_export(self) -> str:
-        """Step 6: 成品导出"""
+
         print(f"\n{'='*50}")
         print(f"[流程 Step 6/6] 成品导出")
         print(f"{'='*50}")
@@ -244,7 +244,7 @@ class VideoPipeline:
         return final_file
     
     def cleanup(self):
-        """清理临时文件"""
+
         if not self.config["auto_cleanup"]:
             return
         
@@ -259,7 +259,7 @@ class VideoPipeline:
                     pass
     
     def run(self) -> str:
-        """执行完整流程"""
+
         print(f"\n{'#'*60}")
         print(f"#")
         print(f"#   AI视频剪辑 - 全自动剪辑流程")
@@ -275,10 +275,10 @@ class VideoPipeline:
         print(f"  - 滤镜预设: {self.config['filter']}")
         
         try:
-            # 1. 创建工作空间
+            
             self.setup_workspace()
             
-            # 2. 执行各步骤
+            
             self.step_analyze()
             self.step_clip()
             self.step_audio()
@@ -286,7 +286,7 @@ class VideoPipeline:
             self.step_effects()
             final_file = self.step_export()
             
-            # 3. 清理
+            
             self.cleanup()
             
             print(f"\n{'#'*60}")
@@ -306,7 +306,7 @@ class VideoPipeline:
 
 
 def main():
-    """命令行入口"""
+
     import argparse
     
     parser = argparse.ArgumentParser(description="AI视频剪辑 - 全自动流程")
@@ -324,7 +324,7 @@ def main():
     
     args = parser.parse_args()
     
-    # 加载配置
+    
     config = DEFAULT_CONFIG.copy()
     config["input_dir"] = args.input
     config["output_dir"] = args.output or os.path.dirname(args.input)
@@ -341,7 +341,7 @@ def main():
         with open(args.config, "r", encoding="utf-8") as f:
             config.update(json.load(f))
     
-    # 执行流程
+    
     pipeline = VideoPipeline(config)
     output_file = pipeline.run()
     

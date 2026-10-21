@@ -1,31 +1,31 @@
-"""请用户提供敏感信息（私钥 / API Secret 之类），并让它变成可用的"引用名"。
 
-## 这个技能解决的是一个**安全问题**，不只是体验问题
 
-在这之前，模型要一把私钥只能开口要 —— 用户**把私钥打进对话框**，于是：
 
-1. 它作为用户消息进 SQLite `messages` 表（``storage/sessions.py``）；
-2. 它进对话上下文，**每一轮都随请求发给模型厂商**（``memory/short_term.py``）；
-3. 它进审计表（``storage/audit.py``）；
-4. 它还会被日志与 tracer 看到 —— 而 ``security/redact.py`` **只认已知格式**
-   （`sk-` / `ghp_` / `AKIA` / JWT…），**裸 hex 与 base58 私钥不匹配任何规则**，
-   会原样穿过全部脱敏。
 
-这个技能把那条路彻底换掉：用户在**弹窗**里粘贴，值由渲染层**直接写进本地加密文件**，
-从来不经过对话链路、也从来不进这个进程。回传给模型（和这里）的**只有名字**。
-模型要用的时候写 ``{{secret:名字}}``，由 ``security/secret_ref.py`` 在**真正发请求那一刻**
-换成明文。
 
-## 三条硬约束（改这个文件前先读）
 
-1. **返回值绝不含值**。它会被回填给模型、写进消息表。这里只回名字。
-2. **`fields[].name` 必须校验**。它会被拼进 ``{{secret:名字}}`` ——
-   不校验就能塞进奇怪的东西（``}}``、换行、超长串），把引用语法本身搞坏。
-   校验规则与 ``security/secret_ref.py`` 的 ``REF_PATTERN`` **同一套**，
-   两边不一致会出现"存进去了但引用不到"。
-3. **不设超时**（``timeout=86400``）：用户可能正在翻钱包、正在导出私钥。
-   理由见 ``SkillContext.ask_interaction``。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -34,9 +34,9 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-# 与 `security/secret_ref.py` 的 `REF_PATTERN` 必须**逐字一致**：
-# 这里的名字最终会被拼成 `{{secret:<name>}}`，两边规则不同就会出现
-# "用户存了、模型却引用不到"这种两头都查不出来的毛病。
+
+
+
 from ...security.interaction import KIND_SECRET, InteractionRequest
 from ...security.secret_ref import SECRET_NAME_PATTERN
 from ..base import BaseSkill, SkillContext
@@ -44,7 +44,7 @@ from ..decorator import skill
 
 
 class _Field(BaseModel):
-    """要用户填写的一项。"""
+
 
     name: str = Field(
         ...,
@@ -90,7 +90,7 @@ class _Input(BaseModel):
     params_model=_Input,
     category="system",
     permission_level="safe",
-    # 见模块顶部说明：24 小时只是兜底，用户翻钱包可能翻很久。
+    
     timeout=86400,
     tags=["交互", "密钥", "安全"],
 )
@@ -119,19 +119,19 @@ class RequestSecretSkill(BaseSkill):
         )
         answer = await ctx.ask_interaction(request)
 
-        # ⚠️ 到这里为止，**值从来没有进过这个进程**：用户在弹窗里粘贴的内容由渲染层
-        # 直接写进本地加密文件，回传给我们的只有名字（见 security/interaction.py）。
-        # 下面这条断言式的说明不是给代码看的，是给下一个改这里的人看的：
-        # 如果你打算往 payload 或返回值里加字段，先想清楚它会不会带值。
+        
+        
+        
+        
         return {"ok": True, "result": _describe(answer, [item.name for item in args.fields])}
 
 
 def _describe(answer: dict[str, Any], asked: list[str]) -> str:
-    """把结果整理成给模型看的一句话。
 
-    ⚠️ **只回名字，绝不回值**。这句话会作为工具结果回填给模型、并写进消息表 ——
-    所以它是这条链路上最容易被误伤的一处，改动时务必守住。
-    """
+
+
+
+
     if answer.get("cancelled"):
         if answer.get("interrupted"):
             return "用户没有提供（这次任务被停止或会话被关闭了）。如果需要，请重新问一次。"
@@ -145,8 +145,8 @@ def _describe(answer: dict[str, Any], asked: list[str]) -> str:
 
     names = [str(item) for item in (answer.get("names") or []) if str(item).strip()]
     if not names:
-        # 前端保证"提交"时一定带回名字；没带回说明消息不完整。
-        # 如实说明，而不是编一个名字 —— 编出来的名字模型引用时会神秘失败。
+        
+        
         return "用户提交了，但没有带回可用的引用名。请重新发起一次。"
 
     listed = "、".join(f"`{item}`" for item in names)
@@ -158,7 +158,7 @@ def _describe(answer: dict[str, Any], asked: list[str]) -> str:
         "不会出现在对话记录里。"
     )
     if missing:
-        # 用户可能只填了一部分就提交了。如实告诉模型"哪几个没拿到"，
-        # 否则它会以为都有、然后在引用时撞上"本地没有这个名字"。
+        
+        
         text += f" ⚠️ 这几位用户没有提供：{'、'.join(missing)} —— 引用它们会失败，需要的话再问一次。"
     return text

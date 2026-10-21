@@ -1,4 +1,4 @@
-"""内置办公技能。"""
+
 
 from .chart import ChartGenerateSkill
 from .document import DocParseSkill

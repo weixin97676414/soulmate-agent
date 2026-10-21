@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""
-自动化数据分析核心引擎
-支持：CSV/Excel 数据加载 → 清洗 → 多维分析 → 结构化输出
-"""
+
+
+
+
 
 import argparse
 import json
@@ -14,7 +14,7 @@ import numpy as np
 
 
 def load_data(filepath: str, sheet_name: str = None) -> pd.DataFrame:
-    """加载 CSV 或 Excel 文件"""
+
     path = Path(filepath)
     if not path.exists():
         raise FileNotFoundError(f"文件不存在: {filepath}")
@@ -28,7 +28,7 @@ def load_data(filepath: str, sheet_name: str = None) -> pd.DataFrame:
 
 
 def profile_data(df: pd.DataFrame) -> dict:
-    """数据概览：行数、列数、类型、空值、基本统计"""
+
     profile = {
         "shape": list(df.shape),
         "columns": list(df.columns),
@@ -48,7 +48,7 @@ def clean_data(
     fill_numeric: str = "median",
     fill_categorical: str = "mode",
 ) -> pd.DataFrame:
-    """数据清洗"""
+
     df = df.copy()
     if drop_empty_cols:
         df = df.drop(columns=[c for c in df.columns if df[c].isnull().all()])
@@ -67,15 +67,15 @@ def clean_data(
 
 
 def variance_analysis(df: pd.DataFrame, value_col: str, group_col: str = None, period_col: str = None) -> dict:
-    """差异分析：同比、环比、分组对比"""
+
     result = {}
     df = df.copy()
     if period_col and period_col in df.columns:
         df = df.sort_values(period_col)
-        # 环比
+        
         df["_pct_change"] = df[value_col].pct_change() * 100
         result["month_over_month"] = df[[period_col, value_col, "_pct_change"]].dropna().to_dict(orient="records")
-        # 同比 (如果有足够数据)
+        
         if len(df) >= len(df[value_col].dropna()):
             df["_yoy"] = df[value_col].pct_change(periods=max(1, len(df) // 2)) * 100
             result["year_over_year"] = df[[period_col, value_col, "_yoy"]].dropna().to_dict(orient="records")
@@ -86,11 +86,11 @@ def variance_analysis(df: pd.DataFrame, value_col: str, group_col: str = None, p
 
 
 def trend_analysis(df: pd.DataFrame, date_col: str, value_col: str, freq: str = "M") -> dict:
-    """趋势分析：按时间维度聚合，计算移动平均"""
+
     df = df.copy()
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
     df = df.dropna(subset=[date_col, value_col])
-    # 兼容新旧 pandas 频率别名
+    
     freq_map = {"M": "ME", "Q": "QE", "Y": "YE", "A": "YE", "D": "D", "W": "W"}
     resample_freq = freq_map.get(freq, freq)
     ts = df.set_index(date_col)[value_col]
@@ -105,17 +105,17 @@ def trend_analysis(df: pd.DataFrame, date_col: str, value_col: str, freq: str = 
 
 
 def kpi_compute(df: pd.DataFrame, kpis: list[dict]) -> dict:
-    """
-    计算 KPI。
-    kpis 格式: [{"name": "总收入", "formula": "sum(revenue)", ...}, ...]
-    支持: sum, mean, median, std, min, max, count, percentile(p)
-    """
+
+
+
+
+
     results = {}
     for kpi in kpis:
         name = kpi["name"]
         formula = kpi["formula"]
         col = kpi.get("column")
-        # 解析公式
+        
         if "(" in formula and ")" in formula:
             func_part, col_part = formula.split("(", 1)
             col_part = col_part.rstrip(")")
@@ -152,7 +152,7 @@ def kpi_compute(df: pd.DataFrame, kpis: list[dict]) -> dict:
 
 
 def correlation_matrix(df: pd.DataFrame, columns: list[str] = None) -> dict:
-    """相关性矩阵"""
+
     numeric = df.select_dtypes(include="number")
     if columns:
         available = [c for c in columns if c in numeric.columns]
@@ -164,7 +164,7 @@ def correlation_matrix(df: pd.DataFrame, columns: list[str] = None) -> dict:
 
 
 def export_results(results: dict, output_path: str = None, fmt: str = "json"):
-    """输出分析结果"""
+
     if fmt == "json":
         text = json.dumps(results, ensure_ascii=False, indent=2)
         if output_path:
@@ -185,7 +185,7 @@ def export_results(results: dict, output_path: str = None, fmt: str = "json"):
 
 
 def _dict_to_md(obj, lines: list, depth: int = 0):
-    """递归将 dict 转为 Markdown"""
+
     if isinstance(obj, dict):
         for k, v in obj.items():
             if isinstance(v, (dict, list)):
@@ -202,17 +202,17 @@ def _dict_to_md(obj, lines: list, depth: int = 0):
                 lines.append(f"- {item}")
 
 
-# ---------- CLI ----------
+
 def main():
     parser = argparse.ArgumentParser(description="自动化数据分析引擎")
     sub = parser.add_subparsers(dest="command")
 
-    # profile
+    
     p_profile = sub.add_parser("profile", help="数据概览")
     p_profile.add_argument("file", help="CSV/Excel 文件路径")
     p_profile.add_argument("--sheet", default=None, help="Excel sheet 名称")
 
-    # clean
+    
     p_clean = sub.add_parser("clean", help="数据清洗")
     p_clean.add_argument("file", help="CSV/Excel 文件路径")
     p_clean.add_argument("-o", "--output", help="输出文件路径")
@@ -220,31 +220,31 @@ def main():
     p_clean.add_argument("--fill-numeric", default="median", choices=["median", "mean"])
     p_clean.add_argument("--fill-categorical", default="mode", choices=["mode", "drop"])
 
-    # variance
+    
     p_var = sub.add_parser("variance", help="差异分析")
     p_var.add_argument("file", help="文件路径")
     p_var.add_argument("--value", required=True, help="数值列")
     p_var.add_argument("--group", help="分组列")
     p_var.add_argument("--period", help="时间列")
 
-    # trend
+    
     p_trend = sub.add_parser("trend", help="趋势分析")
     p_trend.add_argument("file", help="文件路径")
     p_trend.add_argument("--date", required=True, help="日期列")
     p_trend.add_argument("--value", required=True, help="数值列")
     p_trend.add_argument("--freq", default="M", choices=["D", "W", "M", "Q", "Y"])
 
-    # kpi
+    
     p_kpi = sub.add_parser("kpi", help="KPI 计算")
     p_kpi.add_argument("file", help="文件路径")
     p_kpi.add_argument("--config", required=True, help="KPI 配置 JSON 文件")
 
-    # correlate
+    
     p_corr = sub.add_parser("correlate", help="相关性分析")
     p_corr.add_argument("file", help="文件路径")
     p_corr.add_argument("--columns", nargs="+", help="指定列（默认所有数值列）")
 
-    # 通用参数
+    
     for p in [p_profile, p_clean, p_var, p_trend, p_kpi, p_corr]:
         p.add_argument("--format", default="json", choices=["json", "markdown"])
         p.add_argument("--output", default=None, help="输出文件路径")

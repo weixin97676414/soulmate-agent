@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""
-Generate financial analysis reports from Excel data with text analysis.
 
-Usage:
-    python3 generate_report.py <input_xlsx> [-o format] [--company NAME] [--ticker TICKER]
 
-Output formats: html (always generated), pdf (default), doc, md
-"""
+
+
+
+
+
+
 
 import sys
 import os
@@ -37,7 +37,7 @@ def parse_excel(filepath):
 def identify_periods(rows):
     report_types = []
     forecast_flags = []
-    # Find period row (年报/季报) and forecast row (盈利预测)
+    
     for key in rows:
         vals = [str(v) if v else "" for v in rows[key]]
         if not report_types and ("报告期" in key or any("年报" in v for v in vals)):
@@ -45,7 +45,7 @@ def identify_periods(rows):
                 report_types = vals
         if not forecast_flags and any("盈利预测" in v for v in vals):
             forecast_flags = vals
-    # Merge: if report_types doesn't have 盈利预测 but forecast_flags does, overlay
+    
     if report_types and forecast_flags and not any("盈利预测" in r for r in report_types):
         for i, f in enumerate(forecast_flags):
             if "盈利预测" in f and i < len(report_types):
@@ -100,7 +100,7 @@ def find_row_label(rows, keywords):
 
 
 def sparkline_svg(values, is_forecast_flags, width=80, height=22):
-    """Generate compact inline SVG sparkline."""
+
     nums = [to_float(v) for v in values]
     valid = [n for n in nums if n is not None]
     if len(valid) < 2:
@@ -147,7 +147,7 @@ def calc_cagr(start, end, years):
 
 
 def analyze_profitability(dates, is_forecast, revenue, op_profit, net_profit, rd, gross_margin, net_margin, roe, roa):
-    """Generate text analysis for profitability section."""
+
     actual = [(i, d) for i, (d, f) in enumerate(zip(dates, is_forecast)) if not f]
     if len(actual) < 2:
         return ""
@@ -156,7 +156,7 @@ def analyze_profitability(dates, is_forecast, revenue, op_profit, net_profit, rd
     fi, fd = actual[0]
 
     lines = []
-    # Revenue trend
+    
     rv_last = to_float(revenue[li])
     rv_prev = to_float(revenue[pi])
     rv_first = to_float(revenue[fi])
@@ -168,7 +168,7 @@ def analyze_profitability(dates, is_forecast, revenue, op_profit, net_profit, rd
         if cagr:
             lines.append(f"{fd}-{ld}年营收CAGR约{cagr:.0f}%，{'展现强劲增长动能' if cagr > 20 else '保持稳健增长' if cagr > 5 else '增长趋于平缓'}。")
 
-    # Profit analysis
+    
     np_last = to_float(net_profit[li])
     np_prev = to_float(net_profit[pi])
     if np_last is not None:
@@ -180,13 +180,13 @@ def analyze_profitability(dates, is_forecast, revenue, op_profit, net_profit, rd
                 improvement = (1 - abs(np_last) / abs(np_prev)) * 100 if np_prev != 0 else 0
                 lines.append(f"但亏损较上年收窄{improvement:.0f}%，改善趋势明显。")
 
-    # R&D
+    
     rd_last = to_float(rd[li])
     if rd_last and rv_last:
         rd_ratio = rd_last / rv_last * 100
         lines.append(f"研发投入{fmt(rd_last)}亿元，占营收{rd_ratio:.1f}%，{'研发强度极高，属于典型研发驱动型企业' if rd_ratio > 30 else '研发投入力度较大' if rd_ratio > 15 else '研发投入比例适中'}。")
 
-    # Margins
+    
     gm = to_float(gross_margin[li])
     nm = to_float(net_margin[li])
     r = to_float(roe[li])
@@ -195,7 +195,7 @@ def analyze_profitability(dates, is_forecast, revenue, op_profit, net_profit, rd
     if r:
         lines.append(f"ROE为{r:.1f}%，{'盈利能力优秀' if r > 15 else '回报水平合理' if r > 0 else '尚未实现正向股东回报'}。")
 
-    # Forecast hint
+    
     forecast = [(i, d) for i, (d, f) in enumerate(zip(dates, is_forecast)) if f]
     if forecast:
         fi2, fd2 = forecast[0]
@@ -237,7 +237,7 @@ def analyze_balance_sheet(dates, is_forecast, total_assets, total_liab, equity, 
             lines.append(f"资产负债率{dr:.1f}%，<strong>杠杆偏高，需关注偿债风险</strong>。")
 
     if ca and tl:
-        cl = to_float(total_liab[li])  # approx
+        cl = to_float(total_liab[li])  
         if ca and cl and cl > 0:
             ratio = ca / cl
             lines.append(f"流动资产{fmt(ca)}亿元，{'短期偿债能力充足' if ratio > 1.5 else '流动性尚可' if ratio > 1 else '流动性偏紧，需关注短期偿债压力'}。")
@@ -315,7 +315,7 @@ def analyze_per_share(dates, is_forecast, eps, bps, asset_turnover, employees, r
 
 
 def generate_industry_analysis(company, revenue, net_profit, gross_margin, rd, dates, is_forecast):
-    """Generate industry analysis section."""
+
     actual = [(i, d) for i, (d, f) in enumerate(zip(dates, is_forecast)) if not f]
     if not actual:
         return ""
@@ -346,7 +346,7 @@ def generate_industry_analysis(company, revenue, net_profit, gross_margin, rd, d
 
 
 def generate_risk_analysis(dates, is_forecast, net_profit, debt_ratio, ocf, cash_end, revenue, gross_margin):
-    """Generate risk analysis section."""
+
     actual = [(i, d) for i, (d, f) in enumerate(zip(dates, is_forecast)) if not f]
     if not actual:
         return ""
@@ -362,7 +362,7 @@ def generate_risk_analysis(dates, is_forecast, net_profit, debt_ratio, ocf, cash
     rv = to_float(revenue[li])
     gm = to_float(gross_margin[li])
 
-    # Risks
+    
     if np is not None and np < 0:
         risks.append(("持续亏损风险", "公司尚未实现年度盈利，若核心产品销售不及预期或研发支出持续高企，亏损周期可能延长，影响估值和融资能力。"))
     if dr and dr > 50:
@@ -375,7 +375,7 @@ def generate_risk_analysis(dates, is_forecast, net_profit, debt_ratio, ocf, cash
     risks.append(("竞争加剧风险", "同靶点竞品不断涌现，市场份额和定价策略面临挑战。"))
     risks.append(("地缘政治风险", "海外业务受国际关系、贸易政策等影响，存在市场准入不确定性。"))
 
-    # Opportunities
+    
     if rv and to_float(revenue[actual[-2][0] if len(actual) > 1 else 0]):
         rv_prev = to_float(revenue[actual[-2][0]])
         if rv_prev and (rv / rv_prev - 1) > 0.2:
@@ -383,7 +383,7 @@ def generate_risk_analysis(dates, is_forecast, net_profit, debt_ratio, ocf, cash
     if gm and gm > 80:
         opportunities.append(("高毛利优势", f"毛利率{gm:.1f}%，产品竞争力强，一旦费用率下降将快速释放利润。"))
 
-    # Check forecast for profit turnaround
+    
     forecast = [(i, d) for i, (d, f) in enumerate(zip(dates, is_forecast)) if f]
     if forecast and np is not None and np < 0:
         np_fc = to_float(net_profit[forecast[0][0]])
@@ -480,7 +480,7 @@ def generate_html(rows, header_row, indices, report_types, company="", ticker=""
         r += f"<td>{spark}</td></tr>"
         return r
 
-    # Summary uses only actual values
+    
     actual_indices = [i for i, f in enumerate(is_forecast) if not f]
     latest = actual_indices[-1] if actual_indices else 0
     prev = actual_indices[-2] if len(actual_indices) > 1 else 0
@@ -489,7 +489,7 @@ def generate_html(rows, header_row, indices, report_types, company="", ticker=""
     rv_prev = to_float(revenue[prev])
     rv_yoy = f"{(rv_last/rv_prev-1)*100:.1f}%" if rv_last and rv_prev else "-"
 
-    # Text analyses
+    
     profit_text = analyze_profitability(dates, is_forecast, revenue, op_profit, net_profit_parent, rd, gross_margin, net_margin, roe, roa)
     bs_text = analyze_balance_sheet(dates, is_forecast, total_assets, total_liab, equity, current_assets, debt_ratio)
     cf_text = analyze_cash_flow(dates, is_forecast, ocf, icf, fcf_finance, cash_end, capex)

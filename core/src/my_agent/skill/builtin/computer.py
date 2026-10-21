@@ -1,33 +1,33 @@
-"""电脑操作技能：鼠标、键盘、窗口、程序、界面元素读取。
 
-## 这个文件里的技能会**真的操作你的电脑**
 
-它们不是"生成一段文本"，而是把动作直接注入系统输入流：移动鼠标、点击、
-往当前焦点敲字、切窗口、启动程序。所以本模块有两条铁律：
 
-1. **全部 ``permission_level="confirm"``**（定："每一步都先问"）。
-   每一个动作在真正执行前都必须经过用户点「允许」—— 没有例外，**不提供**
-   "一次授权后本会话免确认"的档位。用户点「拒绝」就跳过这一步。
-   这条也意味着:连"列出窗口""读界面元素"这种只读动作**也要确认** ——
-   那是用户明确选的更严的一侧，不要自作主张把它们降成 safe。
-2. **失败必须如实报错**：坐标越界、认不出的按键、系统拒绝切换前台窗口 ——
-   一律抛 ``SkillExecutionError``。假装成功会让模型以为"已经点了"，接着基于
-   一个不存在的结果继续往下做，用户看到的是一连串莫名其妙的动作。
 
-## 坐标口径（三处必须一致）
 
-界面元素的位置来自 UI Automation 的 ``BoundingRectangle``，它与
-``system_screenshot`` 截出来的图、以及 ``computer_mouse_*`` 收的坐标是
-**同一套**（屏幕像素，原点在整个虚拟桌面的左上角，多显示器时为负。
-见 ``utils/windows_api.py`` 的 ``virtual_screen``）。三者对不上就会出现
-"看起来点在这儿、实际点到那儿"。
 
-## 建议的调用顺序
 
-**先看后动**：``system_screenshot``（看图）或 ``computer_read_screen``
-（看元素清单）→ 再 ``computer_mouse_click`` / ``computer_type_text``。
-每一步之间都该重新看一眼 —— 界面会因为上一步而改变。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -43,8 +43,8 @@ from ..decorator import skill
 
 logger = logging.getLogger(__name__)
 
-#: 所有技能共用的标签。前端靠它（以及名字前缀 ``computer_``）识别
-#: "搭子正在操作你的电脑"，从而显示提示条与急停按钮。
+
+
 _TAGS = ["电脑操作", "桌面能力"]
 
 
@@ -53,9 +53,9 @@ def _to_skill_error(exc: windows_api.WindowsApiError) -> SkillExecutionError:
     return SkillExecutionError(text)
 
 
-# --------------------------------------------------------------------------- #
-# 鼠标
-# --------------------------------------------------------------------------- #
+
+
+
 class MouseMoveParams(BaseModel):
     x: int = Field(..., description="目标位置的横坐标（屏幕像素）")
     y: int = Field(..., description="目标位置的纵坐标（屏幕像素）")
@@ -203,9 +203,9 @@ class MouseDragSkill(BaseSkill):
         }
 
 
-# --------------------------------------------------------------------------- #
-# 键盘
-# --------------------------------------------------------------------------- #
+
+
+
 class TypeTextParams(BaseModel):
     text: str = Field(
         ...,
@@ -236,7 +236,7 @@ class TypeTextSkill(BaseSkill):
             await windows_api.type_text(args.text)
         except windows_api.WindowsApiError as exc:
             raise _to_skill_error(exc) from exc
-        # ⚠️ 回执里**只报长度、不回显内容**：输入的可能正是密码或私密文字。
+        
         return {
             "ok": True,
             "length": len(args.text),
@@ -283,9 +283,9 @@ class PressKeysSkill(BaseSkill):
         }
 
 
-# --------------------------------------------------------------------------- #
-# 窗口与程序
-# --------------------------------------------------------------------------- #
+
+
+
 class ListWindowsParams(BaseModel):
     pass
 
@@ -356,8 +356,8 @@ class ActivateWindowSkill(BaseSkill):
                 matches = [item for item in windows if needle in item["title"].lower()]
                 if not matches:
                     titles = "、".join(item["title"] for item in windows[:10])
-                    # 报错里列出**其它窗口的标题**（本来就是屏幕上看得见的东西），
-                    # 方便模型换个说法再试 —— 比一句「没找到」有用得多。
+                    
+                    
                     raise SkillExecutionError(
                         f"没找到标题包含「{args.title}」的窗口。"
                         f"当前可见窗口有：{titles or '（没有）'}"
@@ -420,9 +420,9 @@ class LaunchSkill(BaseSkill):
         }
 
 
-# --------------------------------------------------------------------------- #
-# 界面元素（UI Automation）
-# --------------------------------------------------------------------------- #
+
+
+
 class ReadScreenParams(BaseModel):
     window_handle: int | None = Field(
         None,
@@ -448,7 +448,7 @@ class ReadScreenParams(BaseModel):
     category="system",
     permission_level="confirm",
     tags=_TAGS,
-    # 遍历整棵 UI 树要几十秒（PowerShell 冷启动 + COM 遍历），默认 30s 不够
+    
     timeout=60.0,
 )
 class ReadScreenSkill(BaseSkill):

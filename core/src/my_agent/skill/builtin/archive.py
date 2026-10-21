@@ -1,27 +1,27 @@
-"""压缩包：**只看内容，不解压**（产品约定）。
 
-## 为什么只读、不落盘
 
-用户的原话是「先只做"看内容"，不做解压」—— 能列出压缩包里有什么、能读其中某个文件的
-内容，但**不往磁盘写任何东西**。这个取舍很省事也很安全：不需要路径穿越（zip slip）
-防护、不会把用户的目录搞乱、也不会因为解压出一个几百 MB 的东西把磁盘塞满。
 
-真要把里面的文件拿出来时，模型还有别的路：读取内容后自己用 write 类技能写出去
-（那一步是 confirm 级、用户看得见）。
 
-## 支持哪些格式
 
-标准库覆盖的：``.zip``（含 ``.jar``/``.whl`` 这类 zip 容器）、``.tar``、``.tar.gz``/
-``.tgz``、``.tar.bz2``、``.tar.xz``。**7z / rar 明确不支持** —— 它们要新增依赖
-（py7zr / rarfile，后者还要外部程序），而本项目的口径是不加依赖。不支持时给一句
-可读的说明，而不是抛一个模块导入错误。
 
-## 两处必须有的闸
 
-1. **单成员读取上限**：压缩包是典型的"解压炸弹"载体（几 KB 压出几个 GB），
-   所以读取时按字节截断，并如实说明"只读了前面 N 字节"；
-2. **条目数上限**：几万条目的包列表出来会直接撑爆上下文。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -36,15 +36,15 @@ from ...errors import SkillExecutionError
 from ..base import BaseSkill, SkillContext
 from ..decorator import skill
 
-# 列表最多回多少条目（超出如实说明"还有 N 条没列"）
+
 MAX_ENTRIES = 500
-# 单个成员最多读多少字符（防解压炸弹；超出时明确告知截断位置）
+
 MAX_CHARS = 20_000
-# 判定"这是不是文本"的采样长度
+
 SNIFF_BYTES = 2048
 
 _TAR_SUFFIXES = (".tar", ".tgz", ".tar.gz", ".tar.bz2", ".tar.xz", ".tbz2", ".txz")
-# 这些格式**故意不支持**，并且要把原因说清楚（用户会问"为什么 rar 不行"）
+
 _UNSUPPORTED = {
     ".7z": "7z",
     ".rar": "rar",
@@ -54,7 +54,7 @@ _UNSUPPORTED = {
 
 
 def _format_of(path: Path) -> str:
-    """判断归档格式；不认识就给一句人能看懂的说明。"""
+
     name = path.name.lower()
     if name.endswith(".zip") or name.endswith(".jar") or name.endswith(".whl"):
         return "zip"
@@ -67,7 +67,7 @@ def _format_of(path: Path) -> str:
                 "如果里面是文档/表格，可以先解压或用系统自带的解压工具展开，再让我读那些文件。"
             )
     if zipfile.is_zipfile(path):
-        # 后缀不认识但内容确实是 zip（比如 .apk / .docx）——按 zip 处理
+        
         return "zip"
     raise SkillExecutionError(
         f"这个文件不是压缩包，或者格式不支持：{path.name}。"
@@ -114,7 +114,7 @@ def _stamp(epoch: float | int | None) -> str:
 
 
 def _read_member(path: Path, fmt: str, member: str, max_chars: int) -> dict[str, Any]:
-    """读单个成员的内容（按字节采样 + 截断）。"""
+
     if fmt == "zip":
         with zipfile.ZipFile(path) as archive:
             target = _match_zip(archive, member)
@@ -131,7 +131,7 @@ def _read_member(path: Path, fmt: str, member: str, max_chars: int) -> dict[str,
             if not info.isfile():
                 raise SkillExecutionError(f"「{member}」在压缩包里不是一个普通文件。")
             handle = archive.extractfile(info)
-            if handle is None:  # pragma: no cover - tarfile 对普通文件不会返回 None
+            if handle is None:  
                 raise SkillExecutionError(f"读不到「{member}」的内容。")
             raw = handle.read(SNIFF_BYTES)
             if _looks_binary(raw):
@@ -150,7 +150,7 @@ def _read_member(path: Path, fmt: str, member: str, max_chars: int) -> dict[str,
 
 
 def _looks_binary(raw: bytes) -> bool:
-    """是不是二进制：含 NUL 字节基本可以断定（文本文件里不会有它）。"""
+
     return b"\x00" in raw
 
 
@@ -207,7 +207,7 @@ class ArchiveListSkill(BaseSkill):
             "entries": shown,
         }
         if len(items) > len(shown):
-            # 不静默截断：说清还有多少条没列
+            
             result["note"] = f"条目太多，这里只列了前 {len(shown)} 条（共 {len(items)} 条）。"
         return result
 

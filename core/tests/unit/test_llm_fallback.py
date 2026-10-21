@@ -1,15 +1,15 @@
-"""多模型故障降级。
 
-《智能体框架开发文档》4.6/4.7 要求主模型失败时能切到备用模型。
-这组用例锁住的是两个**边界**，逻辑本身反而不难：
 
-1. **什么该降级** —— 超时/网络/5xx 该降，**鉴权失败不该降**。后者换模型只是
-   换个地方替用户花钱，而他自己的账户到底怎么了再也看不出来。
-2. **什么时候不能再降** —— 流式输出了一半才失败，此时换模型等于把半截话
-   接上另一个模型的续写，比直接报错更让人困惑。
 
-另外验证工厂构建降级链时的防循环处理（A→B、B→A 不能变成无限递归）。
-"""
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from my_agent.llm.fallback import FallbackLLM
 
 
 class FakeLLM(BaseLLM):
-    """按脚本返回结果的假模型，只为了验证降级逻辑本身。"""
+
 
     def __init__(
         self,
@@ -51,7 +51,7 @@ class FakeLLM(BaseLLM):
         *,
         temperature: float = 0.7,
         max_tokens: int | None = None,
-        # 与 BaseLLM 的接口保持一致：FallbackLLM 会无条件转发这几个
+        
         top_p: float | None = None,
         frequency_penalty: float | None = None,
         presence_penalty: float | None = None,
@@ -69,7 +69,7 @@ class FakeLLM(BaseLLM):
         *,
         temperature: float = 0.7,
         max_tokens: int | None = None,
-        # 与 BaseLLM 的接口保持一致：FallbackLLM 会无条件转发这几个
+        
         top_p: float | None = None,
         frequency_penalty: float | None = None,
         presence_penalty: float | None = None,
@@ -77,7 +77,7 @@ class FakeLLM(BaseLLM):
     ):
         self.stream_calls += 1
         if self.error is not None:
-            # 先吐出前 N 个分片再失败，用来验证"中途失败不许降级"
+            
             for delta in self.deltas[: self.stream_error_after]:
                 yield StreamChunk(delta=delta)
             raise self.error
@@ -102,9 +102,9 @@ def user_msg() -> list[Message]:
     return [Message(role="user", content="hi")]
 
 
-# --------------------------------------------------------------------------- #
-# 基本行为
-# --------------------------------------------------------------------------- #
+
+
+
 class TestChatFallback:
     @pytest.mark.asyncio
     async def test_healthy_primary_is_used_alone(self):
@@ -128,11 +128,11 @@ class TestChatFallback:
 
     @pytest.mark.asyncio
     async def test_auth_error_is_never_fallen_back(self):
-        """最重要的一条：凭据问题不许静默换一家。
 
-        Key 失效意味着过期 / 欠费 / 被改 —— 用户必须知道，而不是发现
-        "咦怎么突然扣的是另一家钱"。
-        """
+
+
+
+
         primary = FakeLLM(error=LLMAuthError("Invalid API key"))
         backup = FakeLLM(reply="备用回答")
 
@@ -162,7 +162,7 @@ class TestChatFallback:
         )
 
         assert resp.content == "second up"
-        assert third.chat_calls == 0  # 第二个就成功了，不该再往后试
+        assert third.chat_calls == 0  
 
 
 class TestStreamFallback:
@@ -178,7 +178,7 @@ class TestStreamFallback:
 
     @pytest.mark.asyncio
     async def test_does_not_fall_back_after_partial_output(self):
-        """已经吐了内容再失败时不能换模型 —— 会把两段话拼在一起。"""
+
         primary = FakeLLM(
             error=LLMError("中途断流"), deltas=["我", "来"], stream_error_after=2
         )
@@ -209,7 +209,7 @@ class TestChainShape:
         assert llm.describe_chain() == ["backup-0", "backup-1"]
 
     def test_empty_fallbacks_is_allowed(self):
-        """没配备用时它就是个普通的透传包装，不该报错。"""
+
         llm = chain_of(FakeLLM())
         assert llm.describe_chain() == []
 
@@ -228,9 +228,9 @@ class TestChainShape:
         assert primary.closed and backup.closed
 
 
-# --------------------------------------------------------------------------- #
-# 工厂：降级链的构建
-# --------------------------------------------------------------------------- #
+
+
+
 def _two_model_config() -> ModelsConfig:
     return ModelsConfig(
         default_model="a",
@@ -243,7 +243,7 @@ def _two_model_config() -> ModelsConfig:
             ModelSpec(
                 id="b", model_name="mB", adapter="openai_compat",
                 base_url="https://b.example.com/v1", api_key="k",
-                fallback_models=["a"],  # 故意指回去
+                fallback_models=["a"],  
             ),
         ],
     )
@@ -258,7 +258,7 @@ class TestFactoryBuilding:
         assert llm.describe_chain() == ["b"]
 
     def test_chain_is_flat_to_prevent_cycles(self):
-        """备用成员必须是**未包装**的实例，否则 A→B→A 会无限递归。"""
+
         registry = build_registry(_two_model_config())
 
         chain = registry.get("a")
@@ -274,24 +274,24 @@ class TestFactoryBuilding:
                 ModelSpec(
                     id="solo", model_name="m", adapter="openai_compat",
                     base_url="https://s.example.com/v1", api_key="k",
-                    fallback_models=["solo", "ghost"],  # 自身 + 不存在的 id
+                    fallback_models=["solo", "ghost"],  
                 )
             ]
         )
 
         llm = build_registry(config).get("solo")
 
-        # 没有可用备用，就退化成普通适配器而不是包一层空壳链
+        
         assert isinstance(llm, OpenAICompatAdapter)
         assert not isinstance(llm, FallbackLLM)
 
     def test_default_is_no_fallback(self):
-        """没配就是没有 —— 会不会把请求发到第三方替代品，必须由用户显式决定。"""
+
         spec = ModelSpec(id="x", model_name="mX", base_url="https://x.example.com/v1")
         assert spec.fallback_models == []
 
     def test_duplicate_and_forward_references(self):
-        """备用可以是配置里排在后面的模型（工厂必须先建完所有实例再配链）。"""
+
         registry = build_registry(_two_model_config())
 
         assert isinstance(registry.get("b"), FallbackLLM)

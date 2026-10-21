@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-"""
-build_docx.py — 短视频爆款拆解与二创 报告 Word(.docx) 生成器
-============================================================
-由「短视频爆款8维拆解与反向二创」技能在最终交付阶段调用（与 build_pdf.py / build_html.py 并列的输出选项之一）。
 
-能力：
-  - 后台加载生成软件：缺失 python-docx 时，从官方 PyPI 源（pypi.org）以**固定版本**自动安装到隔离 venv（不污染用户环境，不联网上传任何数据）。
-  - 封面页：报告主题 + 产出日期 + 三行尾注（含反馈邮箱，与 PDF/HTML 封面一致；`--brand` 才打印联系方式）。
-  - 目录页：插入 Word 原生 TOC 域（打开文档时 Word 自动提示/更新目录，含章节与页码），一眼看清结构、快速定位。
-  - 正文：标题 / 段落 / 列表 / 表格 / 代码块 / 引用 全量渲染；正文使用「标题 1/标题 2」样式，导航窗格可直接跳转。
-  - 页脚页码：每节页脚插入「第 N 页 · 本文档由 自动生成」，方便打印后翻阅定位。
 
-用法：
-  python scripts/build_docx.py --md <报告.md> [--out <输出.docx>] [--title <主题>] [--date <YYYY-MM-DD>] [--brand]
-若省略 --out，默认与 --md 同目录、同名换 .docx；省略 --date 用今天；--title 用于封面副标题。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import argparse
 import os
 import re
@@ -22,22 +22,22 @@ import sys
 import subprocess
 from datetime import date
 
-# 统一错误友好化层（v2.21 新增）
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import _friendly_error as _fe  # noqa: E402
+import _friendly_error as _fe  
 
 BRAND_LINE = "出品 内容仅供参考\n欢迎继续探讨交流：vx：Etvis01 祝您演绎成功！干杯！\n使用反馈请发邮件：chongwuqun@agent.qq.com"
 FOOTER = "本文档由 自动生成"
 SKILL_NAME = "短视频爆款8维拆解与二创"
 
-# ---------------------------------------------------------------------------
-# 1. 后台加载生成软件（python-docx 缺失时从官方 PyPI 固定版本安装）
-# ---------------------------------------------------------------------------
+
+
+
 def ensure_docx(auto=False):
-    """确保 python-docx 可用。缺失时：auto=True 直接安装（需显式授权）；
-    auto=False 时仅在交互环境询问确认，非交互环境拒绝自动安装并给出手动命令。"""
+
+
     try:
-        import docx  # noqa: F401
+        import docx  
         return True
     except Exception:
         pkg = "python-docx==1.1.2"
@@ -66,16 +66,16 @@ def ensure_docx(auto=False):
             _fe.print_error(e, context="自动安装 python-docx", show_tech=True)
             sys.stderr.write("   手动安装命令：%s -m pip install %s -i %s\n" % (sys.executable, pkg, idx))
             raise
-        import docx  # noqa: F401
+        import docx  
         return True
 
 
-# ---------------------------------------------------------------------------
-# 2. 行内格式（**加粗** / *斜体* / `代码`）→ docx run
-# ---------------------------------------------------------------------------
+
+
+
 def add_inline_runs(paragraph, text):
-    """把含 **加粗** / *斜体* / `代码` 的文本拆成多个 run 追加到 paragraph。"""
-    # 先按代码块切分（最高优先级，代码内不解析加粗）
+
+    
     parts = re.split(r"(`[^`]+`)", text)
     for part in parts:
         if not part:
@@ -84,7 +84,7 @@ def add_inline_runs(paragraph, text):
             r = paragraph.add_run(part[1:-1])
             r.font.name = "Consolas"
             continue
-        # 加粗 / 斜体
+        
         seg = re.split(r"(\*\*.+?\*\*|\*.+?\*)", part)
         for s in seg:
             if not s:
@@ -97,9 +97,9 @@ def add_inline_runs(paragraph, text):
                 paragraph.add_run(s)
 
 
-# ---------------------------------------------------------------------------
-# 3. Markdown -> docx
-# ---------------------------------------------------------------------------
+
+
+
 def parse_markdown_to_docx(doc, md_text):
     from docx.shared import Pt
     lines = md_text.split("\n")
@@ -152,9 +152,9 @@ def parse_markdown_to_docx(doc, md_text):
             if level == 1:
                 doc.add_heading(txt, level=0)
             elif level == 2:
-                doc.add_heading(txt, level=1)   # 进 TOC（标题 1）
+                doc.add_heading(txt, level=1)   
             elif level == 3:
-                doc.add_heading(txt, level=2)   # 进 TOC（标题 2）
+                doc.add_heading(txt, level=2)   
             else:
                 doc.add_heading(txt, level=3)
             i += 1
@@ -210,11 +210,11 @@ def parse_markdown_to_docx(doc, md_text):
     flush_code()
 
 
-# ---------------------------------------------------------------------------
-# 4. 主构建
-# ---------------------------------------------------------------------------
+
+
+
 def _add_toc_field(document):
-    """在文档起始插入 Word 原生 TOC 域（打开时自动提示更新）。"""
+
     from docx.oxml.ns import qn
     from docx.oxml import OxmlElement
     paragraph = document.add_paragraph()
@@ -238,7 +238,7 @@ def _add_toc_field(document):
 
 
 def _set_update_fields(document):
-    """设置 settings.xml 的 updateFields，使 Word 打开时自动更新域（含 TOC/页码）。"""
+
     from docx.oxml.ns import qn
     from docx.oxml import OxmlElement
     settings = document.settings.element
@@ -250,15 +250,15 @@ def _set_update_fields(document):
 
 
 def _add_footer_page_number(document):
-    """每节页脚插入「第 N 页 · 品牌署名」。"""
+
     from docx.oxml.ns import qn
     from docx.oxml import OxmlElement
     for section in document.sections:
         footer = section.footer
         footer.is_linked_to_previous = False
         p = footer.paragraphs[0]
-        p.alignment = 1  # CENTER
-        # 「第 N 页」
+        p.alignment = 1  
+        
         run = p.add_run("第 ")
         fld_b = OxmlElement("w:fldChar"); fld_b.set(qn("w:fldCharType"), "begin")
         instr = OxmlElement("w:instrText"); instr.set(qn("xml:space"), "preserve"); instr.text = "PAGE"
@@ -276,7 +276,7 @@ def build_docx(md_path, out_path, title, date_str, brand=False):
 
     doc = Document()
 
-    # 封面
+    
     c1 = doc.add_paragraph()
     c1.alignment = 1
     r = c1.add_run(SKILL_NAME + " · 拆解报告")
@@ -291,17 +291,17 @@ def build_docx(md_path, out_path, title, date_str, brand=False):
         cb.add_run(BRAND_LINE).font.size = Pt(12)
     doc.add_page_break()
 
-    # 目录页
+    
     toc_title = doc.add_heading("目录", level=1)
     _add_toc_field(doc)
     doc.add_page_break()
 
-    # 正文
+    
     parse_markdown_to_docx(doc, md_text)
 
-    # 页脚页码（所有节）
+    
     _add_footer_page_number(doc)
-    # 打开时自动更新域（TOC + 页码）
+    
     _set_update_fields(doc)
 
     doc.save(out_path)
@@ -351,7 +351,7 @@ def main():
 
 
 def _check_isolated_venv():
-    """拒绝在系统 Python 中执行，强制要求隔离 venv。"""
+
     if sys.prefix == sys.base_prefix:
         sys.stderr.write(
             "⛔ 必须在隔离 venv 内运行（拒绝系统 Python）。\n"

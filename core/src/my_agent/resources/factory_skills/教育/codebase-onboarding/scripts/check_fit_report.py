@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""需求满足度评估报告自检：是否真的「能拿去评审」
 
-用法:
-    python check_fit_report.py <报告.md>
 
-检查项（ERROR 必须修完再交付）:
-  1. 是否有原子需求项编号（FR-xx）
-  2. 是否有需求澄清记录与冻结的基线
-  3. 每条 FR 是否有四分类判定（原生/改造/扩展/不涵盖）
-  4. 「修改位置」是否精确到 文件:行号
-  5. 「工作量」是否有档位 + 人日 + 估算依据
-  6. 估算前提是否写明（含什么/不含什么）
-  7. ❌ 不涵盖项是否有补齐路径 + 推荐 + 升级影响
-  8. 是否有汇总（总人日 / 关键路径 / 风险 / 结论建议）
-  9. 是否有 TODO / 占位符
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import argparse
 import os
 import re
@@ -45,7 +45,7 @@ TODO_PAT = re.compile(r"\b(TODO|FIXME|待补充|待评估|TBD)\b")
 
 
 def split_items(text):
-    """按 ### FR-xx 标题切分逐项段落"""
+
     blocks = re.split(r"\n(?=#{2,4}\s*FR-\d)", text)
     return [b for b in blocks if re.match(r"\s*#{2,4}\s*FR-\d", b)]
 
@@ -54,7 +54,7 @@ def check(path):
     errors, warns, infos = [], [], []
     text = open(path, encoding="utf-8", errors="ignore").read()
 
-    # 1. 需求项编号
+    
     frs = sorted(set(FR_PAT.findall(text)))
     if not frs:
         errors.append("未发现原子需求项编号（FR-xx）——需求必须先拆成可独立判定的功能项")
@@ -62,7 +62,7 @@ def check(path):
     infos.append(f"需求项 {len(frs)} 个: {', '.join(frs[:8])}"
                  + ("…" if len(frs) > 8 else ""))
 
-    # 2. 澄清记录 + 基线
+    
     if CLARIFY_PAT.search(text):
         infos.append("含需求澄清记录")
     else:
@@ -72,7 +72,7 @@ def check(path):
     else:
         errors.append("缺少「需求基线」——基线未冻结就评估，结论不可复核")
 
-    # 3-5. 逐项检查
+    
     blocks = split_items(text)
     if not blocks:
         warns.append("未发现 `### FR-xx` 逐项段落，无法逐条校验（需求项 >3 条时应逐项展开）")
@@ -89,13 +89,13 @@ def check(path):
         elif not EFFORT_BASIS_PAT.search(b):
             errors.append(f"{fid} 「工作量」只给了数字没给估算依据")
 
-    # 6. 估算前提
+    
     if PREMISE_PAT.search(text):
         infos.append("已写明估算前提")
     else:
         errors.append("未写明「估算前提」（含什么/不含什么）——脱离前提的工时可当作废")
 
-    # 7. 不涵盖项的补充方案
+    
     gaps = GAP_PAT.findall(text)
     if "不涵盖" in text:
         if not gaps:
@@ -115,7 +115,7 @@ def check(path):
     else:
         infos.append("无「不涵盖」项")
 
-    # 8. 汇总四件套
+    
     for pat, name in ((SUMMARY_PAT, "总工作量"),
                       (CRITICAL_PAT, "关键路径"),
                       (RISK_PAT, "风险 Top3"),
@@ -125,7 +125,7 @@ def check(path):
         else:
             warns.append(f"缺少{name}——汇总段不完整，无法支撑决策")
 
-    # 9. 占位符
+    
     todos = TODO_PAT.findall(text)
     if todos:
         errors.append(f"存在占位标记 {len(todos)} 处: " + "、".join(sorted(set(todos))[:4]))

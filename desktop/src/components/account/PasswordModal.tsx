@@ -3,12 +3,12 @@ import { useState } from 'react'
 import { Button, Field, Input, Modal, Spinner } from '@/components/ui'
 import { useAccountStore } from '@/stores/accountStore'
 
-/**
- * 设 / 改密码弹窗（文档 §5.9）。
- *
- * 首次设置（`has_password=false`）时**不需要旧密码**；之后每次修改都要旧密码。
- * 这条路是**设备签名**鉴权（不是会话）——主进程会自动走签名，界面不用关心。
- */
+
+
+
+
+
+
 export function PasswordModal({
   open,
   onClose,
@@ -63,9 +63,9 @@ export function PasswordModal({
         onClose()
       }}
       title={hasPassword ? '修改密码' : '设置密码'}
-      // ⚠️ 原说明是"密码只用于切换登录与找回" —— 两头都过时了："切换登录"
-      // 这个功能本应用**没有**（设备与账号一对一绑定，见 SecurityCard 的文件头），
-      // 而"找回"只是安全流程，不是用途。改成与卡片同一口径。
+      
+      
+      
       description="账号密码用于开源社区登录、参与活动与交流。设置后请妥善保管。"
       width="max-w-md"
       footer={

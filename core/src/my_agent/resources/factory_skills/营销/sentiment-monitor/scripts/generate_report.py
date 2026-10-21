@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""
-舆情监控报告生成器 v3.0
-- 模板注入架构：HTML 模板 + JSON 数据分离
-- 兼容新旧两套 JSON schema
-- 自动查找模板路径（assets/report_template.html）
-"""
+
+
+
+
+
+
 import json
 import sys
 import os
@@ -14,10 +14,10 @@ from datetime import datetime
 
 
 def find_template(custom_path=None):
-    """查找模板文件"""
+
     if custom_path and os.path.exists(custom_path):
         return custom_path
-    # 相对脚本目录查找
+    
     script_dir = Path(__file__).parent.parent
     default = script_dir / "assets" / "report_template.html"
     if default.exists():
@@ -30,7 +30,7 @@ def generate_report(input_path, output_path, template_path=None):
     with open(input_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # 补充 generated_at
+    
     if "report_meta" in data:
         if not data["report_meta"].get("generated_at"):
             data["report_meta"]["generated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

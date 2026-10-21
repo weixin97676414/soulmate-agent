@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""
-Abandoned Checkout Flow Copy Generator for holiday campaigns.
 
-Generates multi-step email/SMS recovery flows with holiday-specific
-urgency copy based on product, holiday, and shipping cut-off date.
 
-Usage:
-    python3 flow_copy_generator.py --product "custom engraved ring" --holiday "Valentine's Day" --cutoff "Feb 8"
-    python3 flow_copy_generator.py --product "Christmas ornament set" --holiday "Christmas" --cutoff "Dec 15" --brand "Sparkle & Co"
-"""
+
+
+
+
+
+
+
+
 
 import argparse
 from datetime import datetime

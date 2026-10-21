@@ -8,7 +8,7 @@ from pathlib import Path
 
 try:
     from PIL import Image, ImageOps
-except ImportError as exc:  # pragma: no cover - environment dependent
+except ImportError as exc:  
     raise SystemExit("缺少 Pillow：请使用带 PIL/Pillow 的 Python 环境运行。") from exc
 
 

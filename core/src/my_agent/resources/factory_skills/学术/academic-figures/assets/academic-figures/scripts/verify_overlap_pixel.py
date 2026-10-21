@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
-"""像素级文本重叠验证器 v3.1: 三级验证闭环。
 
-一级: 全页渲染 -> 连通分量 -> 过滤大分量(网格线/矢量图形)
-二级: 分量质心归属 (质心须在某 char bbox 内才归属该 span)
-三级: 候选对 600dpi 局部重渲染 -> 两 span 墨迹像素集最小欧氏距离
-      (min_dist > 0.05pt 即判定为分离, 消除行高模型误报)
 
-根因背景: PyMuPDF span/char bbox 采用字体行高模型 (Noto CJK 2.856em,
-DejaVu 1.695em), 对旋转文本/堆叠标签系统性高估 (45° 时 fs=9 报 32.3pt,
-真实墨迹仅 16.8pt), 导致 bbox 相交误报为重叠。
-"""
+
+
+
+
+
+
+
+
+
 import sys, fitz, numpy as np
 from scipy import ndimage
 
 MAX_COMP_AREA = 5000
 INK_THRESH = 200
-MIN_DIST_PT = 0.05  # 低于此即认为真实接触
+MIN_DIST_PT = 0.05  
 
 
 def page_components(page, dpi, ink_thresh):
-    """返回 (labels, comp_centers: {c: (x_pt, y_pt)}, big: set)"""
+
     mat = fitz.Matrix(dpi/72, dpi/72)
     pix = page.get_pixmap(matrix=mat)
     img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
@@ -31,7 +31,7 @@ def page_components(page, dpi, ink_thresh):
     if n == 0:
         return labels, centers, big
     sizes = np.bincount(labels.ravel())
-    # 只对尺寸合理的分量算质心 (质心坐标换算为 pt)
+    
     sc = 72.0 / dpi
     for c in range(1, n+1):
         if sizes[c] > MAX_COMP_AREA:
@@ -45,7 +45,7 @@ def page_components(page, dpi, ink_thresh):
 
 
 def span_texts(page):
-    """从 rawdict 提取 (文本, span_bbox, [char_bbox], origin) 列表"""
+
     spans = []
     d = page.get_text('rawdict')
     for block in d['blocks']:
@@ -63,12 +63,12 @@ def span_texts(page):
 
 
 def confirm_min_dist(page, origin_a, cbboxes_a, origin_b, cbboxes_b, dpi=600):
-    """第三级: 局部 600dpi 重渲染, 计算两 span 墨迹像素集最小欧氏距离 (pt)。
 
-    归属采用"唯一归属": 分量若同时落入两 span 的候选区 (行高模型 bbox 膨胀),
-    则归属给质心距 origin 最近的一方, 避免旋转 ylabel 等场景的交叉误归。
-    真实重叠时跨文本分量两端连接两方专属墨迹, min_dist 仍趋近 0。
-    """
+
+
+
+
+
     x0 = min(min(b[0] for b in cbboxes_a), min(b[0] for b in cbboxes_b)) - 4
     y0 = min(min(b[1] for b in cbboxes_a), min(b[1] for b in cbboxes_b)) - 4
     x1 = max(max(b[2] for b in cbboxes_a), max(b[2] for b in cbboxes_b)) + 4
@@ -101,7 +101,7 @@ def confirm_min_dist(page, origin_a, cbboxes_a, origin_b, cbboxes_b, dpi=600):
     cb = candidates(origin_b, cbboxes_b)
     if not ca or not cb:
         return None
-    # 唯一归属: 冲突分量给质心距 origin 更近的一方
+    
     def pick(cands, other):
         keep = []
         for c, cx, cy, ys, xs in cands:
@@ -136,7 +136,7 @@ def verify(pdf_path, dpi=200, ink_thresh=INK_THRESH, verbose=True, confirm=True)
     for pno, page in enumerate(doc):
         labels, centers, big = page_components(page, dpi, ink_thresh)
         spans = span_texts(page)
-        # 二级: 质心归属 (质心在 char bbox 膨胀1pt 内)
+        
         comp_sets = []
         for txt, sbbox, cbboxes, origin in spans:
             owned = set()
@@ -166,7 +166,7 @@ def verify(pdf_path, dpi=200, ink_thresh=INK_THRESH, verbose=True, confirm=True)
                         dmin = confirm_min_dist(page, spans[i][3], spans[i][2],
                                                 spans[j][3], spans[j][2])
                         if dmin is None or dmin > MIN_DIST_PT:
-                            continue  # 三级确认分离
+                            continue  
                     real_overlaps += 1
                     details.append((pno+1, spans[i][0][:30], spans[j][0][:30],
                                     tuple(round(v, 1) for v in bi),

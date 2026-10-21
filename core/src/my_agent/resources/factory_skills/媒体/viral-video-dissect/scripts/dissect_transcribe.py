@@ -1,14 +1,14 @@
-"""dissect_transcribe.py — 本地视频转写 + 抽帧（依赖 faster-whisper + imageio-ffmpeg）。
 
-用法：
-  python dissect_transcribe.py --video <mp4> --outdir <dir> [--model small]
-产出：
-  <outdir>/audio.wav            16k mono
-  <outdir>/frames/frame_*.png   抽帧（场景检测优先，上限 ~24）
-  <outdir>/transcript.txt       纯文本
-  <outdir>/transcript.json      segments[{start,end,text}]
-  <outdir>/meta.json            {duration,fps,frame_count,scene_mode}
-"""
+
+
+
+
+
+
+
+
+
+
 from __future__ import annotations
 import argparse
 import json
@@ -21,9 +21,9 @@ from pathlib import Path
 
 import imageio_ffmpeg
 
-# 统一错误友好化层（v2.21 新增）
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import _friendly_error as _fe  # noqa: E402
+import _friendly_error as _fe  
 
 
 def get_ffmpeg() -> str:
@@ -70,10 +70,10 @@ def extract_frames(video: str, frames_dir: Path, scene_threshold: float = 0.3,
                    max_frames: int = 24, max_frame_edge: int = 1280) -> tuple[list[Path], str]:
     ff = get_ffmpeg()
     frames_dir.mkdir(parents=True, exist_ok=True)
-    # 长边压缩：仅当某边超过 max_frame_edge 才等比缩到此值，不放大、不动画质。
+    
     scale_vf = "scale='if(gt(iw,%d),%d,-1)':'if(gt(ih,%d),%d,-1)'" % (
         max_frame_edge, max_frame_edge, max_frame_edge, max_frame_edge)
-    # 1) 场景检测优先
+    
     sc_dir = frames_dir / "_scene"
     sc_dir.mkdir(exist_ok=True)
     subprocess.run(
@@ -86,7 +86,7 @@ def extract_frames(video: str, frames_dir: Path, scene_threshold: float = 0.3,
     if len(sc_files) >= 2:
         picks = _subsample(sc_files, max_frames)
     else:
-        # 2) 均匀兜底：根据时长把总数控制在 ~max_frames
+        
         dur = probe_duration(video) or 60.0
         fps = max(1 / 30, max_frames / max(dur, 1))
         subprocess.run(
@@ -95,13 +95,13 @@ def extract_frames(video: str, frames_dir: Path, scene_threshold: float = 0.3,
         )
         picks = _subsample(sorted(frames_dir.glob("u*.png")), max_frames)
         mode = "uniform"
-    # 3) 落到 frames_dir/frame_NNN.png
+    
     final: list[Path] = []
     for i, p in enumerate(picks, 1):
         dst = frames_dir / f"frame_{i:03d}.png"
         dst.write_bytes(p.read_bytes())
         final.append(dst)
-    # 4) 清理临时（用 os.remove 避开沙箱 safe-delete 拦截）
+    
     import os as _os
     for tmp in sc_dir.glob("*.png"):
         try:
@@ -133,7 +133,7 @@ def main() -> int:
                     help="抽帧长边上限（px），仅当某边超过时等比缩到此值，不动画质。默认 1280。")
     args = ap.parse_args()
 
-    # 前置：检查视频文件是否存在（v2.21 友好错误）
+    
     if not Path(args.video).exists():
         _fe.print_error(
             FileNotFoundError(args.video),

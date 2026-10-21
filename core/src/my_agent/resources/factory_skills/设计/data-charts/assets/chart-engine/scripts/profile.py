@@ -1,21 +1,21 @@
-"""数据画像层（profile）：出图之前先回答「这份数据里有什么」。
 
-存在动机：chart_type 是 CLI 的必填参数，而选型真正依赖的依据（每列基数、
-分布形态、时间粒度、实体粒度 vs 明细行、相关性）原本只能在选完型之后由
-plot_stats 给出——先决策、后取证。profile 把取证提到选型之前，且不依赖
-任何图表类型：给定 DataFrame 即输出客观事实，供 agent 自主决定出什么图。
 
-职责边界（只摆客观事实，不做语义判断）：
-- columns：逐列的 dtype / 基数 / 缺失 / 样本，及按客观类型附加的统计块
-  （numeric→数值统计；时间→时间统计；文本→top_values）。哪列是 ID、哪列是
-  维度，由 agent 从 sample + dtype + cardinality 自行判断，不做 card==n 猜 id
-- grain：能唯一标识一行的列组合（"按实体还是按行"的机械判据）
-- relations：数值列之间的强相关对
-- signals：候选洞察信号（趋势 / 集中度 / 逆势类别 / 离群 / 常量列 / 缺失）
-- row_quality：疑似非数据行（只披露不删除）
 
-只读：不写文件、不渲染、不改数据。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import re
 import warnings
@@ -25,20 +25,20 @@ import numpy as np
 import pandas as pd
 
 
-# 月份标签（如「1月」「12月」）——值判断，非列名猜测
+
 _MONTH_LABEL_RE = re.compile(r'^(\d{1,2})\s*月$')
-# 时间判定的可解析比例下限（低于此比例不认为是时间列，宁可当分类）
+
 _TIME_PARSE_MIN_RATIO = 0.8
-# 强相关阈值
+
 _CORR_STRONG = 0.7
-# 类别"逆势下滑"的判定阈值（后段相对前段变化率）
+
 _DIVERGE_DROP = -0.25
-# 高缺失率提示阈值
+
 _MISSING_ALERT = 0.2
 
 
 def _f(v) -> Optional[float]:
-    """numpy/pandas 标量 → python float（None 安全）。"""
+
     try:
         if v is None or (isinstance(v, float) and np.isnan(v)):
             return None
@@ -56,7 +56,7 @@ def _i(v) -> int:
 
 
 def _safe(v):
-    """单元格值 → JSON 友好标量。"""
+
     if v is None:
         return None
     try:
@@ -72,12 +72,12 @@ def _safe(v):
 
 
 def build_profile(df: pd.DataFrame) -> Dict[str, Any]:
-    """生成数据画像。df 为解析（含清洗/数值化）之后的 DataFrame。
 
-    只摆客观事实：每列的 dtype/基数/缺失/样本/统计、实体粒度、数值列相关性、
-    候选洞察信号、疑似非数据行。不做语义判断——哪列是 ID、哪列是维度、出什么图，
-    由 agent 从 sample/cardinality/dtype 自行判断。
-    """
+
+
+
+
+
     try:
         df = df.reset_index(drop=True)
     except Exception:
@@ -86,7 +86,7 @@ def build_profile(df: pd.DataFrame) -> Dict[str, Any]:
     columns = [_profile_column(df, c) for c in df.columns]
     types = _classify_types(df)
     numeric_cols = types.get('numeric', [])
-    # 相关矩阵只算一次：relations / signals 共用，避免重复计算与 numpy cov 警告
+    
     relations = _relations(df, numeric_cols)
     return {
         'rows': n,
@@ -99,17 +99,17 @@ def build_profile(df: pd.DataFrame) -> Dict[str, Any]:
     }
 
 
-# ── 逐列画像 ──
+
 
 def _profile_column(df: pd.DataFrame, col: Any) -> Dict[str, Any]:
-    """单列的客观画像：dtype / 基数 / 缺失 / 样本 + 按客观类型附加的统计块。
 
-    不做语义判断（不猜「是不是 ID」「是不是维度」）。类型只由客观事实决定：
-    - 数值 dtype → 附加 `numeric` 统计块；
-    - 时间 dtype 或字符串值能高比例解析为时间 → 附加 `time` 统计块；
-    - 其余文本列 → 附加 `top_values` 频次块。
-    agent 从 dtype + sample + 这些统计块自行判断每列的角色。
-    """
+
+
+
+
+
+
+
     s = df[col]
     n = int(len(s))
     nn = s.dropna()
@@ -137,14 +137,14 @@ def _profile_column(df: pd.DataFrame, col: Any) -> Dict[str, Any]:
 
 
 def _classify_types(df: pd.DataFrame) -> Dict[str, List[str]]:
-    """按客观类型把列分为 numeric / time / category，供 signals 内部计算使用。
 
-    这是「客观类型」（基于 dtype + 值解析），不是「语义角色」：
-    - numeric：pandas 判定为数值 dtype；
-    - time：时间 dtype，或字符串值能高比例解析为时间（纯值判断，不看列名）；
-    - category：其余列（含「每行唯一」的姓名/学号等——是不是标识符是语义，
-      由 agent 判断，这里不做 card==n 的猜测）。
-    """
+
+
+
+
+
+
+
     numeric: List[str] = []
     time: List[str] = []
     category: List[str] = []
@@ -160,7 +160,7 @@ def _classify_types(df: pd.DataFrame) -> Dict[str, List[str]]:
 
 
 def _looks_like_time(nn: pd.Series) -> bool:
-    """字符串列的值是否为时间：月份标签，或可解析日期（纯值判断，不看列名）。"""
+
     if nn.empty:
         return False
     if _MONTH_LABEL_RE.match(nn.iloc[0] or '') and \
@@ -213,8 +213,8 @@ def _time_profile(nn: pd.Series) -> Dict[str, Any]:
     if parsed is not None and parsed.notna().sum() >= 2:
         uniq = pd.Series(parsed.dropna().unique()).sort_values()
         span = int((uniq.max() - uniq.min()).days)
-        # 粒度按「相邻时间点的中位间隔」推断，不能按总跨度：
-        # 5 万条小时级数据跨 5 年，粒度仍是小时，跨度会误判成年。
+        
+        
         step_days = float(uniq.diff().median().total_seconds() / 86400)
         out['span_days'] = span
         out['median_step_days'] = round(step_days, 4)
@@ -226,7 +226,7 @@ def _time_profile(nn: pd.Series) -> Dict[str, Any]:
             granularity = 'month'
         else:
             granularity = 'year'
-    # 中文月份标签（1月…12月）to_datetime 解析不了，但显然是月度粒度
+    
     if nn.astype(str).str.match(_MONTH_LABEL_RE).mean() >= _TIME_PARSE_MIN_RATIO:
         granularity = 'month'
     out['granularity'] = granularity
@@ -234,7 +234,7 @@ def _time_profile(nn: pd.Series) -> Dict[str, Any]:
 
 
 def _order_values(s: pd.Series) -> List[Any]:
-    """按自然序（时间/数值）返回去重后的取值序列；无法判序时保持出现顺序。"""
+
     idx = _order_index(s)
     vals = s.dropna().tolist()
     if idx is None:
@@ -244,7 +244,7 @@ def _order_values(s: pd.Series) -> List[Any]:
 
 
 def _order_index(s: pd.Series) -> Optional[np.ndarray]:
-    """自然序位置索引；判定不了返回 None（调用方保持原序，绝不臆测排序）。"""
+
     if pd.api.types.is_datetime64_any_dtype(s) or pd.api.types.is_numeric_dtype(s):
         return np.argsort(s.to_numpy(), kind='stable')
     ss = s.astype(str).str.strip()
@@ -267,26 +267,26 @@ def _order_index(s: pd.Series) -> Optional[np.ndarray]:
 
 
 def _group_by_type(types: Dict[str, List[str]]) -> Dict[str, List[str]]:
-    """signals 内部按客观类型取列的统一入口（numeric/time/category）。
 
-    注意：这是「客观类型」不是「语义角色」。category 里可能含每行唯一的
-    姓名/学号——那是 agent 的判断，不是这里的分类。
-    """
+
+
+
+
     return {'time': types.get('time', []),
             'category': types.get('category', []),
             'numeric': types.get('numeric', [])}
 
 
-# ── 粒度：每行是实体还是明细 ──
+
 
 def _grain(df: pd.DataFrame) -> Dict[str, Any]:
     n = int(len(df))
     names = list(df.columns)
-    # 数值列唯一通常是巧合（金额/序号各不相同），不能当实体键
+    
     non_numeric = [c for c in names if not pd.api.types.is_numeric_dtype(df[c])]
     singles = [str(c) for c in non_numeric if int(df[c].nunique(dropna=False)) == n and n > 0]
     pairs: List[List[str]] = []
-    # 组合键检查代价随列数平方增长，只在小表上做（大数据靠单键与基数比已可判断）
+    
     if n <= 5000 and len(names) <= 12:
         for i in range(len(names)):
             for j in range(i + 1, len(names)):
@@ -310,7 +310,7 @@ def _grain(df: pd.DataFrame) -> Dict[str, Any]:
     }
 
 
-# ── 关系 ──
+
 
 def _relations(df: pd.DataFrame, numeric_cols: List[str]) -> Dict[str, Any]:
     pairs = []
@@ -319,9 +319,9 @@ def _relations(df: pd.DataFrame, numeric_cols: List[str]) -> Dict[str, Any]:
         for j in range(i + 1, len(cols)):
             a, b = cols[i], cols[j]
             try:
-                # 预检：成对有效样本 < 3 或任一方标准差为 0 时跳过。否则
-                # numpy 的 cov 会对退化切片刷 RuntimeWarning（Degrees of
-                # freedom <= 0 / divide by zero / invalid value），纯噪音。
+                
+                
+                
                 valid = df[[a, b]].dropna()
                 if len(valid) < 3:
                     continue
@@ -339,7 +339,7 @@ def _relations(df: pd.DataFrame, numeric_cols: List[str]) -> Dict[str, Any]:
     return {'correlations': pairs[:10]}
 
 
-# ── 候选洞察信号 ──
+
 
 def _signals(df: pd.DataFrame, types: Dict[str, List[str]],
              relations: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
@@ -392,7 +392,7 @@ def _sig_trend(df: pd.DataFrame, time_cols: List[str], num_cols: List[str]) -> L
             continue
         pct = (last - first) / abs(first) * 100
         direction = '上升' if pct > 0.5 else ('下降' if pct < -0.5 else '基本持平')
-        # 第一个点的 diff 恒为 NaN，必须跳过，否则 argmax 会稳定指向首点
+        
         step = seq.diff().abs().to_numpy()[1:]
         jump_i = None
         if len(step) and not np.all(np.isnan(step)):
@@ -409,7 +409,7 @@ def _sig_trend(df: pd.DataFrame, time_cols: List[str], num_cols: List[str]) -> L
 
 
 def _series_by_time(df: pd.DataFrame, t: str, m: str) -> pd.Series:
-    """按时间列的自然序聚合数值列（sum）。"""
+
     g = df.groupby(t)[m].sum()
     idx = _order_index(pd.Series(g.index, index=range(len(g))))
     if idx is not None:
@@ -471,7 +471,7 @@ def _sig_concentration(df: pd.DataFrame, cat_cols: List[str], num_cols: List[str
 
 def _sig_divergent(df: pd.DataFrame, time_cols: List[str], cat_cols: List[str],
                    num_cols: List[str]) -> List[Dict[str, Any]]:
-    """某类别在时间上逆势变化（整体涨而它跌 / 反之）——最容易被整体均值掩盖的信号。"""
+
     if not time_cols or not cat_cols or not num_cols:
         return []
     t = time_cols[0]
@@ -481,7 +481,7 @@ def _sig_divergent(df: pd.DataFrame, time_cols: List[str], cat_cols: List[str],
         card = int(df[c].nunique(dropna=True))
         if card < 2 or card > 12:
             continue
-        # 只取有足够时间点的表，避免 2 个点的噪声被当成转折
+        
         points = int(df[t].nunique(dropna=True))
         if points < 4:
             continue
@@ -508,7 +508,7 @@ def _sig_divergent(df: pd.DataFrame, time_cols: List[str], cat_cols: List[str],
         if worst_rate > _DIVERGE_DROP:
             continue
         if worst_rate > overall_rate - 0.15:
-            continue  # 与整体同向，不算逆势
+            continue  
         out.append({
             'kind': 'divergent_category', 'columns': [c, t, m],
             'headline': (f'{c}={worst} 逆势变化：后段较前段 {worst_rate:+.1%}，'
@@ -522,15 +522,15 @@ def _sig_divergent(df: pd.DataFrame, time_cols: List[str], cat_cols: List[str],
     return out[:2]
 
 
-# ── 行质量：疑似非数据行披露（只报不删） ──
+
 
 def _row_quality(df: pd.DataFrame) -> Dict[str, Any]:
-    """披露疑似非数据行（子表头行 / 分值行 / 单位行等）。
 
-    判定规则（通用，非本表专属）：某行在所有数值列上均为缺失，且该行至少有一个
-    非空单元格 ⇒ 疑似非数据行；所有列都缺失的单独归为「空行」。无数值列时规则
-    不适用（跳过）。只披露、绝不自动删行——删哪行是语义判断，交给 agent。
-    """
+
+
+
+
+
     numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
     out: Dict[str, Any] = {'suspicious_non_data_rows': [], 'empty_rows': []}
     if not numeric_cols:

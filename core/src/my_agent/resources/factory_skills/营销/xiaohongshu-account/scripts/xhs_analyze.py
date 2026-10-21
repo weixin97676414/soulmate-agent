@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-"""数据与内容分析引擎：把 dataset.json 变成可判断结论。
 
-输出：
-  <out>/analysis.json      结构化分析结论（报告渲染 / 二次加工的数据源）
-  <out>/notes_metrics.csv  逐条笔记指标表（Excel 可直接打开）
 
-设计原则：**只算事实，不做空话**。每个结论都带可追溯的数值证据，
-报告阶段的判断必须引用这里的字段，不允许凭印象下结论。
-"""
+
+
+
+
+
+
+
 from __future__ import annotations
 
 import argparse
@@ -21,31 +21,31 @@ from pathlib import Path
 
 from xhs_common import fmt_num, human_num, log, read_json, write_json
 
-# --------------------------------------------------------------------------- #
-# 词典
-# --------------------------------------------------------------------------- #
-#: 词典必须跨赛道覆盖。早期版本只写了美妆/穿搭词，
-#: 遇到家居、装修、房产、宠物等赛道会全军覆没（命中率 0%），进而把好账号判成没结构。
+
+
+
+
+
 AUDIENCE = [
-    # 通用人群
+    
     "打工人", "上班族", "学生党", "宝妈", "孕妈", "新手", "小白", "男生", "女生", "姐妹",
     "家人们", "闺蜜", "情侣", "铲屎官", "新手爸妈", "银发", "懒人", "手残党", "普通人",
-    # 美妆穿搭
+    
     "油皮", "干皮", "混油", "敏感肌", "痘肌", "方圆脸", "微胖", "小个子", "高个子",
     "梨形", "苹果型", "黄皮",
-    # 家居/房产/生活方式
+    
     "独居", "一个人住", "租客", "租房党", "房东", "刚需", "沪漂", "北漂", "深漂",
     "小户型", "大户型", "有房", "无房", "首套", "二房东", "合租", "搬家人", "装修人",
 ]
 
 PAIN = [
-    # 通用
+    
     "踩坑", "翻车", "焦虑", "崩溃", "后悔", "太难", "没时间", "太贵", "智商税", "割韭菜",
     "避坑", "无效", "失败", "差评", "鸡肋", "劝退", "难用", "踩雷", "乱花", "白买",
     "将就", "凑合", "委屈", "不甘", "崩了", "坚持不住", "撑不住",
-    # 美妆
+    
     "失眠", "脱发", "黑头", "毛孔", "卡粉", "脱妆", "显胖", "显矮", "显黑",
-    # 家居/房产
+    
     "老破小", "太小", "拥挤", "脏乱", "采光差", "漏水", "隔音差", "买不起", "房贷",
     "首付", "装修坑", "甲醛", "收纳难", "乱糟糟", "破旧", "昏暗", "阴暗", "潮湿",
 ]
@@ -53,7 +53,7 @@ PAIN = [
 FORMAT = ["清单", "合集", "盘点", "测评", "实测", "教程", "攻略", "对比", "拆解", "干货", "模板",
           "保姆级", "一条龙", "三步", "五招", "七个", "指南", "手把手", "速成", "入门", "进阶",
           "复盘", "总结", "VS", "开箱", "vlog", "记录", "日记",
-          # 家居/装修
+          
           "改造", "装修", "一镜到底", "收纳", "布置", "前后对比", "爆改", "翻新", "好物",
           "roomtour", "RoomTour", "入住", "搬家", "软装", "硬装", "设计", "平价改造"]
 
@@ -86,9 +86,9 @@ COMMAND_RE = re.compile(r"^(快|赶紧|一定|必须|别|不要|建议|记得|�
 EXCLAIM_RE = re.compile(r"[!！]")
 
 
-# --------------------------------------------------------------------------- #
-# 工具
-# --------------------------------------------------------------------------- #
+
+
+
 def _median(values: list[float]) -> float:
     return statistics.median(values) if values else 0.0
 
@@ -114,11 +114,11 @@ EDGE_CHARS = set("的了我是你他她它们这那个之与就在有和不也�
 
 
 def top_keywords(texts: list[str], n: int = 25, min_count: int = 3) -> list[dict]:
-    """无依赖中文关键词抽取：n-gram 频次 → 边界虚词过滤 → 长短词择优合并。
 
-    关键处理：频次接近时保留更长的词（"别再踩坑" 优于 "别再"），
-    避免出现「我把 / 照着做就」这类无意义的切片段。
-    """
+
+
+
+
     counter: Counter = Counter()
     for text in texts:
         clean = re.sub(r"[^\u4e00-\u9fffA-Za-z0-9]+", " ", text or "")
@@ -135,7 +135,7 @@ def top_keywords(texts: list[str], n: int = 25, min_count: int = 3) -> list[dict
             elif len(seg) >= 2 and not seg.isdigit() and not re.fullmatch(r"([a-zA-Z])\1+", seg):
                 counter[seg.lower()] += 1
 
-    # 长度加权排序：4 字词优先于同频的 2 字词
+    
     ranked = sorted(counter.items(),
                     key=lambda kv: (kv[1] * (1 + 0.3 * (len(kv[0]) - 2)), len(kv[0])),
                     reverse=True)
@@ -146,11 +146,11 @@ def top_keywords(texts: list[str], n: int = 25, min_count: int = 3) -> list[dict
         handled = False
         for i, prev in enumerate(picked):
             if prev["word"] in word and count >= 0.7 * prev["count"]:
-                picked[i] = {"word": word, "count": count}   # 用更长的词替换短词
+                picked[i] = {"word": word, "count": count}   
                 handled = True
                 break
             if word in prev["word"]:
-                handled = True                                # 已被更长的词覆盖
+                handled = True                                
                 break
         if not handled:
             picked.append({"word": word, "count": count})
@@ -159,14 +159,14 @@ def top_keywords(texts: list[str], n: int = 25, min_count: int = 3) -> list[dict
 
 
 def match_lexicon(text: str, lexicon: list[str]) -> list[str]:
-    """词典匹配。忽略空格差异，避免「扣 1」匹配不到「扣1」这类漏判。"""
+
     flat = re.sub(r"\s+", "", text or "")
     return sorted({w for w in lexicon if w and re.sub(r"\s+", "", w) in flat})
 
 
-# --------------------------------------------------------------------------- #
-# 分析模块
-# --------------------------------------------------------------------------- #
+
+
+
 def enrich_notes(notes: list[dict]) -> list[dict]:
     for note in notes:
         title = note.get("title") or ""
@@ -211,8 +211,8 @@ def engagement_block(notes: list[dict], fans: int) -> dict:
         med = max(1, _mean(liked))
     viral = [n for n in notes if n["liked"] >= max(med * 3, 10)]
     dead = [n for n in notes if n["liked"] <= max(med * 0.3, 1)]
-    # 免登录通道（SSR 列表）只下发点赞数。收藏/评论全为 0 时不是"账号差"，
-    # 而是"没采到"——必须标记出来，否则下游会把缺失当成低分并误报刷量。
+    
+    
     has_collected = any(n["collected"] for n in notes)
     has_commented = any(n["commented"] for n in notes)
     has_shared = any(n["shared"] for n in notes)
@@ -279,7 +279,7 @@ def content_block(notes: list[dict]) -> dict:
     for n in notes:
         for t in n.get("tags") or []:
             tag_counter[t] += 1
-    # 小样本（十几条）下 min_count=3 会把关键词过滤到只剩几个，按样本量自适应
+    
     keywords = top_keywords([f"{t} {d}" for t, d in zip(titles, descs)], n=30,
                             min_count=3 if len(notes) >= 20 else 2)
     return {
@@ -304,11 +304,11 @@ def content_block(notes: list[dict]) -> dict:
 
 
 def format_block(notes: list[dict]) -> dict:
-    """图文 / 视频结构占比。
 
-    `format_mix` 是下游报告与叙述**必须引用**的占比口径：
-    rate 基于**全量笔记条数**（不是抽样），两种形式相加恒为 100%。
-    """
+
+
+
+
     videos = [n for n in notes if n["type"] == "video"]
     images = [n for n in notes if n["type"] != "video"]
     total = len(notes)
@@ -358,7 +358,7 @@ def format_block(notes: list[dict]) -> dict:
 
 
 def tier_block(eng: dict, fans: int, cadence: dict) -> dict:
-    """流量层级推演：峰值决定天花板，中位数决定水位，浓度决定依赖度。"""
+
     peak = eng["liked"]["max"]
     water = eng["liked"]["median"]
     conc = eng["concentration"]
@@ -402,11 +402,11 @@ def tier_block(eng: dict, fans: int, cadence: dict) -> dict:
 
 
 def health_block(eng: dict, notes: list[dict], fans: int) -> dict:
-    """注水/异常检测：小红书常见数据失真信号。
 
-    关键：只对**实际采到**的指标下判断。收藏/评论缺失时不能算比值、更不能报刷量，
-    否则会把"数据没采到"误判成"账号有问题"。
-    """
+
+
+
+
     flags = []
     complete = eng.get("data_completeness", {})
     cl = eng["collect_like_ratio"]
@@ -507,7 +507,7 @@ def score_block(eng: dict, tier: dict, content: dict, monet: dict, health: dict,
         return max(0, min(100, int(round(v))))
 
     fans = profile.get("fans", 0) or 0
-    # 商业价值：粉丝体量(30) + 互动效率(30) + 变现清晰度(25) + 更新稳定性(15)
+    
     fan_score = min(30, 30 * (min(fans, 1_000_000) / 1_000_000) ** 0.45)
     eff = eng.get("engage_per_fan", 0)
     eff_score = 30 * min(1.0, eff / 0.15) if fans else 15
@@ -517,20 +517,20 @@ def score_block(eng: dict, tier: dict, content: dict, monet: dict, health: dict,
     stable_score = 15 * min(1.0, (cadence.get("posts_per_week", 0) or 0) / 4)
     business = clamp(fan_score + eff_score + money_score + stable_score)
 
-    # 内容力：结构完整度（人群/痛点/形式命中）为主，互动效率为辅
+    
     structure = 100 * (0.35 * min(1, content["audience_rate"] / 0.6) +
                        0.3 * min(1, content["pain_rate"] / 0.5) +
                        0.35 * min(1, content["format_rate"] / 0.5))
     content_score = clamp(0.75 * structure + 0.25 * 100 * min(1.0, eff / 0.03))
 
-    # 爆款确定性：水位占峰值比例（能否稳定复现）+ 流量结构稳态 + 爆款率
+    
     water_ratio = tier.get("water_ratio", 0)
     steadiness = tier.get("steadiness", 0)
     certainty = clamp(100 * (0.45 * min(1.0, water_ratio / 0.25) +
                              0.30 * steadiness +
                              0.25 * min(1.0, eng["viral_rate"] / 0.15)))
 
-    # 可复制性：标签聚焦 + 套路稳定 + 爆款可复现 + 流量稳态
+    
     focus = 1 - min(1, content["tag_diversity"])
     replicability = clamp(100 * (0.30 * focus +
                                  0.25 * min(1, content["format_rate"] / 0.5) +
@@ -564,8 +564,8 @@ def gaps_block(content: dict, eng: dict, cadence: dict, monet: dict, tier: dict)
         gaps.append({"gap": "标签过于分散，赛道不聚焦", "evidence": f"标签离散度 {content['tag_diversity']:.2f}",
                      "action": "收敛到 3 个核心标签 + 2 个流量标签，连续 10 篇不变"})
     complete = eng.get("data_completeness", {})
-    # 基准：家居/生活方式类账号收藏/点赞常态约 8-15%，教程干货类 25-40%。
-    # 旧阈值 0.3 会把 25% 的健康账号误判成"收藏率低"（真实案例：冰镇小豆奶 24.7%）。
+    
+    
     if complete.get("collected") and eng["collect_like_ratio"] < 0.2:
         gaps.append({"gap": "收藏率低，缺工具属性", "evidence": f"收藏/点赞 {eng['collect_like_ratio']:.0%}（行业常态 8-15%）",
                      "action": "正文加清单化结构：步骤 / 清单 / 参数表 / 可直接抄的模板"})
@@ -585,9 +585,9 @@ def gaps_block(content: dict, eng: dict, cadence: dict, monet: dict, tier: dict)
     return gaps
 
 
-# --------------------------------------------------------------------------- #
-# 主流程
-# --------------------------------------------------------------------------- #
+
+
+
 def analyze(dataset: dict) -> dict:
     profile = dataset.get("profile", {})
     notes = enrich_notes(list(dataset.get("notes", [])))
@@ -683,5 +683,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     from xhs_env import ensure_ready
-    ensure_ready(need_browser=False)     # 纯分析，不需要 Chromium 内核
+    ensure_ready(need_browser=False)     
     raise SystemExit(main())

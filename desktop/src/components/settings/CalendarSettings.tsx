@@ -5,21 +5,21 @@ import { useAppStore } from '@/stores/appStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 import type { CalendarConfig } from '@/types'
 
-/**
- * 「日历」设置区块。
- *
- * 两种用法，默认那种**不用配任何东西**：
- *
- * - **本地日历**（默认）：日程存在本机数据目录下的 `calendar/local.ics`。
- *   这个文件本身就是标准 iCalendar —— 可以导出到手机/系统日历，也能把它们导出的
- *   文件放回来，数据不是锁在应用里的。
- * - **在线日历（CalDAV）**：填地址、账号、密码就能直接读写苹果日历 / Nextcloud 等。
- *   配好之后 `auto` 模式会自动改走在线，用户不必再回来手动切换。
- *
- * 密码的存法与模型 Key 完全一致：**先在主进程用系统加密存起来**（下次启动注入），
- * 再随这次提交把明文交给本地后端放进内存。所以它既不会明文落盘，也不会因为
- * 一次"保存设置"就丢 —— 后端把空值当成"用户没动它"。
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export function CalendarSettings() {
   const settings = useAppStore((state) => state.settings)
   const api = useAppStore((state) => state.api)
@@ -27,9 +27,9 @@ export function CalendarSettings() {
   const push = useNotificationStore((state) => state.push)
 
   const [draft, setDraft] = useState<CalendarConfig | null>(null)
-  /** 已保存密码的脱敏预览（形如 `ab****cd`），用来告诉用户"已经配过了" */
+  
   const [maskedPassword, setMaskedPassword] = useState('')
-  /** 用户这次输入的密码：留空表示不改（后端同样按空值忽略处理） */
+  
   const [passwordInput, setPasswordInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [testing, setTesting] = useState(false)
@@ -57,9 +57,9 @@ export function CalendarSettings() {
     if (!api) return
     setBusy(true)
     try {
-      // 顺序有讲究：**先落密码再提交设置**。
-      // 反过来的话，提交设置时如果密码还没进加密存储，后端内存里那份会被这次
-      // 提交覆盖成空（只有当用户确实输入了新密码时才有区别，但顺序一致更省心）
+      
+      
+      
       if (passwordInput.trim()) {
         await window.agentBridge?.saveSecrets({
           integrations: { calendar: { password: passwordInput.trim() } },
@@ -97,7 +97,7 @@ export function CalendarSettings() {
       const result = await api.testCalendar({
         caldav_url: draft.caldav_url,
         caldav_username: draft.caldav_username,
-        // 留空 = 用已保存的那份密码（后端这么约定，界面不回显密码）
+        
         caldav_password: passwordInput.trim() || undefined,
       })
       push({
@@ -119,13 +119,13 @@ export function CalendarSettings() {
   }
 
   return (
-    /*
-      ⚠️ `max-w-[880px]`：这一页原先只有内部字段区限了宽（见下面的
-      `max-w-[560px]`），整页内容却是铺满的。加个宽度上限，让它和同一排的其它设置页一致。
+    
 
-      ⚠️ **不要再加 `mx-auto`**：居中那一版用户看过之后说"并不好看" ——
-      他要的是内容**贴着左边**，不是飘在中间。
-    */
+
+
+
+
+
     <section className="mb-8 max-w-[880px]">
       <h2 className="text-[15px] font-semibold text-ink">日历</h2>
       <p className="mt-1 text-[12.5px] leading-relaxed text-ink-soft">

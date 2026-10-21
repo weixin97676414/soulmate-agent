@@ -44,7 +44,7 @@ def _normalize_inputs(inputs: Any) -> str:
     if isinstance(inputs, dict):
         parts: List[str] = []
         for key, value in inputs.items():
-            if value in (None, "", [], {}, ()):  # type: ignore[comparison-overlap]
+            if value in (None, "", [], {}, ()):  
                 continue
             if isinstance(value, (list, tuple, set)):
                 rendered = ", ".join(str(item) for item in value)

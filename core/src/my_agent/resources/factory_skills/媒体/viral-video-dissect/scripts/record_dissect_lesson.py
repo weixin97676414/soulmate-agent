@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Append reusable dissect lessons to references/dissect-lessons.md.
 
-Mirrors browser-automation-toolbox's record_platform_experience.py:
-small, append-only, idempotent (dedup by exact bullet), grouped by video type.
-"""
+
+
+
+
 from __future__ import annotations
 
 import argparse

@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-护理操作PDF结构化分析脚本
-功能：
-  1. 使用 pdfplumber 提取PDF全文
-  2. 利用正则对文本进行结构化提取
-  3. 输出标准化JSON（含护理评估、适应症、禁忌证、准备、操作要点、并发症、干预措施）
-用法：
-  python analyze_pdf.py --pdf_path "xxx.pdf" --diagnosis "气管切开"
-  python analyze_pdf.py --text_input "xxx" --standard_name "气管切开非机械通气患者气道护理"
-"""
+
+
+
+
+
+
+
+
+
+
 
 import argparse
 import json
@@ -19,7 +19,7 @@ import sys
 
 
 def extract_pdf_text(pdf_path):
-    """提取PDF全文，使用pdfplumber"""
+
     try:
         import pdfplumber
         text_pages = []
@@ -51,15 +51,15 @@ def extract_pdf_text(pdf_path):
 
 
 def rule_based_extract(text, standard_name=""):
-    """基于规则的结构化提取"""
+
     
     def extract_section(text, patterns, max_chars=2000):
-        """提取指定章节内容"""
+
         for pattern in patterns:
             match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
             if match:
                 start = match.start()
-                # 找到下一个章节
+                
                 next_section = re.search(
                     r'\n\d+[\s\.、]+[^\n]{2,20}\n', 
                     text[start+len(match.group()):start+max_chars]
@@ -85,14 +85,14 @@ def rule_based_extract(text, standard_name=""):
         "precautions": ""
     }
     
-    # 护理评估
+    
     assessment_text = extract_section(text, [
         r'护理评估[^\n]*\n', r'评估[^\n]*\n', r'4[\s\.]+护理评估',
         r'一[、．].*评估', r'assessment'
     ])
     result["nursing_assessment"] = assessment_text[:800] if assessment_text else "参见标准文件第三章护理评估部分"
     
-    # 适应症
+    
     indications_text = extract_section(text, [
         r'适应[症证][^\n]*\n', r'适用范围[^\n]*\n', r'indication',
         r'2[\s\.]+适应', r'3[\s\.]+适应'
@@ -101,7 +101,7 @@ def rule_based_extract(text, standard_name=""):
         items = re.findall(r'[a-zA-Z\d\u4e00-\u9fff][）\)、]([^\n]{5,100})', indications_text)
         result["indications"] = items[:10] if items else [indications_text[:200]]
     
-    # 禁忌证
+    
     contra_text = extract_section(text, [
         r'禁忌[症证][^\n]*\n', r'contraindication', r'禁忌[^\n]*\n'
     ])
@@ -109,30 +109,30 @@ def rule_based_extract(text, standard_name=""):
         items = re.findall(r'[a-zA-Z\d\u4e00-\u9fff][）\)、]([^\n]{5,100})', contra_text)
         result["contraindications"] = items[:10] if items else [contra_text[:200]]
     
-    # 准备（药物、器械）
+    
     prep_text = extract_section(text, [
         r'用物准备[^\n]*\n', r'操作准备[^\n]*\n', r'准备[^\n]*\n',
         r'物品准备[^\n]*\n', r'器械准备[^\n]*\n'
     ])
     if prep_text:
-        # 药物
+        
         drug_match = re.search(r'药物[^\n]{0,200}', prep_text)
         result["preparations"]["drugs"] = drug_match.group(0) if drug_match else ""
-        # 器械
+        
         equip_match = re.search(r'(器械|仪器|设备|物品)[^\n]{0,300}', prep_text)
         result["preparations"]["equipment"] = equip_match.group(0)[:300] if equip_match else prep_text[:300]
-        # 患者准备
+        
         patient_match = re.search(r'患者准备[^\n]{0,200}', prep_text)
         result["preparations"]["patient_prep"] = patient_match.group(0) if patient_match else ""
     
-    # 操作要点
+    
     op_text = extract_section(text, [
         r'操作要点[^\n]*\n', r'操作步骤[^\n]*\n', r'护理操作[^\n]*\n',
         r'实施[^\n]*\n', r'操作程序[^\n]*\n'
     ], max_chars=3000)
     result["operation_key_points"] = op_text[:1500] if op_text else "参见标准文件操作步骤章节"
     
-    # 并发症
+    
     comp_text = extract_section(text, [
         r'并发症[^\n]*\n', r'complication', r'不良反应[^\n]*\n'
     ])
@@ -140,14 +140,14 @@ def rule_based_extract(text, standard_name=""):
         items = re.findall(r'[a-zA-Z\d\u4e00-\u9fff][）\)、]([^\n]{3,60})', comp_text)
         result["complications"] = items[:10] if items else [comp_text[:200]]
     
-    # 干预与处理措施
+    
     intervention_text = extract_section(text, [
         r'干预[^\n]*\n', r'处理[^\n]*\n', r'应急处理[^\n]*\n',
         r'并发症.*处理', r'注意事项[^\n]*\n'
     ], max_chars=2000)
     result["intervention_measures"] = intervention_text[:1000] if intervention_text else ""
     
-    # 注意事项
+    
     precaution_text = extract_section(text, [
         r'注意事项[^\n]*\n', r'注意[^\n]*\n', r'precaution'
     ])
@@ -157,29 +157,29 @@ def rule_based_extract(text, standard_name=""):
 
 
 def analyze_multiple_standards(pdf_paths_or_texts, standard_names, diagnosis=""):
-    """分析多个标准（用于有多个护理操作的情况）
-    
-    Args:
-        pdf_paths_or_texts: PDF文件路径列表或文本列表
-        standard_names: 标准名称列表
-        diagnosis: 患者诊断
-    
-    Returns:
-        合并后的分析结果列表
-    """
+
+
+
+
+
+
+
+
+
+
     results = []
     
     for i, item in enumerate(pdf_paths_or_texts):
         std_name = standard_names[i] if i < len(standard_names) else f"标准{i+1}"
         print(f"\n[INFO] 分析标准 {i+1}/{len(pdf_paths_or_texts)}: {std_name}")
         
-        # 判断是PDF路径还是文本
+        
         if isinstance(item, str) and item.endswith('.pdf') and os.path.exists(item):
             text = extract_pdf_text(item)
         else:
-            text = item  # 可能是网页文本
+            text = item  
         
-        # 结构化提取
+        
         result = None
         if text:
             result = rule_based_extract(text, std_name)
@@ -194,13 +194,13 @@ def analyze_multiple_standards(pdf_paths_or_texts, standard_names, diagnosis="")
 
 
 def extract_complications_detailed(text, standard_name=""):
-    """详细提取并发症及处理措施
-    
-    从标准文档中提取：
-    1. 并发症名称列表
-    2. 每个并发症的处理措施
-    3. 预防要点
-    """
+
+
+
+
+
+
+
     result = {
         "standard_name": standard_name,
         "complications": [],
@@ -208,7 +208,7 @@ def extract_complications_detailed(text, standard_name=""):
         "emergency_handling": ""
     }
     
-    # 提取并发症章节
+    
     comp_section = ""
     lines = text.split('\n')
     in_complication_section = False
@@ -217,46 +217,46 @@ def extract_complications_detailed(text, standard_name=""):
     for i, line in enumerate(lines):
         line_stripped = line.strip()
         
-        # 检测并发症章节开始
+        
         if any(kw in line_stripped for kw in complication_keywords):
             in_complication_section = True
             comp_section += line + '\n'
             continue
         
-        # 检测章节结束（遇到新的章节标题）
+        
         if in_complication_section:
             if re.match(r'^\d+[\.、]', line_stripped) and len(line_stripped) < 50:
-                # 新的章节开始
+                
                 if not any(kw in line_stripped for kw in complication_keywords):
                     in_complication_section = False
             else:
                 comp_section += line + '\n'
     
-    # 如果没有找到并发症章节，尝试在整个文本中搜索
+    
     if not comp_section:
         comp_match = re.search(r'(并发症|不良反应|风险因素)[^\n]*\n(.*?)(?=\n\d+[\.、]|$)', text, re.DOTALL)
         if comp_match:
             comp_section = comp_match.group(0)
     
-    # 解析并发症列表
+    
     if comp_section:
-        # 提取并发症名称（通常是列表形式）
+        
         comp_items = re.findall(r'[a-zA-Z\d\u4e00-\u9fff][）\)、\.．]([^\n]{3,60})', comp_section)
         if comp_items:
             result["complications"] = [item.strip() for item in comp_items]
         else:
-            # 尝试按行提取
+            
             for line in comp_section.split('\n'):
                 line = line.strip()
                 if len(line) >= 3 and len(line) <= 60 and not line.startswith('#'):
                     result["complications"].append(line)
         
-        # 提取预防要点
+        
         prevention_match = re.search(r'预防[^\n]*\n(.*?)(?=\n\d+[\.、]|$)', comp_section, re.DOTALL)
         if prevention_match:
             result["prevention"] = prevention_match.group(1).strip()[:500]
         
-        # 提取应急处理
+        
         emergency_match = re.search(r'应急[^\n]*\n(.*?)(?=\n\d+[\.、]|$)', comp_section, re.DOTALL)
         if emergency_match:
             result["emergency_handling"] = emergency_match.group(1).strip()[:500]
@@ -265,9 +265,9 @@ def extract_complications_detailed(text, standard_name=""):
 
 
 def generate_standard_template(standard_name, diagnosis):
-    """当无法获取PDF/网页内容时，生成基于诊断的标准化模板"""
+
     
-    # 根据标准名称推断内容
+    
     templates = {
         "气管切开": {
             "nursing_assessment": "1.评估患者意识状态、呼吸功能、气道分泌物情况\n2.评估气管切开切口愈合情况\n3.评估气道通畅性\n4.评估套管固定情况（松紧度以容纳1-2指为宜）",
@@ -287,7 +287,7 @@ def generate_standard_template(standard_name, diagnosis):
         },
     }
     
-    # 匹配最佳模板
+    
     matched_template = None
     for key, tmpl in templates.items():
         if key in standard_name or key in diagnosis:
@@ -295,7 +295,7 @@ def generate_standard_template(standard_name, diagnosis):
             break
     
     if not matched_template:
-        matched_template = templates["氧气吸入"]  # 默认模板
+        matched_template = templates["氧气吸入"]  
     
     return {
         "standard_name": standard_name,
@@ -329,7 +329,7 @@ def main():
     parser.add_argument("--extract_complications", action="store_true", help="详细提取并发症及处理措施")
     args = parser.parse_args()
     
-    # 详细提取并发症模式
+    
     if args.extract_complications and args.pdf_path:
         print(f"[INFO] 详细提取并发症: {args.pdf_path}")
         text = extract_pdf_text(args.pdf_path)
@@ -343,7 +343,7 @@ def main():
             print(json.dumps(result, ensure_ascii=False, indent=2))
         return
     
-    # 多个PDF分析模式
+    
     if args.pdf_paths:
         print(f"[INFO] 分析多个标准，共 {len(args.pdf_paths)} 个")
         standard_names = args.standard_names if args.standard_names else [f"标准{i+1}" for i in range(len(args.pdf_paths))]
@@ -354,7 +354,7 @@ def main():
             diagnosis=args.diagnosis
         )
         
-        # 保存结果
+        
         if args.output_dir:
             os.makedirs(args.output_dir, exist_ok=True)
             for i, result in enumerate(results):
@@ -363,7 +363,7 @@ def main():
                     json.dump(result, f, ensure_ascii=False, indent=2)
                 print(f"[DONE] 分析结果 {i+1} 已保存: {output_path}")
             
-            # 保存合并结果
+            
             merged_path = os.path.join(args.output_dir, "analysis_merged.json")
             with open(merged_path, "w", encoding="utf-8") as f:
                 json.dump(results, f, ensure_ascii=False, indent=2)
@@ -377,7 +377,7 @@ def main():
         
         return
     
-    # 单个PDF/文本分析模式（原有逻辑）
+    
     text = ""
     if args.pdf_path and os.path.exists(args.pdf_path):
         print(f"[INFO] 提取PDF: {args.pdf_path}")
@@ -386,7 +386,7 @@ def main():
         text = args.text_input
         print(f"[INFO] 使用输入文本，{len(text)} 字符")
     
-    # 结构化提取
+    
     result = None
     if text:
         print("[INFO] 使用规则提取...")
@@ -396,11 +396,11 @@ def main():
         print("[INFO] 生成标准化模板...")
         result = generate_standard_template(args.standard_name, args.diagnosis)
     
-    # 确保standard_name正确
+    
     if args.standard_name:
         result["standard_name"] = args.standard_name
     
-    # 输出
+    
     if args.output:
         with open(args.output, "w", encoding="utf-8") as f:
             json.dump(result, f, ensure_ascii=False, indent=2)

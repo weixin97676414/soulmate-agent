@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""
-LegalDoc AI - Deadline Tracker
-Automated legal deadline management and alerting system.
-"""
+
+
+
+
 
 import os
 import sys
@@ -17,13 +17,13 @@ import sqlite3
 import hashlib
 
 
-# Default storage location
+
 DEFAULT_DB_PATH = os.environ.get(
     "LEGALDOC_DEADLINES_DB",
     os.path.expanduser("~/.legaldoc/deadlines.db")
 )
 
-# Deadline categories with default rules
+
 DEADLINE_CATEGORIES = {
     "court_filing": {
         "description": "Court filing deadlines",
@@ -75,7 +75,7 @@ DEADLINE_CATEGORIES = {
     },
 }
 
-# Statute of limitations by claim type (California defaults)
+
 STATUTE_OF_LIMITATIONS = {
     "personal_injury": {"years": 2, "statute": "CCP § 335.1"},
     "medical_malpractice": {"years": 1, "statute": "CCP § 340.5", "notes": "Discovery rule may apply"},
@@ -93,10 +93,10 @@ STATUTE_OF_LIMITATIONS = {
 
 @dataclass
 class Deadline:
-    """Represents a tracked legal deadline."""
+
     id: str
     description: str
-    date: str  # ISO format YYYY-MM-DD
+    date: str  
     category: str
     matter_id: Optional[str] = None
     matter_name: Optional[str] = None
@@ -141,7 +141,7 @@ class Deadline:
 
 
 class DeadlineDatabase:
-    """SQLite-based deadline storage."""
+
     
     def __init__(self, db_path: str = DEFAULT_DB_PATH):
         self.db_path = db_path
@@ -149,7 +149,7 @@ class DeadlineDatabase:
         self._init_db()
     
     def _init_db(self):
-        """Initialize database schema."""
+
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -186,7 +186,7 @@ class DeadlineDatabase:
         conn.close()
     
     def add(self, deadline: Deadline) -> bool:
-        """Add a deadline to the database."""
+
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -220,7 +220,7 @@ class DeadlineDatabase:
             conn.close()
     
     def update(self, deadline: Deadline) -> bool:
-        """Update an existing deadline."""
+
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -259,7 +259,7 @@ class DeadlineDatabase:
         return updated
     
     def get(self, deadline_id: str) -> Optional[Deadline]:
-        """Get a deadline by ID."""
+
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -272,7 +272,7 @@ class DeadlineDatabase:
         return None
     
     def list_upcoming(self, days: int = 30, include_completed: bool = False) -> list[Deadline]:
-        """List upcoming deadlines."""
+
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -298,7 +298,7 @@ class DeadlineDatabase:
         return [self._row_to_deadline(row) for row in rows]
     
     def list_overdue(self) -> list[Deadline]:
-        """List overdue deadlines."""
+
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -316,7 +316,7 @@ class DeadlineDatabase:
         return [self._row_to_deadline(row) for row in rows]
     
     def list_by_matter(self, matter_id: str) -> list[Deadline]:
-        """List deadlines for a specific matter."""
+
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -332,7 +332,7 @@ class DeadlineDatabase:
         return [self._row_to_deadline(row) for row in rows]
     
     def mark_complete(self, deadline_id: str) -> bool:
-        """Mark a deadline as completed."""
+
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -348,7 +348,7 @@ class DeadlineDatabase:
         return updated
     
     def delete(self, deadline_id: str) -> bool:
-        """Delete a deadline."""
+
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -360,7 +360,7 @@ class DeadlineDatabase:
         return deleted
     
     def _row_to_deadline(self, row: tuple) -> Deadline:
-        """Convert database row to Deadline object."""
+
         return Deadline(
             id=row[0],
             description=row[1],
@@ -380,14 +380,14 @@ class DeadlineDatabase:
 
 
 def extract_deadlines_from_document(file_path: str) -> list[Deadline]:
-    """Extract deadlines from a legal document."""
+
     
-    # Load document
+    
     path = Path(file_path)
     if not path.exists():
         raise FileNotFoundError(f"Document not found: {file_path}")
     
-    # Read text (simplified - in production use proper parsers)
+    
     if path.suffix.lower() == ".txt":
         text = path.read_text(encoding="utf-8")
     elif path.suffix.lower() == ".pdf":
@@ -402,7 +402,7 @@ def extract_deadlines_from_document(file_path: str) -> list[Deadline]:
     
     deadlines = []
     
-    # Date patterns
+    
     date_patterns = [
         (r'(?:due|deadline|by|before|no later than)[:\s]+(\w+\s+\d{1,2},?\s+\d{4})', "deadline"),
         (r'(?:hearing|trial|conference)[:\s]+(\w+\s+\d{1,2},?\s+\d{4})', "court_filing"),
@@ -419,7 +419,7 @@ def extract_deadlines_from_document(file_path: str) -> list[Deadline]:
         for match in re.finditer(pattern, text, re.IGNORECASE):
             date_str = match.group(1).strip()
             
-            # Parse date
+            
             parsed_date = None
             for fmt in ["%B %d, %Y", "%B %d %Y", "%m/%d/%Y", "%Y-%m-%d"]:
                 try:
@@ -437,13 +437,13 @@ def extract_deadlines_from_document(file_path: str) -> list[Deadline]:
                 continue
             found_dates.add(iso_date)
             
-            # Get context
+            
             start = max(0, match.start() - 100)
             end = min(len(text), match.end() + 100)
             context = text[start:end].strip()
             context = re.sub(r'\s+', ' ', context)
             
-            # Generate ID
+            
             deadline_id = hashlib.md5(
                 f"{iso_date}:{context[:50]}".encode()
             ).hexdigest()[:12]
@@ -466,7 +466,7 @@ def calculate_sol_deadline(
     claim_type: str,
     jurisdiction: str = "CA"
 ) -> Optional[Deadline]:
-    """Calculate statute of limitations deadline."""
+
     
     sol_info = STATUTE_OF_LIMITATIONS.get(claim_type.lower().replace(" ", "_"))
     if not sol_info:
@@ -504,7 +504,7 @@ def format_deadlines(
     output_format: str = "markdown",
     show_completed: bool = False
 ) -> str:
-    """Format deadlines for output."""
+
     
     if not show_completed:
         deadlines = [d for d in deadlines if not d.completed]
@@ -512,7 +512,7 @@ def format_deadlines(
     if output_format == "json":
         return json.dumps([d.to_dict() for d in deadlines], indent=2)
     
-    # Markdown format
+    
     urgency_emoji = {
         "overdue": "🔴",
         "critical": "🔴",
@@ -532,7 +532,7 @@ def format_deadlines(
         ""
     ]
     
-    # Group by urgency
+    
     overdue = [d for d in deadlines if d.is_overdue()]
     critical = [d for d in deadlines if d.urgency_level() == "critical"]
     upcoming = [d for d in deadlines if d.urgency_level() in ["urgent", "soon", "normal"]]
@@ -596,7 +596,7 @@ def main():
     
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
     
-    # List command
+    
     list_parser = subparsers.add_parser("list", help="List deadlines")
     list_parser.add_argument(
         "--upcoming", "-u",
@@ -619,7 +619,7 @@ def main():
         default="markdown"
     )
     
-    # Add command
+    
     add_parser = subparsers.add_parser("add", help="Add a deadline")
     add_parser.add_argument("description", help="Deadline description")
     add_parser.add_argument("--date", "-d", required=True, help="Deadline date (YYYY-MM-DD)")
@@ -629,30 +629,30 @@ def main():
     add_parser.add_argument("--court", help="Court name")
     add_parser.add_argument("--notes", "-n", help="Additional notes")
     
-    # Extract command
+    
     extract_parser = subparsers.add_parser("extract", help="Extract deadlines from document")
     extract_parser.add_argument("file_path", help="Path to document")
     extract_parser.add_argument("--save", "-s", action="store_true", help="Save extracted deadlines")
     extract_parser.add_argument("--output", "-o", choices=["markdown", "json"], default="markdown")
     
-    # SOL command
+    
     sol_parser = subparsers.add_parser("sol", help="Calculate statute of limitations")
     sol_parser.add_argument("incident_date", help="Incident date (YYYY-MM-DD)")
     sol_parser.add_argument("claim_type", help="Type of claim")
     sol_parser.add_argument("--save", "-s", action="store_true", help="Save to tracker")
     
-    # Complete command
+    
     complete_parser = subparsers.add_parser("complete", help="Mark deadline complete")
     complete_parser.add_argument("deadline_id", help="Deadline ID")
     
-    # Delete command
+    
     delete_parser = subparsers.add_parser("delete", help="Delete a deadline")
     delete_parser.add_argument("deadline_id", help="Deadline ID")
     
-    # Categories command
+    
     subparsers.add_parser("categories", help="List deadline categories")
     
-    # SOL types command
+    
     subparsers.add_parser("sol-types", help="List statute of limitations types")
     
     args = parser.parse_args()
@@ -660,7 +660,7 @@ def main():
     db = DeadlineDatabase()
     
     if args.command == "list":
-        # Parse days
+        
         days_match = re.match(r"(\d+)d?", args.upcoming)
         days = int(days_match.group(1)) if days_match else 30
         

@@ -17,18 +17,18 @@ import { useAppStore } from '@/stores/appStore'
 import { useChatStore } from '@/stores/chatStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 
-/**
- * 单聊输入区。
- *
- * ⚠️ 真正的输入体验在 `ComposerShell` 里（多行、附件、语音、命令面板），
- * 这里只负责把**单聊特有的东西**接上去：
- *
- * - 草稿与附件来自 `chatStore`（发给哪个会话它自己知道）；
- * - 斜杠命令的全套语义：`/new` `/compact` `/clear` `/stop` `/model` `/help`；
- * - 控件行上的思考强度、上下文用量、权限模式。
- *
- * 群聊用同一个壳接它自己的状态 —— 于是"输入栏的操作体验"只有一份实现。
- */
+
+
+
+
+
+
+
+
+
+
+
+
 export function Composer() {
   const draft = useChatStore((state) => state.draft)
   const setDraft = useChatStore((state) => state.setDraft)
@@ -45,36 +45,36 @@ export function Composer() {
   const effectiveDefaultModelId = useAppStore((state) => state.modelDefaults.effectiveDefault)
   const sessionModelId = useChatStore((state) => state.modelId)
 
-  // ---- 输入栏下方那一行（产品要求把顶栏那三样搬下来）----
-  //
-  // 搬过来的理由不只是"挪个位置"：顶栏在**独立窗口**里会空出一整行（那个窗口不
-  // 显示"独立窗口对话"按钮），而输入栏下方这一行本来就离手最近。
+  
+  
+  
+  
   const drawerOpen = useChatStore((state) => state.drawerOpen)
   const setDrawerOpen = useChatStore((state) => state.setDrawerOpen)
-  // 这里曾有 `trace` / `artifactCount`，用于"没内容就把入口按钮置灰"。
-  // 那个置灰规则按产品要求去掉了（见按钮处的说明），变量随之删除。
+  
+  
   const activeSessionId = useChatStore((state) => state.activeSessionId)
   const activeAssistant = useAssistantStore((state) =>
     state.assistants.find((item) => item.id === state.activeId),
   )
-  // 独立窗口里这两个入口都没有意义（它自己就是那个窗口），判断与顶栏时代一致
+  
   const isChatWindow = window.agentBridge?.getWindowArgs?.()?.mode === 'chat'
-  // 输入框 placeholder 用**当前搭子的称呼**（产品要求：不再是通用的 Soulmate）。
-  // 昵称优先、没有昵称就用它的本名。
+  
+  
   const assistantLabel =
     useAssistantStore((state) => {
       const current = state.assistants.find((item) => item.id === state.activeId)
       return current ? current.nickname || current.name : ''
     }) || '助手'
 
-  // ---- 斜杠命令面板 -------------------------------------------------- //
-  //
-  // 面板有两种"下一步"形态（切模型、确认清空），所以除了开关还需要一个模式，
-  // 否则用户选了 /model 之后面板会立刻因为输入框被清空而消失。
+  
+  
+  
+  
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [paletteMode, setPaletteMode] = useState<'command' | 'model' | 'clear'>('command')
 
-  // 命令名后面的那段（到第一个空格为止），用于过滤
+  
   const paletteQuery =
     paletteOpen && paletteMode === 'command' && draft.startsWith('/')
       ? draft.slice(1).split(/\s+/)[0]
@@ -111,8 +111,8 @@ export function Composer() {
   }
 
   useEffect(() => {
-    // 只在**命令模式**下跟着输入内容开关。切到模型/确认列表之后输入框已经清空，
-    // 若还跟着它判断，面板会在用户刚选完 /model 的瞬间自己关掉。
+    
+    
     if (paletteMode !== 'command') return
     const shouldOpen = draft.startsWith('/') && !streaming
     if (shouldOpen && !paletteOpen) {
@@ -151,7 +151,7 @@ export function Composer() {
       void stop()
       return
     }
-    // 清空是不可逆的，所以不直接执行 —— 让面板换成一次确认
+    
     if (name === 'clear') {
       setPaletteMode('clear')
       return
@@ -192,7 +192,7 @@ export function Composer() {
             title: result.compressed ? '上下文已压缩' : '无需压缩',
             message: result.message,
           })
-          // 压缩会改变会话的摘要状态，刷新上下文用量显示
+          
           useAppStore.getState().reloadHealth?.()
         })
         .catch((error: unknown) => {
@@ -207,8 +207,8 @@ export function Composer() {
     closePalette()
   }
 
-  // 「附件里有图片、但当前模型不收图」必须当场说清 —— 图片走的是另一条通道，
-  // 模型不支持图片输入时它只会作为文件路径发过去，用户却以为"图已经给它看过了"。
+  
+  
   const activeModel = useMemo(() => {
     const id = sessionModelId ?? effectiveDefaultModelId
     if (!id) return null
@@ -238,8 +238,8 @@ export function Composer() {
             type="button"
             onClick={() => {
               if (!activeAssistant?.id) return
-              // 带上当前会话 id：独立窗口开的就是**正在看的这一段**，
-              // 而不是"这个搭子最近的一条"
+              
+              
               window.agentBridge?.openChatWindow(activeAssistant.id, activeSessionId ?? '')
             }}
             disabled={!activeAssistant}
@@ -255,22 +255,22 @@ export function Composer() {
         <button
           type="button"
           onClick={() => setDrawerOpen(!drawerOpen)}
-          /*
-            ⚠️ **不再置灰**（报"按钮无法点击"）。
+          
 
-            原先的条件是 `!isChatWindow && !trace && artifactCount === 0`：
-            主窗口在当前会话没有 trace、也没有产物时就禁用。问题在于
-            **每个窗口各有一份独立的 store**（Electron 的 BrowserWindow 是独立
-            渲染进程），所以"在独立窗口里跑出来的链路"主窗口**根本看不到** ——
-            用户在主窗口看到的永远是空 trace + 空产物，按钮就一直点不动。
 
-            而且"禁用"本身就是个坏设计：用户想点开看看的**恰恰是没内容那一次**
-            （"它到底调了什么？"）。没内容时打开抽屉显示空态，比一个点不动的
-            按钮诚实得多。
-          */
-          /* ⚠️ 展开时高亮（产品要求）：它是个开关，而原样式两种状态
-             长得一样 —— 用户看不出抽屉是否开着，也找不到"再点一下就关"的线索。
-             用 `brand-soft` 而不是实心主色：它只是状态指示，不是页面上的主动作。 */
+
+
+
+
+
+
+
+
+
+
+          
+
+
           aria-pressed={drawerOpen}
           className={clsx(
             'flex items-center gap-1 rounded-[6px] px-1.5 py-0.5 transition-colors disabled:opacity-40',

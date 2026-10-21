@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
-"""
-build_html.py — 短视频爆款拆解与二创 报告 HTML 生成器
-========================================================
-由「短视频爆款8维拆解与反向二创」技能在最终交付阶段调用（与 build_pdf.py 并列的输出选项之一）。
 
-能力：
-  - 纯标准库实现，零外部依赖：把技能产出的 Markdown 报告渲染为一份**自包含 HTML 文档**
-    （内联 CSS，单文件可直接双击打开 / 转发 / 浏览器打印成 PDF），不联网、不上传任何数据。
-  - 封面页：报告主题 + 产出日期 + 三行尾注（含反馈邮箱，与 PDF 封面一致，兼作对外宣传交流窗口；`--brand` 才打印联系方式）。
-  - 目录页：依据 Markdown 报告的标题层级（## 一级节、### 二级节）抽取目录与页内锚点跳转，一眼看清结构、快速定位。
-  - 正文：标题 / 段落 / 列表 / 表格 / 代码块 / 引用 全量渲染，风格与 PDF 保持一致。
-  - 打印页码：通过 CSS 分页媒体（`@page`）在打印 / 导出 PDF 时自动生成「第 N 页」页码与品牌页脚；屏幕浏览时显示静态页脚。
 
-用法：
-  python scripts/build_html.py --md <报告.md> [--out <输出.html>] [--title <主题>] [--date <YYYY-MM-DD>] [--brand]
 
-若省略 --out，默认与 --md 同目录、同名换 .html；省略 --date 用今天；--title 用于封面副标题。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import argparse
 import os
 import re
@@ -24,9 +24,9 @@ import sys
 from datetime import date
 from html import escape
 
-# 统一错误友好化层（v2.21 新增）
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import _friendly_error as _fe  # noqa: E402
+import _friendly_error as _fe  
 
 BRAND_LINE = "出品 内容仅供参考<br/>欢迎继续探讨交流：vx：Etvis01 祝您演绎成功！干杯！<br/>使用反馈请发邮件：chongwuqun@agent.qq.com"
 FOOTER = "本文档由 自动生成"
@@ -85,7 +85,7 @@ hr { border: none; border-top: 1px solid var(--line); margin: 14px 0; }
 
 
 def md_inline(text):
-    """行内格式：**加粗** / *斜体* / `代码`；先转义 HTML 特殊字符。"""
+
     text = escape(text)
     text = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", text)
     text = re.sub(r"(?<!\*)\*(?!\*)(.+?)\*(?!\*)", r"<i>\1</i>", text)
@@ -94,7 +94,7 @@ def md_inline(text):
 
 
 def parse_markdown(md_text):
-    """返回 (html_body, toc_items)。toc_items: [(level(0/1), anchor, text)]。"""
+
     lines = md_text.split("\n")
     n = len(lines)
     body = []
@@ -288,7 +288,7 @@ def main():
 
 
 def _check_isolated_venv():
-    """拒绝在系统 Python 中执行，强制要求隔离 venv。"""
+
     if sys.prefix == sys.base_prefix:
         sys.stderr.write(
             "⛔ 必须在隔离 venv 内运行（拒绝系统 Python）。\n"

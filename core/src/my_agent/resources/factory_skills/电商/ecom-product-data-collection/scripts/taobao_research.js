@@ -5,16 +5,16 @@ const xlsx = require('xlsx');
 const https = require('https');
 const http = require('http');
 
-/**
- * 淘宝产品调研工具
- * 
- * 使用方法:
- * node taobao_research.js <关键词> <价格区间> <数量> [输出目录]
- * 
- * 示例:
- * node taobao_research.js "AI机器人" "0-169" 15
- * node taobao_research.js "智能手表" "100-500" 20 ./output
- */
+
+
+
+
+
+
+
+
+
+
 
 class TaobaoResearcher {
     constructor(options = {}) {
@@ -25,7 +25,7 @@ class TaobaoResearcher {
         this.outputDir = options.outputDir || path.join(__dirname, '..', '..', 'taobao_research');
         this.userDataDir = path.join(this.outputDir, 'browser_data');
         
-        // 确保目录存在
+        
         if (!fs.existsSync(this.outputDir)) fs.mkdirSync(this.outputDir, { recursive: true });
         if (!fs.existsSync(this.userDataDir)) fs.mkdirSync(this.userDataDir, { recursive: true });
     }
@@ -39,7 +39,7 @@ class TaobaoResearcher {
         });
         this.page = this.context.pages()[0] || await this.context.newPage();
         
-        // 检查登录状态
+        
         await this.page.goto('https://s.taobao.com', { waitUntil: 'domcontentloaded', timeout: 30000 });
         await this.page.waitForTimeout(3000);
         
@@ -66,11 +66,11 @@ class TaobaoResearcher {
             const reviews = await newPage.evaluate(() => {
                 const bodyText = document.body.innerText;
                 
-                // 模式: 386人评价 / 1000+人评价
+                
                 let match = bodyText.match(/(\d+[\d万+]*人评价)/);
                 if (match) return match[1];
                 
-                // 找包含"人评价"的元素
+                
                 const elements = Array.from(document.querySelectorAll('*'));
                 for (const el of elements) {
                     const text = el.textContent.trim();
@@ -79,7 +79,7 @@ class TaobaoResearcher {
                     }
                 }
                 
-                // 累计评价格式
+                
                 match = bodyText.match(/累计评价[\s:：]*(\d+[\d万+]*)/);
                 if (match) return `${match[1]}人评价`;
                 
@@ -98,7 +98,7 @@ class TaobaoResearcher {
         console.log(`\n🔍 搜索: ${this.keyword} | 价格: ${this.priceMin}-${this.priceMax} | 数量: ${this.maxItems}`);
         
         let url = `https://s.taobao.com/search?q=${encodeURIComponent(this.keyword)}`;
-        url += '&sort=sale-desc'; // 按销量排序
+        url += '&sort=sale-desc'; 
         if (this.priceMin !== null && this.priceMax !== null) {
             url += `&filter=reserve_price[${this.priceMin},${this.priceMax}]`;
         }
@@ -107,7 +107,7 @@ class TaobaoResearcher {
         console.log('⏳ 等待页面加载...');
         await this.page.waitForTimeout(8000);
         
-        // 截图调试
+        
         const debugFile = path.join(this.outputDir, `debug_${this.keyword}_${this.priceMin}_${this.priceMax}.png`);
         await this.page.screenshot({ path: debugFile });
         
@@ -123,7 +123,7 @@ class TaobaoResearcher {
             for (const card of cards) {
                 if (results.length >= max) break;
                 
-                // 提取商品ID
+                
                 let itemId = null;
                 const childWithId = card.querySelector('[data-item]');
                 if (childWithId) {
@@ -140,11 +140,11 @@ class TaobaoResearcher {
                 
                 if (!itemId || seenIds.has(itemId)) continue;
                 
-                // 提取标题
+                
                 const titleEl = card.querySelector('.title--ASSt27UY, [class*="title"]');
                 const title = titleEl?.textContent?.trim() || '';
                 
-                // 提取价格
+                
                 let price = '';
                 const priceIntEl = card.querySelector('.priceInt--yqqZMJ5a');
                 const priceFloatEl = card.querySelector('.priceFloat--QBXhQJ1w');
@@ -155,21 +155,21 @@ class TaobaoResearcher {
                     }
                 }
                 
-                // 价格筛选
+                
                 const priceNum = parseFloat(price);
                 if (!priceNum || (priceMin !== null && priceMax !== null && (priceNum < priceMin || priceNum > priceMax))) {
                     continue;
                 }
                 
-                // 提取销量
+                
                 const salesEl = card.querySelector('.realSales--XZJiepmt');
                 const sales = salesEl?.textContent?.trim() || '';
                 
-                // 提取店铺
+                
                 const shopEl = card.querySelector('.shopNameText--DmtlsDKm');
                 const shop = shopEl?.textContent?.trim() || '';
                 
-                // 提取图片
+                
                 const imgEl = card.querySelector('img');
                 const image = imgEl?.src || imgEl?.getAttribute('data-src') || '';
                 
@@ -193,7 +193,7 @@ class TaobaoResearcher {
         
         console.log(`✅ 提取到 ${products.length} 个产品`);
         
-        // 获取每个产品的评价数
+        
         console.log('📊 获取评价数...');
         for (let i = 0; i < products.length; i++) {
             const p = products[i];
@@ -209,7 +209,7 @@ class TaobaoResearcher {
             }
         }
         
-        // 显示结果预览
+        
         products.forEach((p, i) => {
             console.log(`  [${i+1}] ${p.title?.substring(0, 25)}... ¥${p.price} | 销量:${p.sales || '-'} | 评价:${p.reviews || '-'}`);
         });
@@ -284,7 +284,7 @@ class TaobaoResearcher {
         ];
         ws['!rows'] = data.map(() => ({ hpt: 80 }));
         
-        // 添加超链接
+        
         for (let i = 0; i < data.length; i++) {
             const rowNum = i + 2;
             const cellRef = xlsx.utils.encode_cell({ r: rowNum - 1, c: 7 });
@@ -293,13 +293,13 @@ class TaobaoResearcher {
             }
         }
         
-        // 生成文件名
+        
         const safeKeyword = this.keyword.replace(/[^\w\u4e00-\u9fa5]/g, '_');
         const filename = `taobao_${safeKeyword}_${priceRange}_${Date.now()}.xlsx`;
         const filepath = path.join(this.outputDir, filename);
         xlsx.writeFile(wb, filepath);
         
-        // 嵌入图片
+        
         await this.embedImages(filepath, data);
         
         return filepath;
@@ -350,7 +350,7 @@ class TaobaoResearcher {
             filepath = await this.saveToExcel(products);
             console.log(`\n📁 保存: ${filepath}`);
             
-            // 显示前5个产品的预览
+            
             console.log('\n📋 产品预览:');
             products.slice(0, 5).forEach((p, idx) => {
                 console.log(`  ${idx+1}. ${p.title?.substring(0, 40)}... | ¥${p.price} | ${p.sales || '-'} | ${p.reviews || '-'}`);
@@ -377,7 +377,7 @@ class TaobaoResearcher {
     }
 }
 
-// 命令行参数解析
+
 function parseArgs() {
     const args = process.argv.slice(2);
     
@@ -393,7 +393,7 @@ function parseArgs() {
     const maxItems = parseInt(args[2]) || 10;
     const outputDir = args[3] || null;
     
-    // 解析价格区间
+    
     const priceMatch = priceRange.match(/(\d+)-(\d+)/);
     if (!priceMatch) {
         console.error('❌ 价格区间格式错误，请使用 "min-max" 格式，如 "0-169"');
@@ -409,7 +409,7 @@ function parseArgs() {
     };
 }
 
-// 主程序
+
 if (require.main === module) {
     const options = parseArgs();
     const researcher = new TaobaoResearcher(options);

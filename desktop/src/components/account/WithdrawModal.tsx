@@ -3,13 +3,13 @@ import { useState } from 'react'
 import { Button, Field, Input, Modal, Spinner } from '@/components/ui'
 import { useAccountStore } from '@/stores/accountStore'
 
-/**
- * 提现弹窗（文档 §6）。
- *
- * 按线路取其一：大陆 → 人民币（3% 手续费，收款口径「支付宝号 或 银行卡号，填一个即可」）；
- * 国际 → USDT（固定 1 USDT/次，TRC20 地址）。
- * 金额校验、手续费说明都来自后端字段（`fee_rate` / `fee_fixed`），不写死。
- */
+
+
+
+
+
+
+
 export function WithdrawModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const snapshot = useAccountStore((state) => state.snapshot)
   const withdrawRmb = useAccountStore((state) => state.withdrawRmb)
@@ -28,7 +28,7 @@ export function WithdrawModal({ open, onClose }: { open: boolean; onClose: () =>
   const commission = snapshot.commission
   const rmb = commission?.rmb
   const usdt = commission?.usdt
-  // 支付宝、银行卡两个都没存过时，才要求本次至少填一个（清单 §5.2）
+  
   const needPayee = rmb ? !(rmb.payee_ready?.zhifubao || rmb.payee_ready?.bank) : false
 
   const reset = () => {

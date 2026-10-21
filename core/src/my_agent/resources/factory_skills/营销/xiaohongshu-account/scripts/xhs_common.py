@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""小红书账号深度拆解技能 - 公共基础模块.
 
-提供：路径常量、日志、限速器、浏览器指纹、数字解析、JSON 读写。
-所有脚本统一通过 `from xhs_common import *` 复用。
-"""
+
+
+
+
 from __future__ import annotations
 
 import json
@@ -16,9 +16,9 @@ from pathlib import Path
 
 SKILL_DIR = Path(__file__).resolve().parent.parent
 RUNTIME_DIR = SKILL_DIR / ".runtime"
-STATE_FILE = RUNTIME_DIR / "storage_state.json"   # Playwright storage_state（登录态）
-COOKIE_FILE = RUNTIME_DIR / "cookies.json"        # 纯 cookie 文本，供 requests/curl_cffi 用
-PROFILE_DIR = RUNTIME_DIR / "browser_profile"     # 持久化浏览器 profile（扫码登录复用）
+STATE_FILE = RUNTIME_DIR / "storage_state.json"   
+COOKIE_FILE = RUNTIME_DIR / "cookies.json"        
+PROFILE_DIR = RUNTIME_DIR / "browser_profile"     
 CACHE_DIR = RUNTIME_DIR / "cache"
 
 BASE = "https://www.xiaohongshu.com"
@@ -43,18 +43,18 @@ def ensure_runtime() -> None:
 
 
 def reset_runtime(include_profile: bool = True, logger=None) -> dict:
-    """清除登录态与浏览器缓存，返回 `{"removed": [...], "failed": [...]}`。
 
-    本技能**不复用历史登录态**。清理策略是「**改名弃用**」而不是删除：
 
-    - `storage_state.json` / `cookies.json` 这两个登录凭证文件**真删**（各 1 个文件）；
-    - `cache/`、`browser_profile/` 整目录**改名**为 `<name>_discard_<时间戳>` ——
-      改名不是删除，在受限环境（沙箱护栏 / 浏览器进程占用目录）下也不会失败；
-      改完即达成「旧 profile 永久失效、下次启动创建全新 profile、无法复用任何登录记录」。
 
-    `_discard_*` 目录是惰性垃圾（不再被任何代码引用），磁盘紧张时可手动删除，
-    不影响本技能的任何功能。
-    """
+
+
+
+
+
+
+
+
+
     removed: list[str] = []
     failed: list[str] = []
 
@@ -63,7 +63,7 @@ def reset_runtime(include_profile: bool = True, logger=None) -> dict:
             if path.exists():
                 path.unlink()
                 removed.append(path.name)
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:  
             failed.append(f"{path.name}：{err}")
 
     targets = [CACHE_DIR] + ([PROFILE_DIR] if include_profile else [])
@@ -72,19 +72,19 @@ def reset_runtime(include_profile: bool = True, logger=None) -> dict:
             continue
         try:
             if not any(path.iterdir()):
-                # 空目录：里面没有任何登录态/缓存，无需清理 ——
-                # 也避免在受限环境（护栏按轮计数）里触发无谓的改名操作
+                
+                
                 continue
-        except Exception:  # noqa: BLE001
+        except Exception:  
             pass
         try:
             trash = path.with_name(f"{path.name}_discard_{time.strftime('%Y%m%d%H%M%S')}")
             path.rename(trash)
             removed.append(f"{path.name}/")
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:  
             failed.append(f"{path.name}/（改名失败）：{err}")
 
-    ensure_runtime()          # 目录改走了要重建，否则后续写文件失败
+    ensure_runtime()          
 
     if logger is not None:
         logger.info("已清除历史登录态与缓存：%s", "、".join(removed) or "（无残留）")
@@ -92,7 +92,7 @@ def reset_runtime(include_profile: bool = True, logger=None) -> dict:
             logger.warning("清理失败：%s", item)
     return {"removed": removed, "failed": failed}
 
-    ensure_runtime()          # 目录删掉了要重建，否则后续写文件失败
+    ensure_runtime()          
 
     if logger is not None:
         logger.info("已清除历史登录态与缓存：%s", "、".join(removed) or "（无残留）")
@@ -117,7 +117,7 @@ log = get_logger()
 
 
 class RateLimiter:
-    """按区间随机间隔限速，模拟真人浏览节奏，降低风控概率。"""
+
 
     def __init__(self, min_sec: float = 1.2, max_sec: float = 3.0):
         self.min_sec = min_sec
@@ -132,7 +132,7 @@ class RateLimiter:
         self._last = time.time()
 
     def rest(self, min_sec: float = 8.0, max_sec: float = 18.0) -> None:
-        """长休息，用于翻页之间的降温。"""
+
         time.sleep(random.uniform(min_sec, max_sec))
 
 
@@ -167,12 +167,12 @@ def random_headers(cookie: str = "") -> dict:
 
 
 def human_num(value) -> int:
-    """把 '1.2万' / '3.5k' / '1,234' / 1234 / None 统一转成 int。"""
+
     if value is None:
         return 0
     if isinstance(value, (int, float)):
         return int(value)
-    # 小红书的下发格式带「+」后缀：1万+ / 10+ / 10万+。不去掉会被解析成 1 / 10
+    
     text = str(value).strip().replace(",", "").replace(" ", "").rstrip("+")
     if not text:
         return 0
@@ -220,7 +220,7 @@ def strip_html(text: str) -> str:
 
 
 def detect_lang(text: str) -> str:
-    """粗略判断正文语种，避免英文账号被按中文规则拆解。"""
+
     if not text:
         return "unknown"
     chinese = len(re.findall(r"[\u4e00-\u9fff]", text))

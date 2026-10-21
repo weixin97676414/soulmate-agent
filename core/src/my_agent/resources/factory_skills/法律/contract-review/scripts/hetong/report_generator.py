@@ -1,10 +1,10 @@
-"""
-报告生成脚本
-Report Generator Script
 
-功能：生成结构化合同审查报告
-支持多种输出格式：JSON、Markdown、Text、HTML
-"""
+
+
+
+
+
+
 
 import json
 import datetime
@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 class ReportGenerator:
-    """报告生成器"""
+
     
     def __init__(self):
         self.template_dir = Path(__file__).parent.parent / "templates"
@@ -24,17 +24,17 @@ class ReportGenerator:
     def generate(self, review_result: Dict, 
                 output_path: Optional[str] = None,
                 format: str = "markdown") -> str:
-        """
-        生成审查报告
-        
-        Args:
-            review_result: 审查结果
-            output_path: 输出文件路径
-            format: 输出格式 (json/markdown/text/html)
-            
-        Returns:
-            报告文本
-        """
+
+
+
+
+
+
+
+
+
+
+
         if format == "json":
             return self._generate_json(review_result)
         elif format == "markdown":
@@ -45,14 +45,14 @@ class ReportGenerator:
             return self._generate_text(review_result)
     
     def _generate_json(self, result: Dict) -> str:
-        """生成JSON格式报告"""
+
         return json.dumps(result, ensure_ascii=False, indent=2)
     
     def _generate_markdown(self, result: Dict) -> str:
-        """生成Markdown格式报告"""
+
         lines = []
         
-        # 标题
+        
         lines.append("# 📋 合同智能审查报告")
         lines.append("")
         lines.append(f"**生成时间**: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -61,7 +61,7 @@ class ReportGenerator:
         lines.append("---")
         lines.append("")
         
-        # 综合评级
+        
         rating = result.get("overall_rating", "未知")
         rating_emoji = {
             "高危": "🔴",
@@ -72,7 +72,7 @@ class ReportGenerator:
         lines.append(f"## {rating_emoji} 综合风险评级: {rating}")
         lines.append("")
         
-        # 风险摘要
+        
         risks_summary = result.get("risks_summary", {})
         lines.append("### 📊 风险统计")
         lines.append("")
@@ -83,7 +83,7 @@ class ReportGenerator:
         lines.append(f"| 🟢 低风险 | {risks_summary.get('low_risk_count', 0)} |")
         lines.append("")
         
-        # 合规摘要
+        
         compliance_summary = result.get("compliance_summary", {})
         lines.append("### ⚖️ 合规检查摘要")
         lines.append("")
@@ -93,7 +93,7 @@ class ReportGenerator:
         lines.append(f"- 格式条款问题: **{compliance_summary.get('format_clause_issues', 0)}项**")
         lines.append("")
         
-        # 风险详情
+        
         phases = result.get("phases", {})
         risk_data = phases.get("risk_detection", {})
         high_risks = risk_data.get("high_risk", [])
@@ -138,7 +138,7 @@ class ReportGenerator:
                 lines.append(f"**修改建议**: {risk.get('suggestion', '无')}")
                 lines.append("")
         
-        # 合规问题详情
+        
         compliance_data = phases.get("compliance_check", {})
         compliance_issues = compliance_data.get("mandatory_violations", []) + \
                            compliance_data.get("format_clause_issues", [])
@@ -157,7 +157,7 @@ class ReportGenerator:
                 lines.append(f"**建议**: {issue.get('suggestion', '无')}")
                 lines.append("")
         
-        # 条款亮点
+        
         lines.append("")
         lines.append("## ✅ 条款亮点")
         lines.append("")
@@ -166,7 +166,7 @@ class ReportGenerator:
         clauses_data = phases.get("clause_extraction", {})
         clauses = clauses_data.get("clauses", [])
         
-        # 简单列出提取的条款
+        
         for clause in clauses[:5]:
             lines.append(f"- {clause.get('clause_number', '')} {clause.get('clause_title', clause.get('clause_type', ''))}")
         
@@ -176,7 +176,7 @@ class ReportGenerator:
         lines.append("## 📌 总结与建议")
         lines.append("")
         
-        # 生成总结
+        
         if result.get("overall_rating") == "高危":
             lines.append("⚠️ **本份合同存在较高法律风险，建议在签署前与对方协商修改以下条款：**")
             for risk in high_risks[:3]:
@@ -195,7 +195,7 @@ class ReportGenerator:
         return "\n".join(lines)
     
     def _generate_text(self, result: Dict) -> str:
-        """生成纯文本格式报告"""
+
         lines = []
         
         lines.append("=" * 60)
@@ -208,7 +208,7 @@ class ReportGenerator:
         lines.append("")
         lines.append("-" * 60)
         
-        # 风险摘要
+        
         risks_summary = result.get("risks_summary", {})
         lines.append("")
         lines.append("【风险统计】")
@@ -216,7 +216,7 @@ class ReportGenerator:
         lines.append(f"  中风险: {risks_summary.get('medium_risk_count', 0)} 项")
         lines.append(f"  低风险: {risks_summary.get('low_risk_count', 0)} 项")
         
-        # 风险详情
+        
         phases = result.get("phases", {})
         risk_data = phases.get("risk_detection", {})
         high_risks = risk_data.get("high_risk", [])
@@ -239,10 +239,10 @@ class ReportGenerator:
         return "\n".join(lines)
     
     def _generate_html(self, result: Dict) -> str:
-        """生成HTML格式报告"""
+
         markdown = self._generate_markdown(result)
         
-        # 简单的Markdown转HTML
+        
         html = markdown.replace("# ", "<h1>").replace("## ", "<h2>").replace("### ", "<h3>")
         html = html.replace("\n\n", "</p><p>")
         html = html.replace("\n", "<br>")
@@ -274,19 +274,19 @@ class ReportGenerator:
     
     def export_to_file(self, content: str, output_path: str, 
                       format: str = "markdown") -> bool:
-        """
-        导出报告到文件
-        
-        Args:
-            content: 报告内容
-            output_path: 输出文件路径
-            format: 文件格式
-            
-        Returns:
-            是否成功
-        """
+
+
+
+
+
+
+
+
+
+
+
         try:
-            # 根据格式确定文件扩展名
+            
             extension_map = {
                 "json": ".json",
                 "markdown": ".md",
@@ -308,7 +308,7 @@ class ReportGenerator:
 
 
 def main():
-    """测试函数"""
+
     from scripts.clause_extraction import ClauseExtractor
     from scripts.risk_detection import RiskDetector
     from scripts.compliance_check import ComplianceChecker
@@ -352,7 +352,7 @@ def main():
         "compliance_summary": {}
     }
     
-    # 计算摘要
+    
     risks_summary = {
         "high_risk_count": len(review_result["phases"]["risk_detection"].get("high_risk", [])),
         "medium_risk_count": len(review_result["phases"]["risk_detection"].get("medium_risk", [])),
@@ -369,7 +369,7 @@ def main():
     
     generator = ReportGenerator()
     
-    # 生成Markdown报告
+    
     print("=== Markdown格式报告预览 ===")
     print(generator.generate(review_result, format="markdown")[:2000])
     print("...")

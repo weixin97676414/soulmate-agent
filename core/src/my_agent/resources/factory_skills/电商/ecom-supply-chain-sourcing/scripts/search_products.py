@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""
-1688 商品搜索 — search_products.py
-用法: python3 search_products.py <关键词> [--page N] [--min-price X] [--max-price Y] [--factory-only]
 
-依赖：python3, requests（标准库 + pip install requests）
-网络：仅访问 *.1688.com 域名
-凭证：无需，可选配置 ALI_COOKIE 环境变量增强访问能力
-"""
+
+
+
+
+
+
+
 
 import sys
 import json
@@ -16,7 +16,7 @@ import urllib.parse
 import requests
 from typing import Optional
 
-# 可选 Cookie（从环境变量读取，非必需）
+
 _OPTIONAL_COOKIE = os.environ.get("ALI_COOKIE", "")
 
 HEADERS = {
@@ -31,9 +31,9 @@ if _OPTIONAL_COOKIE:
 def search_products(keyword: str, page: int = 1, min_price: Optional[float] = None,
                      max_price: Optional[float] = None, factory_only: bool = False,
                      page_size: int = 20) -> dict:
-    """
-    搜索 1688 商品，返回结构化 JSON 数据。
-    """
+
+
+
     params = {
         "keywords": keyword,
         "beginPage": page,
@@ -55,14 +55,14 @@ def search_products(keyword: str, page: int = 1, min_price: Optional[float] = No
 
     text = resp.text
 
-    # 策略1: 直接 JSON
+    
     try:
         raw = resp.json()
         return _parse_json_response(raw, keyword)
     except Exception:
         pass
 
-    # 策略2: HTML 内嵌 JSON
+    
     try:
         raw = _extract_json_from_html(text)
         return _parse_json_response(raw, keyword)
@@ -73,8 +73,8 @@ def search_products(keyword: str, page: int = 1, min_price: Optional[float] = No
 
 
 def _extract_json_from_html(html: str) -> dict:
-    """从 HTML 中提取 embeded JSON 数据"""
-    # 尝试找 <script>window.__INIT_STATE__ = {...}</script>
+
+    
     patterns = [
         r'window\.__INIT_STATE__\s*=\s*(\{.*?\});',
         r'"moduleList"\s*:\s*(\[.*?\])',
@@ -91,9 +91,9 @@ def _extract_json_from_html(html: str) -> dict:
 
 
 def _parse_json_response(data: dict, keyword: str) -> dict:
-    """解析 1688 JSON 响应，提取商品列表"""
+
     items = []
-    # 遍历多种可能的数据路径
+    
     content = data
     for path in ["data.moduleList", "data.resultList", "resultList", "data.modules"]:
         try:
@@ -125,7 +125,7 @@ def _parse_json_response(data: dict, keyword: str) -> dict:
             "图片链接": item.get("imageUrl", "") or item.get("pic_url", "") or "",
         })
 
-    # 汇总统计
+    
     prices = [float(it["price"]) for it in items if it["price"]]
     stats = {
         "搜索关键词": keyword,
@@ -138,12 +138,12 @@ def _parse_json_response(data: dict, keyword: str) -> dict:
 
 
 def _clean_html(text: str) -> str:
-    """去除 HTML 标签"""
+
     return re.sub(r"<[^>]+>", "", text).strip()
 
 
 def _clean_price(text) -> str:
-    """提取价格数字"""
+
     if not text:
         return ""
     text = str(text)
@@ -152,14 +152,14 @@ def _clean_price(text) -> str:
 
 
 def _parse_address(item: dict) -> str:
-    """解析发货地"""
+
     loc = item.get("location", {}) or {}
     if isinstance(loc, dict):
         return f"{loc.get('province','')}{loc.get('city','')}{loc.get('area','')}".strip()
     return str(item.get("address", item.get("province", "")))
 
 
-# --- CLI ---
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     kw = ""

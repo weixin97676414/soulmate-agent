@@ -1,11 +1,11 @@
-"""助手集市：索引解析与外部地址拉取。
 
-集市的数据来自**别人维护的外部地址**，所以要盯住三件事：
 
-1. 一条坏数据不能废掉整个集市（逐条跳过）；
-2. 外部地址要过和模型端点同一套校验（否则它是一个现成的 SSRF 入口）；
-3. 响应体必须有体积上限（否则被指向的地址可以一直吐数据）。
-"""
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -25,11 +25,11 @@ from my_agent.errors import ConfigError
 
 
 def patch_transport(monkeypatch, handler) -> None:
-    """把 httpx.AsyncClient 换成挂了 MockTransport 的版本。
 
-    这样被测代码仍然走真实的 httpx 调用链（超时、header 解析、aiter_bytes
-    都是真的），只是不发网络请求。
-    """
+
+
+
+
     real = httpx.AsyncClient
 
     def factory(*args, **kwargs):
@@ -43,9 +43,9 @@ def ok(payload) -> httpx.Response:
     return httpx.Response(200, json=payload)
 
 
-# --------------------------------------------------------------------------- #
-# 索引解析
-# --------------------------------------------------------------------------- #
+
+
+
 class TestParseIndex:
     def test_parses_valid_entries(self):
         entries = parse_index(
@@ -76,7 +76,7 @@ class TestParseIndex:
             parse_index({"version": 1})
 
     def test_bad_entry_is_skipped_not_fatal(self):
-        """一条坏数据不能废掉整个集市 —— 集市是别人维护的，写错一个 URL 很正常。"""
+
         entries = parse_index(
             {
                 "assistants": [
@@ -91,7 +91,7 @@ class TestParseIndex:
         assert [entry.id for entry in entries] == ["good"]
 
     def test_entry_with_unsafe_url_is_skipped(self):
-        """指向云元数据服务的条目直接丢掉，而不是留给后面去拦。"""
+
         entries = parse_index(
             {
                 "assistants": [
@@ -104,7 +104,7 @@ class TestParseIndex:
         assert [entry.id for entry in entries] == ["ok"]
 
     def test_duplicate_ids_are_deduped(self):
-        """同 id 只留第一个：安装时重名会自动改 id，留着两条只会让用户困惑。"""
+
         entries = parse_index(
             {
                 "assistants": [
@@ -118,9 +118,9 @@ class TestParseIndex:
         assert entries[0].name == "第一次"
 
 
-# --------------------------------------------------------------------------- #
-# 拉取
-# --------------------------------------------------------------------------- #
+
+
+
 class TestFetch:
     @pytest.mark.asyncio
     async def test_fetch_index_happy_path(self, monkeypatch):
@@ -154,10 +154,10 @@ class TestFetch:
 
     @pytest.mark.asyncio
     async def test_html_page_gives_actionable_error(self, monkeypatch):
-        """用户很容易把"集市网页地址"当成"索引地址"填进来。
 
-        这时报"不是合法 JSON"并提示他填的是什么，比抛一个 JSONDecodeError 有用。
-        """
+
+
+
         patch_transport(
             monkeypatch,
             lambda request: httpx.Response(200, text="<html><body>hi</body></html>"),
@@ -168,12 +168,12 @@ class TestFetch:
 
     @pytest.mark.asyncio
     async def test_oversized_body_is_rejected(self, monkeypatch):
-        """体积上限：被指向的地址可以一直吐数据，不设上限就是内存放大器。"""
+
         huge = json.dumps({"padding": "x" * (MAX_BYTES + 1024)}).encode("utf-8")
 
         def handler(request: httpx.Request) -> httpx.Response:
-            # 刻意**不**提供 content-length，逼代码走"边读边计数"那条路径 ——
-            # 只信那个头的话，它撒个谎或干脆不给就绕过去了
+            
+            
             return httpx.Response(200, content=huge)
 
         patch_transport(monkeypatch, handler)
@@ -204,7 +204,7 @@ class TestFetchPack:
 
     @pytest.mark.asyncio
     async def test_returns_pack_unchanged(self, monkeypatch):
-        """包内容原样返回 —— 校验交给 _install_profiles，与文件导入共用同一条路。"""
+
         pack = {"version": 1, "assistants": [{"id": "a", "name": "A"}]}
         patch_transport(monkeypatch, lambda request: ok(pack))
 

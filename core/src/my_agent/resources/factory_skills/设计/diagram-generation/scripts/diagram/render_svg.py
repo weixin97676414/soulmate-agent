@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
-"""graph.json -> SVG（自研布局 + 自渲染，零第三方依赖）。
 
-用于 PPT / 邮件 / 文档等只读展示场景。需要可编辑请用 gen_drawio.py。
-用法: python render_svg.py graph.json -o out.svg
-"""
+
+
+
+
 import argparse
 import os
 import sys
 from xml.sax.saxutils import escape
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from lib_graph import load, layout, style_of, FONT, TEXT_COLOR  # noqa: E402
+from lib_graph import load, layout, style_of, FONT, TEXT_COLOR  
 
 LINE = "#4C4C4C"
 
@@ -47,7 +47,7 @@ def render(g):
                  % (24, TEXT_COLOR, esc_xml(meta["title"])))
     o.append('  <g transform="translate(0,%d)">' % title_h)
 
-    # 分组
+    
     for gid, box in groups.items():
         o.append('  <rect x="%d" y="%d" width="%d" height="%d" rx="8" '
                  'fill="#FFFFFF" stroke="#999999" stroke-width="1" '
@@ -57,7 +57,7 @@ def render(g):
                  'fill="#666666">%s</text>'
                  % (box["x"] + 12, box["y"] + 18, esc_xml(box["label"])))
 
-    # 边
+    
     for e in edges:
         pts = " ".join("%.1f,%.1f" % p for p in e["points"])
         dash = ' stroke-dasharray="8 4"' if e["dashed"] else ""
@@ -76,7 +76,7 @@ def render(g):
                      'text-anchor="middle">%s</text>'
                      % (e["lx"], e["ly"] + 4, TEXT_COLOR, esc_xml(e["label"])))
 
-    # 节点
+    
     for nid, d in nodes.items():
         src = nm.get(nid) or {}
         shape, fill, stroke, _, _, radius = d.get("shape"), d["fill"], d["stroke"], \

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""
-Academic Research Hub - Multi-Source Academic Paper Search
 
-Search and retrieve academic papers from arXiv, PubMed, Semantic Scholar, and more.
-Download PDFs, extract citations, and generate bibliographies.
 
-Requires: pip install arxiv scholarly pubmed-parser semanticscholar requests
-"""
+
+
+
+
+
+
 
 import argparse
 import json
@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from enum import Enum
 
-# Import handlers
+
 try:
     import arxiv
 except ImportError:
@@ -37,14 +37,14 @@ import requests
 
 
 class Source(Enum):
-    """Available research sources"""
+
     ARXIV = "arxiv"
     PUBMED = "pubmed"
     SEMANTIC = "semantic"
 
 
 class OutputFormat(Enum):
-    """Available output formats"""
+
     TEXT = "text"
     JSON = "json"
     BIBTEX = "bibtex"
@@ -53,7 +53,7 @@ class OutputFormat(Enum):
 
 
 def check_dependencies(source: Source):
-    """Check if required dependencies are installed"""
+
     if source == Source.ARXIV and arxiv is None:
         print("Error: arxiv library not installed", file=sys.stderr)
         print("Install with: pip install arxiv", file=sys.stderr)
@@ -70,9 +70,9 @@ def check_dependencies(source: Source):
         sys.exit(1)
 
 
-# ============================================================================
-# arXiv Search Functions
-# ============================================================================
+
+
+
 
 def search_arxiv(
     query: str,
@@ -84,9 +84,9 @@ def search_arxiv(
     end_date: Optional[str] = None,
     sort_by: str = "relevance"
 ) -> List[Dict[str, Any]]:
-    """Search arXiv repository"""
+
     
-    # Build query
+    
     search_query = query
     
     if category:
@@ -95,7 +95,7 @@ def search_arxiv(
     if author:
         search_query = f"{search_query} AND au:{author}"
     
-    # Determine sort order
+    
     sort_order = arxiv.SortCriterion.Relevance
     if sort_by == "date":
         sort_order = arxiv.SortCriterion.SubmittedDate
@@ -109,7 +109,7 @@ def search_arxiv(
         
         results = []
         for paper in search.results():
-            # Filter by date if specified
+            
             pub_date = paper.published.date()
             
             if year and pub_date.year != year:
@@ -148,20 +148,20 @@ def search_arxiv(
 
 
 def download_arxiv_papers(papers: List[Dict[str, Any]], output_dir: str):
-    """Download arXiv papers as PDFs"""
+
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     
     downloaded = 0
     for paper in papers:
         arxiv_id = paper["arxiv_id"]
-        title = paper["title"][:100]  # Truncate long titles
-        # Clean filename
+        title = paper["title"][:100]  
+        
         filename = "".join(c if c.isalnum() or c in " -_" else "_" for c in title)
         filepath = output_path / f"{arxiv_id}_{filename}.pdf"
         
         try:
-            # Download PDF
+            
             pdf_url = paper["pdf_url"]
             response = requests.get(pdf_url, timeout=30)
             response.raise_for_status()
@@ -178,9 +178,9 @@ def download_arxiv_papers(papers: List[Dict[str, Any]], output_dir: str):
     print(f"\nDownloaded {downloaded}/{len(papers)} papers to {output_dir}", file=sys.stderr)
 
 
-# ============================================================================
-# PubMed Search Functions
-# ============================================================================
+
+
+
 
 def search_pubmed(
     query: str,
@@ -189,14 +189,14 @@ def search_pubmed(
     end_date: Optional[str] = None,
     publication_type: Optional[str] = None,
     author: Optional[str] = None,
-    email: str = "user@example.com"  # Required by NCBI
+    email: str = "user@example.com"  
 ) -> List[Dict[str, Any]]:
-    """Search PubMed database"""
+
     
-    # Set email for Entrez (required by NCBI)
+    
     Entrez.email = email
     
-    # Build query
+    
     search_query = query
     
     if publication_type:
@@ -205,7 +205,7 @@ def search_pubmed(
     if author:
         search_query = f"{search_query} AND {author}[Author]"
     
-    # Add date range
+    
     date_filter = ""
     if start_date and end_date:
         date_filter = f"{start_date}:{end_date}[Date - Publication]"
@@ -218,7 +218,7 @@ def search_pubmed(
         search_query = f"{search_query} AND {date_filter}"
     
     try:
-        # Search for PMIDs
+        
         handle = Entrez.esearch(db="pubmed", term=search_query, retmax=max_results)
         record = Entrez.read(handle)
         handle.close()
@@ -228,34 +228,34 @@ def search_pubmed(
         if not pmids:
             return []
         
-        # Fetch details
+        
         handle = Entrez.efetch(db="pubmed", id=pmids, rettype="medline", retmode="text")
         records = handle.read()
         handle.close()
         
-        # Parse results (simplified - would need proper MEDLINE parser)
+        
         results = []
         for pmid in pmids:
-            # Fetch individual record in XML for easier parsing
+            
             handle = Entrez.efetch(db="pubmed", id=pmid, rettype="abstract", retmode="xml")
             record = Entrez.read(handle)
             handle.close()
             
             article = record["PubmedArticle"][0]["MedlineCitation"]["Article"]
             
-            # Extract authors
+            
             authors = []
             if "AuthorList" in article:
                 for author in article["AuthorList"]:
                     if "LastName" in author and "Initials" in author:
                         authors.append(f"{author['LastName']} {author['Initials']}")
             
-            # Extract abstract
+            
             abstract = ""
             if "Abstract" in article and "AbstractText" in article["Abstract"]:
                 abstract = " ".join(str(text) for text in article["Abstract"]["AbstractText"])
             
-            # Extract publication date
+            
             pub_date = ""
             if "Journal" in article and "JournalIssue" in article["Journal"]:
                 issue = article["Journal"]["JournalIssue"]
@@ -266,7 +266,7 @@ def search_pubmed(
                     day = date.get("Day", "")
                     pub_date = f"{year}-{month}-{day}".strip("-")
             
-            # Extract DOI
+            
             doi = ""
             if "ELocationID" in article:
                 for eid in article["ELocationID"]:
@@ -291,9 +291,9 @@ def search_pubmed(
         return []
 
 
-# ============================================================================
-# Semantic Scholar Search Functions
-# ============================================================================
+
+
+
 
 def search_semantic(
     query: str,
@@ -303,29 +303,29 @@ def search_semantic(
     author: Optional[str] = None,
     sort_by: str = "relevance"
 ) -> List[Dict[str, Any]]:
-    """Search Semantic Scholar"""
+
     
     try:
         sch = SemanticScholar()
         
-        # Search papers
+        
         results = sch.search_paper(query, limit=max_results)
         
         papers = []
         for paper in results:
-            # Get detailed info
+            
             paper_id = paper.paperId
             details = sch.get_paper(paper_id)
             
-            # Filter by year
+            
             if year and details.year != year:
                 continue
             
-            # Filter by citations
+            
             if min_citations and (details.citationCount or 0) < min_citations:
                 continue
             
-            # Filter by author
+            
             if author and details.authors:
                 author_match = any(
                     author.lower() in a.name.lower()
@@ -334,7 +334,7 @@ def search_semantic(
                 if not author_match:
                     continue
             
-            # Extract data
+            
             authors = [a.name for a in details.authors] if details.authors else []
             
             papers.append({
@@ -352,7 +352,7 @@ def search_semantic(
                 "pdf_url": details.openAccessPdf.get("url") if details.openAccessPdf else None
             })
         
-        # Sort results
+        
         if sort_by == "citations":
             papers.sort(key=lambda p: p["citations"], reverse=True)
         elif sort_by == "date":
@@ -365,12 +365,12 @@ def search_semantic(
         return []
 
 
-# ============================================================================
-# Output Formatting Functions
-# ============================================================================
+
+
+
 
 def format_text(papers: List[Dict[str, Any]], source: Source) -> str:
-    """Format results as plain text"""
+
     if not papers:
         return "No results found."
     
@@ -410,7 +410,7 @@ def format_text(papers: List[Dict[str, Any]], source: Source) -> str:
                 abstract += "..."
             lines.append(f"   Abstract: {abstract}")
         
-        # Add URLs
+        
         if "pdf_url" in paper and paper["pdf_url"]:
             lines.append(f"   PDF: {paper['pdf_url']}")
         if "url" in paper:
@@ -420,22 +420,22 @@ def format_text(papers: List[Dict[str, Any]], source: Source) -> str:
 
 
 def format_json_output(papers: List[Dict[str, Any]]) -> str:
-    """Format results as JSON"""
+
     return json.dumps(papers, indent=2, ensure_ascii=False)
 
 
 def format_bibtex(papers: List[Dict[str, Any]], source: Source) -> str:
-    """Format results as BibTeX"""
+
     entries = []
     
     for paper in papers:
-        # Generate citation key
+        
         first_author = paper.get("authors", ["Unknown"])[0].split()[-1].lower()
         year = paper.get("published", "0000")[:4]
         title_word = paper.get("title", "").split()[0].lower()
         key = f"{first_author}{year}{title_word}"
         
-        # Build entry
+        
         entry = f"@article{{{key},\n"
         entry += f"  title={{{paper.get('title', 'No title')}}},\n"
         
@@ -469,7 +469,7 @@ def format_bibtex(papers: List[Dict[str, Any]], source: Source) -> str:
 
 
 def format_ris(papers: List[Dict[str, Any]], source: Source) -> str:
-    """Format results as RIS"""
+
     entries = []
     
     for paper in papers:
@@ -510,7 +510,7 @@ def format_ris(papers: List[Dict[str, Any]], source: Source) -> str:
 
 
 def format_markdown(papers: List[Dict[str, Any]], source: Source) -> str:
-    """Format results as Markdown"""
+
     if not papers:
         return "# Search Results\n\nNo results found."
     
@@ -555,7 +555,7 @@ def format_markdown(papers: List[Dict[str, Any]], source: Source) -> str:
 
 
 def format_output(papers: List[Dict[str, Any]], format_type: OutputFormat, source: Source) -> str:
-    """Format results according to specified format"""
+
     if format_type == OutputFormat.JSON:
         return format_json_output(papers)
     elif format_type == OutputFormat.BIBTEX:
@@ -564,13 +564,13 @@ def format_output(papers: List[Dict[str, Any]], format_type: OutputFormat, sourc
         return format_ris(papers, source)
     elif format_type == OutputFormat.MARKDOWN:
         return format_markdown(papers, source)
-    else:  # TEXT
+    else:  
         return format_text(papers, source)
 
 
-# ============================================================================
-# Main Function
-# ============================================================================
+
+
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -595,21 +595,21 @@ Examples:
         """
     )
     
-    # Source selection
+    
     parser.add_argument(
         "source",
         choices=["arxiv", "pubmed", "semantic"],
         help="Research source to search"
     )
     
-    # Required arguments
+    
     parser.add_argument(
         "query",
         type=str,
         help="Search query"
     )
     
-    # General options
+    
     parser.add_argument(
         "-n", "--max-results",
         type=int,
@@ -639,7 +639,7 @@ Examples:
         help="Sort results by (default: relevance)"
     )
     
-    # Filtering options
+    
     parser.add_argument(
         "--year",
         type=int,
@@ -664,28 +664,28 @@ Examples:
         help="Filter by author name"
     )
     
-    # arXiv-specific options
+    
     parser.add_argument(
         "--category",
         type=str,
         help="arXiv category (e.g., cs.AI, cs.LG)"
     )
     
-    # PubMed-specific options
+    
     parser.add_argument(
         "--publication-type",
         type=str,
         help="PubMed publication type filter"
     )
     
-    # Semantic Scholar-specific options
+    
     parser.add_argument(
         "--min-citations",
         type=int,
         help="Minimum citation count"
     )
     
-    # Download options
+    
     parser.add_argument(
         "--download",
         action="store_true",
@@ -701,13 +701,13 @@ Examples:
     
     args = parser.parse_args()
     
-    # Determine source
+    
     source = Source(args.source)
     
-    # Check dependencies
+    
     check_dependencies(source)
     
-    # Perform search
+    
     papers = []
     
     if source == Source.ARXIV:
@@ -745,11 +745,11 @@ Examples:
             sort_by=args.sort_by
         )
     
-    # Format output
+    
     output_format = OutputFormat(args.format)
     formatted_output = format_output(papers, output_format, source)
     
-    # Save or print results
+    
     if args.output:
         try:
             with open(args.output, 'w', encoding='utf-8') as f:

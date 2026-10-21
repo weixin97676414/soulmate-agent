@@ -1,27 +1,27 @@
-/**
- * 一键出安装包（NSIS）。
- *
- * 只出 NSIS 安装包，**不再出 portable 免安装版**（产品决定）。
- * 目标由 package.json 的 build.win.target 决定，这里不再重复一份。
- *
- * 单独抽脚本是为了处理 electron-builder 的**下载问题**：
- * 它出 Windows 包时一定要从 GitHub releases 拉 winCodeSign / nsis 工具包
- * （源码里 `getBinariesMirrorUrl` 只认这一个镜像环境变量），
- * 国内直连经常卡到 600s 超时，而报错长得像构建失败。
- *
- * 两件事必须由本脚本补齐，否则用户会反复撞墙：
- *
- * 1. **代理**：electron-builder 用 `got` 下载，而 `got` 只认 `HTTPS_PROXY`
- *    环境变量，**不读 Windows 注册表里的系统代理**。翻墙软件通常只改注册表，
- *    于是"我明明开了代理，它还是连不上"。这里自动探测并补上；
- * 2. **`NO_PROXY`**：既然设了代理，就必须显式豁免本机地址，
- *    否则对 127.0.0.1 的请求也会被转发出去（这个坑在本项目里踩过好几次）。
- *
- * 用法：
- *   node scripts/dist.mjs                        # 有代理走官方源，没代理走镜像
- *   $env:HTTPS_PROXY="http://127.0.0.1:7897"; node scripts/dist.mjs
- *   $env:ELECTRON_BUILDER_BINARIES_MIRROR=""; node scripts/dist.mjs   # 强制用官方源
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -31,12 +31,12 @@ import { fileURLToPath } from 'node:url'
 const scriptDir = path.dirname(fileURLToPath(import.meta.url))
 const desktopDir = path.resolve(scriptDir, '..')
 
-/**
- * 读取 Windows 注册表里的系统代理。
- *
- * 翻墙软件默认只写注册表、不导出环境变量，而 electron-builder 的下载器
- * 完全看不见注册表——这就是"开了代理仍然超时"的根因。
- */
+
+
+
+
+
+
 function detectSystemProxy() {
   if (process.platform !== 'win32') return null
   const key = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'
@@ -48,7 +48,7 @@ function detectSystemProxy() {
     const matched = /ProxyServer\s+REG_SZ\s+(\S+)/.exec(server.stdout ?? '')
     const value = matched?.[1]?.trim()
     if (!value) return null
-    // 注册表里可能写成 "127.0.0.1:7897"，也可能带协议前缀
+    
     return value.includes('://') ? value : `http://${value}`
   } catch {
     return null
@@ -72,8 +72,8 @@ if (proxy) {
   console.log(`[dist] 检测到代理 ${proxy}（已为本机地址设置 NO_PROXY）`)
 }
 
-// 镜像策略：**有代理就优先官方源**。
-// 镜像可能落后于上游版本（拿到 404 或旧包），网络既然通了就没必要冒这个险。
+
+
 const explicit = process.env.ELECTRON_BUILDER_BINARIES_MIRROR
 if (explicit) {
   env.ELECTRON_BUILDER_BINARIES_MIRROR = explicit
@@ -106,19 +106,104 @@ const run = (label, command, args) => {
   }
 }
 
-// 核心产物已存在时跳过重建：PyInstaller 每次会先删掉 500+ 个旧文件，
-// 在有批量删除保护的机器上会被拦下，但源码没改时其实完全没必要重建。
-const coreExe = path.resolve(desktopDir, '..', 'core', 'dist', 'agent-core', 'agent-core.exe')
-if (fs.existsSync(coreExe) && !process.env.FORCE_CORE_BUILD) {
-  console.log('[dist] 检测到已有的核心产物，跳过重建（需要重建请设置 FORCE_CORE_BUILD=1）')
-} else {
-  run('打包 Python 核心', 'npm', ['run', 'build:core'])
+
+
+
+
+
+
+
+
+function newestMtimeMs(target, skipDirNames) {
+  if (!fs.existsSync(target)) return 0
+  const stat = fs.statSync(target)
+  if (!stat.isDirectory()) return stat.mtimeMs
+
+  let newest = 0
+  const walk = (current) => {
+    let entries
+    try {
+      entries = fs.readdirSync(current, { withFileTypes: true })
+    } catch {
+      return 
+    }
+    for (const entry of entries) {
+      const full = path.join(current, entry.name)
+      if (entry.isDirectory()) {
+        if (skipDirNames.has(entry.name) || entry.name.endsWith('.egg-info')) continue
+        walk(full)
+      } else if (entry.isFile()) {
+        try {
+          const { mtimeMs } = fs.statSync(full)
+          if (mtimeMs > newest) newest = mtimeMs
+        } catch {
+          
+        }
+      }
+    }
+  }
+  walk(target)
+  return newest
 }
 
-// electron-builder 开始前会先清空 release/win-unpacked（600+ 个文件）。
-// 开了批量删除保护时这一步会被拦下，报错长得像打包失败。**改名不算删除**，
-// 所以先把旧目录挪开——与 build-core.mjs 用的是同一套办法。
-const releaseDir = path.join(desktopDir, 'release')
+
+
+
+
+
+
+
+
+
+const coreDir = path.resolve(desktopDir, '..', 'core')
+const coreExe = path.join(coreDir, 'dist', 'agent-core', 'agent-core.exe')
+const CORE_SOURCES = [
+  path.join(coreDir, 'src'),
+  path.join(coreDir, 'pyproject.toml'),
+  
+  path.join(coreDir, 'build', 'agent-core.spec'),
+]
+const CORE_SKIP_DIRS = new Set([
+  'dist',
+  'build',
+  '__pycache__',
+  '.pytest_cache',
+  '.ruff_cache',
+  '.mypy_cache',
+  '.venv',
+  'node_modules',
+])
+
+const newestSourceMs = Math.max(...CORE_SOURCES.map((p) => newestMtimeMs(p, CORE_SKIP_DIRS)))
+const coreExeMs = fs.existsSync(coreExe) ? fs.statSync(coreExe).mtimeMs : 0
+const coreUpToDate = coreExeMs > 0 && newestSourceMs <= coreExeMs
+
+const stamp = (ms) => (ms > 0 ? new Date(ms).toLocaleString() : '（无）')
+if (process.env.FORCE_CORE_BUILD || !coreUpToDate) {
+  console.log(
+    process.env.FORCE_CORE_BUILD
+      ? '[dist] FORCE_CORE_BUILD=1，强制重建核心'
+      : `[dist] 核心源码比产物新（源码 ${stamp(newestSourceMs)} > 产物 ${stamp(coreExeMs)}），重建核心`,
+  )
+  run('打包 Python 核心', 'npm', ['run', 'build:core'])
+} else {
+  console.log(
+    `[dist] 核心产物不比源码旧，跳过重建（产物 ${stamp(coreExeMs)}）。` +
+      ' 需要强制重建请设置 FORCE_CORE_BUILD=1',
+  )
+}
+
+
+
+
+
+
+
+
+
+const releaseDir = process.env.DIST_OUTPUT
+  ? path.resolve(process.env.DIST_OUTPUT)
+  : path.join(desktopDir, 'release')
 const stashed = []
 if (fs.existsSync(releaseDir)) {
   for (const name of fs.readdirSync(releaseDir)) {
@@ -138,11 +223,20 @@ if (fs.existsSync(releaseDir)) {
 }
 
 run('构建前端与主进程', 'npm', ['run', 'build'])
-run('生成安装包', 'npx', ['--no-install', 'electron-builder', '--win'])
+run('生成安装包', 'npx', [
+  '--no-install',
+  'electron-builder',
+  '--win',
+  
+  
+  
+  
+  `--config.directories.output=${path.relative(desktopDir, releaseDir) || '.'}`,
+])
 
-// 收尾：清掉挪开的旧产物。
-// 走 PowerShell 而不是 fs.rmSync —— 在开了批量删除保护的环境里，
-// Node 侧的批量删除会被拦下，而外部进程的删除不受影响。
+
+
+
 for (const target of stashed) {
   spawnSync(
     'powershell.exe',
@@ -151,4 +245,78 @@ for (const target of stashed) {
   )
 }
 
-console.log('\n[dist] 完成，产物在 desktop/release/ 下')
+
+
+
+
+
+
+
+
+
+
+
+
+const packedCoreExe = path.join(
+  releaseDir,
+  'win-unpacked',
+  'resources',
+  'agent-core',
+  'agent-core.exe',
+)
+let coreCheckFailed = ''
+if (!fs.existsSync(packedCoreExe)) {
+  coreCheckFailed = `包里没找到核心：${packedCoreExe}`
+} else {
+  const built = fs.statSync(coreExe)
+  const packed = fs.statSync(packedCoreExe)
+  if (built.size !== packed.size) {
+    coreCheckFailed =
+      '包里装的核心不是本次构建的产物：\n' +
+      `    本次构建  ${path.relative(desktopDir, coreExe)}\n` +
+      `      ${built.size} 字节 · ${new Date(built.mtimeMs).toLocaleString()}\n` +
+      `    包里那份  ${path.relative(desktopDir, packedCoreExe)}\n` +
+      `      ${packed.size} 字节 · ${new Date(packed.mtimeMs).toLocaleString()}`
+  } else {
+    console.log(
+      `[dist] 核心核验通过：包内 agent-core.exe 与本次构建一致（${(packed.size / 1024 / 1024).toFixed(1)} MB）`,
+    )
+  }
+}
+
+
+
+
+
+
+
+try {
+  const pkg = JSON.parse(fs.readFileSync(path.join(desktopDir, 'package.json'), 'utf8'))
+  const expected = `${pkg.productName ?? 'Soulmate Agent'} Setup ${pkg.version}.exe`
+  const installers = fs
+    .readdirSync(releaseDir)
+    .filter((name) => name.toLowerCase().endsWith('.exe'))
+    .map((name) => ({
+      name,
+      size: fs.statSync(path.join(releaseDir, name)).size,
+      mtimeMs: fs.statSync(path.join(releaseDir, name)).mtimeMs,
+    }))
+    .sort((a, b) => b.mtimeMs - a.mtimeMs)
+  if (installers.length > 0) {
+    const best = installers.find((item) => item.name === expected) ?? installers[0]
+    console.log(
+      `[dist] 安装包：${path.relative(desktopDir, path.join(releaseDir, best.name))}（${(best.size / 1024 / 1024).toFixed(1)} MB）`,
+    )
+  }
+} catch {
+  
+}
+
+console.log(`\n[dist] 完成，产物在 ${path.relative(desktopDir, releaseDir) || '.'} 下`)
+console.log('[dist] 建议接着跑：npm run verify:core && npm run verify:app')
+
+if (coreCheckFailed) {
+  console.error(`\n[dist] ✗ 出包后核验失败：${coreCheckFailed}`)
+  console.error('[dist]   包已生成，但核心对不上，**不要拿去测**。请清理 win-unpacked 后重出。')
+  process.exit(1)
+}

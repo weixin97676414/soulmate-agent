@@ -6,35 +6,35 @@ import { useChatStore } from '@/stores/chatStore'
 import type { InteractionAnswer, InteractionEvent } from '@/types'
 import { Check, Eye, EyeOff, HelpCircle, KeyRound, Loader2 } from 'lucide-react'
 
-/**
- * 技能向用户发起的交互弹窗（选择 / 敏感输入）。
- *
- * ## 与 `ConfirmDialog` 的分工
- *
- * 那个问「允不允许执行」（布尔），这个问「你指的是哪个 / 把东西给我」（任意结构）。
- * 后端也是两套挂起表，两者**不共用**队列。
- *
- * ## ⚠️ 敏感输入那条路上，值**不经过任何聊天链路**
- *
- * 用户在密码框里粘贴的内容，由本组件直接调
- * `window.agentBridge.saveSkillSecrets()` 写进本地加密文件（DPAPI），
- * 然后**只把名字**回传给核心。所以：
- *
- * - 值不进消息表、不进对话上下文、不会发给模型厂商；
- * - AI 从头到尾看不到它，只知道"有个叫 xxx 的东西在本地"；
- * - 明文只在发请求那一刻由核心进程替换进去（`{{secret:名字}}`）。
- *
- * ⚠️ 改这个文件时**不要**把 `keys` 里的值塞进 `respondInteraction` 的 payload ——
- * 那条请求会进服务端日志与审计。
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export function InteractionDialog() {
   const interaction = useChatStore((state) => state.interaction)
   const respond = useChatStore((state) => state.respondInteraction)
 
-  // ⚠️ 只有**选择**弹窗登记为"可被语音关掉"：关掉等于告诉 AI「都不对，重新理解」，
-  // 语义安全、也符合用户直觉。
-  // **敏感输入绝不登记** —— 半途被一句"关闭弹窗"收掉，用户会以为自己已经提供了，
-  // 而实际上什么都没存，AI 那边还在等（见 transientDialogs.ts 的说明）。
+  
+  
+  
+  
   useClosableDialog(
     'InteractionDialog',
     interaction?.kind === 'choice',
@@ -54,7 +54,7 @@ interface Props {
   respond: (answer: InteractionAnswer) => Promise<void>
 }
 
-/** 来源标注：用户可能已经切到别的会话了，得让他看出"这是谁在问"。 */
+
 function SourceLine({ data }: { data: InteractionEvent }): React.JSX.Element | null {
   if (!data.sessionTitle && !data.assistantName) return null
   const who = data.assistantName || ''
@@ -64,9 +64,9 @@ function SourceLine({ data }: { data: InteractionEvent }): React.JSX.Element | n
   return <p className="mt-1 text-[11.5px] text-ink-faint">来自 {text}</p>
 }
 
-// --------------------------------------------------------------------------- //
-// 选择
-// --------------------------------------------------------------------------- //
+
+
+
 function ChoiceList({ data, respond }: Props): React.JSX.Element {
   const [custom, setCustom] = useState('')
   const [open, setOpen] = useState(false)
@@ -115,7 +115,7 @@ function ChoiceList({ data, respond }: Props): React.JSX.Element {
         ))}
       </div>
 
-      {/* 自定义输入：产品约定"AI 没想到的那种，我自己说" */}
+      {}
       {data.allowCustom ? (
         open ? (
           <div className="mt-2 flex items-start gap-2">
@@ -165,16 +165,16 @@ function ChoiceList({ data, respond }: Props): React.JSX.Element {
   )
 }
 
-// --------------------------------------------------------------------------- //
-// 敏感输入
-// --------------------------------------------------------------------------- //
+
+
+
 function SecretForm({ data, respond }: Props): React.JSX.Element {
   const [values, setValues] = useState<Record<string, string>>({})
   const [shown, setShown] = useState<Record<string, boolean>>({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
-  // 显形 5 秒后自动收回：用户点开小眼睛是为了核对，不是为了让私钥一直亮在屏幕上
+  
   useEffect(() => {
     const timers = Object.keys(shown)
       .filter((name) => shown[name])
@@ -196,9 +196,9 @@ function SecretForm({ data, respond }: Props): React.JSX.Element {
     const keys: Record<string, string> = {}
     for (const field of filled) keys[field.name] = values[field.name].trim()
     try {
-      // ⚠️ 关键顺序：**先写盘、成功了再回传**。
-      // 反过来的话，写盘失败时 AI 已经以为拿到了，而用户那边看到的是保存失败 ——
-      // 于是 AI 用它去发请求会撞上"本地没有这个密钥"，两边谁都查不出原因。
+      
+      
+      
       const bridge = window.agentBridge
       if (!bridge?.saveSkillSecrets) {
         setError('当前版本不支持安全保存，请更新客户端')
@@ -206,7 +206,7 @@ function SecretForm({ data, respond }: Props): React.JSX.Element {
         return
       }
       await bridge.saveSkillSecrets({ keys })
-      // ⚠️ 回传里**只有名字**，没有值 —— 这批名字会进对话记录与审计
+      
       await respond({ names: filled.map((field) => field.name) })
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : '保存失败，请重试')
@@ -273,7 +273,7 @@ function SecretForm({ data, respond }: Props): React.JSX.Element {
         ))}
       </div>
 
-      {/* 这句话必须显眼：用户交出去的是私钥，他需要明确知道它去哪了 */}
+      {}
       <p className="mt-3 rounded-[8px] bg-success/8 px-3 py-2 text-[11.5px] leading-relaxed text-ink-soft">
         内容<strong className="font-semibold text-ink">只保存在这台电脑上</strong>
         （本地加密），不会发送给模型，AI 也看不到它。之后它会被用来代替你向对方服务发起请求。

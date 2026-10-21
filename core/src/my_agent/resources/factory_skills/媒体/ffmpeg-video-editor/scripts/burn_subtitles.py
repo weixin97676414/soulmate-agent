@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""Burn Subtitles — SRT字幕烧录到视频"""
+
 import argparse, os, subprocess, shutil, sys
 
 def burn_subtitles(input_file: str, srt_file: str, output: str,
                    font: str = "Arial", size: int = 24, color: str = "white") -> bool:
-    """使用 FFmpeg 将 SRT 字幕烧录到视频。"""
+
     if not os.path.exists(srt_file):
         print(f"错误: 字幕文件不存在: {srt_file}", file=sys.stderr)
         return False
 
-    # 检查字幕编码
+    
     try:
         with open(srt_file, "r", encoding="utf-8") as f:
             f.read()
     except UnicodeDecodeError:
-        # 尝试 GBK
+        
         tmp = srt_file + ".utf8.srt"
         with open(srt_file, "r", encoding="gbk", errors="ignore") as src:
             content = src.read()
@@ -22,7 +22,7 @@ def burn_subtitles(input_file: str, srt_file: str, output: str,
             dst.write(content)
         srt_file = tmp
 
-    # 使用 FFmpeg subtitles filter
+    
     filter_str = (
         f"subtitles='{srt_file}':force_style="
         f"'FontName={font},FontSize={size},PrimaryColour=&H{color}&'"
@@ -37,7 +37,7 @@ def burn_subtitles(input_file: str, srt_file: str, output: str,
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0 and "Unable to parse option" in result.stderr:
-        # fallback: 简化滤镜
+        
         cmd = [
             "ffmpeg", "-y",
             "-i", input_file,

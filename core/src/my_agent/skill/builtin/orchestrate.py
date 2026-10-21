@@ -1,45 +1,45 @@
-"""搭子团队技能：AI 自己组队，并把群讨论挪到后台跑。
 
-## 为什么要有它们
 
-用户的原话是「让 AI 自己建搭子、自己组群」。没有这些技能时，用户说"你们几个
-讨论一下"，模型只能回"请你自己到左侧新建搭子、再建一个群" —— 而这恰恰是零基础
-用户最卡的一步。有了它，一句"帮我找几个搭子讨论下这周的学习计划"就够了。
 
-## ⚠️ 建之前必须先查（用户明确要求）
 
-> 需要在确认之前拉取现有搭子的名称列表与简介列表，如果有功能相同的则使用现有的，
-> 没有合适的需要补充的时候才进行创建
 
-这条**不能**只写在描述里 —— 光提醒的话，模型照样会建出第三个「资料整理助手」。
-所以规则同时落在三处：
 
-1. ``team_list_assistants`` 这个技能本身（模型得先调它才看得到清单）；
-2. ``team_create_group`` 的**返回体**里带上现有搭子清单（清单会出现在它眼前）；
-3. ``Orchestrator.create_assistant`` 里**同名直接拒绝**（硬约束，绕不过去）。
 
-## ⚠️ 审核员 / 优化顾问：少了就走不动（产品要求加的那一环）
 
-以前"要不要审核员"是 ``team_create_group`` 上的一个布尔参数，模型一句
-``require_reviewer=false`` 就带过去了。现在这一步被拆成**独立的、绕不过去的工具**：
 
-    ① team_create_group          建群
-    ② team_assign_group_roles    提交审核员 + 优化顾问的搭子 id（没有"不需要"这个选项）
-    ③ team_start_discussion      才能开讨论
 
-系统**不再替你补通用角色**：确实没有合适的搭子时，自己用 ``team_create_assistant``
-建（``group_role`` 填 reviewer / advisor），再提交 id。闸门在
-``Orchestrator.start_discussion`` 上 —— 没配齐一律拒绝，并把缺什么说清楚。
 
-## 权限分级
 
-- 查（``team_list_assistants`` / 群清单）：safe，只读；
-- 建搭子 / 建群 / 提交群角色 / 排顺序 / 起讨论：**confirm** 级。
 
-写操作标 confirm 是本项目的本分（它真的会改配置），而**出厂默认已经是
-「自动批准」**，所以日常使用**不会**被弹框打断 —— 只有用户主动把确认模式切回
-「每次确认」时才会问一句，那时他本来就希望被问。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -48,12 +48,13 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from ...assistants import evolution
+from ...assistants.persona import ALLOWED_FILES, read_file
 from ...errors import SkillExecutionError
 from ...skill.base import BaseSkill, SkillContext
 from ...skill.decorator import skill
 
-# 起讨论是"后台跑、立刻返回"，所以不带任何轮数/时长参数：
-# 成本闸由群讨论自己的安全阀负责（见 routes/groups.py 的 MAX_ROUNDS）。
+
+
 
 
 class TeamListParams(BaseModel):
@@ -199,7 +200,7 @@ class TeamCreateAssistantSkill(BaseSkill):
                 actor_id=ctx.assistant_id,
             )
         except ValueError as exc:
-            # 把规则原文带回去，模型下一次就知道该怎么做了（而不是只看到"失败了"）
+            
             raise SkillExecutionError(str(exc)) from exc
         return {
             "created": created,
@@ -228,6 +229,13 @@ class AssistantSetupParams(BaseModel):
         ),
     )
     tone_append: str = Field("", description="追加到 SOUL.md 的内容（语气风格的补充）")
+    memory_append: str = Field(
+        "",
+        description=(
+            "追加到对方 MEMORY.md 的内容（例如「全员进化月度复盘」给每个人定的下月重点）。"
+            "只追加，不要动他已经写下的东西"
+        ),
+    )
     description_append: str = Field(
         "", description="追加到简介末尾的内容（新增能力时同步更新简介，界面才看得到）"
     )
@@ -240,6 +248,7 @@ class AssistantSetupParams(BaseModel):
         "在**现有**搭子的设定上补充能力与规则（用于「这个搭子还差点什么，给它加上」）。\n"
         "只能**追加**，不能删改原有内容 —— 要删除只能由用户自己在设置页操作。\n"
         "调用前先 team_list_assistants 看它现在有哪些设定，避免重复补充。\n"
+        "memory_append 是给「全员进化月度复盘」回写各人下月重点用的，平时别用它。\n"
         + evolution.APPEND_ONLY_CLAUSE
     ),
     params_model=AssistantSetupParams,
@@ -255,12 +264,13 @@ class TeamUpdateAssistantSkill(BaseSkill):
                 args.identity_append.strip(),
                 args.rules_append.strip(),
                 args.tone_append.strip(),
+                args.memory_append.strip(),
                 args.description_append.strip(),
             ]
         ):
             raise SkillExecutionError(
                 "至少要给一段要补充的内容（identity_append / rules_append / "
-                "tone_append / description_append 之一）。"
+                "tone_append / memory_append / description_append 之一）。"
             )
         team = ctx.service("team")
         try:
@@ -269,6 +279,7 @@ class TeamUpdateAssistantSkill(BaseSkill):
                 identity_append=args.identity_append,
                 rules_append=args.rules_append,
                 tone_append=args.tone_append,
+                memory_append=args.memory_append,
                 description_append=args.description_append,
                 actor_id=ctx.assistant_id,
             )
@@ -280,6 +291,61 @@ class TeamUpdateAssistantSkill(BaseSkill):
                 f"已给「{args.assistant_id}」补上设定（原有内容一个字都没动）："
                 f"{'、'.join(result['appended']) or '简介'}。"
             ),
+        }
+
+
+
+
+
+class TeamReadFileParams(BaseModel):
+    assistant_id: str = Field(
+        ..., min_length=1, description="要看的搭子 id（来自 team_list_assistants 的结果）"
+    )
+    file: str = Field(
+        "进化日志.md",
+        description=(
+            f"要读哪个文件，只能是：{' / '.join(ALLOWED_FILES)}。"
+            "「全员进化月度复盘」读的是各个搭子的 进化日志.md"
+        ),
+    )
+
+
+@skill(
+    name="team_read_assistant_file",
+    display_name="查看搭子的文件",
+    description=(
+        "读取**另一个**搭子的人格文件（身份 / 人格 / 规则 / 记忆 / 进化日志）。\n"
+        "什么时候用：你要评判或协助别的搭子时 —— 最典型的是「全员进化月度复盘」："
+        "总管必须看得到每个人的 进化日志.md，否则只能凭印象说话。\n"
+        "只读，不改任何东西；全文返回、不做截断。"
+    ),
+    params_model=TeamReadFileParams,
+    category="system",
+    
+    permission_level="safe",
+    tags=["搭子团队"],
+)
+class TeamReadAssistantFileSkill(BaseSkill):
+    async def run(self, ctx: SkillContext, **params: Any) -> dict[str, Any]:
+        args = TeamReadFileParams(**params)
+        team = ctx.service("team")
+        
+        
+        if not team.list_assistants(assistant_id=args.assistant_id):
+            raise SkillExecutionError(
+                f"没有 id 为「{args.assistant_id}」的搭子（先用 team_list_assistants 看清单）。"
+            )
+        try:
+            content = read_file(ctx.paths, args.assistant_id, args.file)
+        except ValueError as exc:  
+            raise SkillExecutionError(str(exc)) from exc
+        return {
+            "ok": True,
+            "assistant_id": args.assistant_id,
+            "file": args.file,
+            "content": content,
+            
+            "empty": not content.strip(),
         }
 
 
@@ -305,9 +371,9 @@ class AssistantDeleteParams(BaseModel):
     ),
     params_model=AssistantDeleteParams,
     category="system",
-    # confirm：产品约定是「总管建与改可以直接做，**删除要你点头**」。
-    # 落在这个既有的确认机制上，而不是另造一套"删除前先问一句"的流程 ——
-    # 那种靠模型自觉的问法，模型一步就能带过去（本项目为此吃过教训）。
+    
+    
+    
     permission_level="confirm",
     tags=["搭子团队"],
 )
@@ -323,8 +389,8 @@ class TeamDeleteAssistantSkill(BaseSkill):
             raise SkillExecutionError(str(exc)) from exc
         return {
             "deleted": result,
-            # 连带影响原样带上（**不替它总结成"删好了"**）：顺手删了一个群这件事，
-            # 比"删了那个搭子"本身更需要被说出来
+            
+            
             "message": result["message"] + " 请如实把上面的连带影响告诉用户。",
         }
 
@@ -557,7 +623,7 @@ class TeamUpdateGroupSkill(BaseSkill):
             raise SkillExecutionError(str(exc)) from exc
         note = ""
         if result.get("roles_cleared"):
-            # **不静默**：角色跟着人一起走了，模型必须知道开讨论前得重新提交 id
+            
             note = (
                 f"⚠️ 被移出群的人里包含已确认的{'、'.join(result['roles_cleared'])}，"
                 "该角色已作废 —— 要开讨论必须先用 team_assign_group_roles 重新提交一个 id。"
@@ -661,9 +727,9 @@ class TeamStartDiscussionSkill(BaseSkill):
         }
 
 
-# --------------------------------------------------------------------------- #
-# 重塑团队（总管专用）：改成员设定 + 建新搭子 + 拉进群调序列，一次调用按需组合
-# --------------------------------------------------------------------------- #
+
+
+
 class RestructureUpdateItem(BaseModel):
     assistant_id: str = Field(..., min_length=1, description="要改设定的搭子 id（来自 team_list_assistants）")
     identity_append: str = Field("", description="追加到 IDENTITY.md 的职责/能力")
@@ -728,11 +794,11 @@ class TeamRestructureSkill(BaseSkill):
         add_ids: list[str] = []
         try:
             for item in args.update:
-                # ⚠️ 方法名必须是 `append_assistant_setup` —— `Orchestrator` 上
-                # **没有** `update_assistant`（那个名字是路由层的 HTTP 端点）。
-                # 2026-10-06 实测：名字写错时这一整条技能每次调用都 AttributeError
-                # 失败，而审计日志里只留一行"工具 team_restructure 执行出错"，
-                # 看起来像"模型用错了工具"，查起来要一路翻到 Orchestrator 才发现。
+                
+                
+                
+                
+                
                 res = await team.append_assistant_setup(
                     assistant_id=item.assistant_id,
                     identity_append=item.identity_append,
@@ -826,19 +892,19 @@ class TeamEnsureRequiredSkillsSkill(BaseSkill):
         }
 
 
-# --------------------------------------------------------------------------- #
-# 群对话（AI 也要能管一个群里的多条对话）
-# --------------------------------------------------------------------------- #
-#
-# ⚠️ 这一组**只动「对话」，不动「群」**（用户划的边界："对话名右键的功能是管这
-# 一个对话"）。要动整个群，用 team_restructure 那一组。
-#
-# ⚠️ 四个技能一律同时要 `group_id` 与 `thread_id`，而且都在描述里写明
-# "id 必须来自 team_list_assistants 的结果" —— 模型编一个 id 的代价是当场报错，
-# 而**用错一条**的代价是它安静地改了另一条对话，用户回头才发现。
-#
-# ⚠️ "清空"与"删除"的区别必须写在描述里：两者都不可逆，但清空之后那条对话还在
-# （能接着聊），删除之后它就没了。模型混用这两个词时，用户的损失是不一样的。
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class GroupThreadCreateParams(BaseModel):

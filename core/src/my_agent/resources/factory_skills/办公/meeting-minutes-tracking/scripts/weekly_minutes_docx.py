@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-weekly_minutes_docx.py — 按附件10 格式生成周期性例会（周例会/月度例会）纪要 docx。
 
-与 meeting_docx.py 的区别：本脚本承载**上周/本周待办联动**结构——
-  ① 待办事项跟踪恒为正文最后实质段落；
-  ② prior_action_items 记录上周进展复盘，action_items 记录本周待办及承接关系；
-  ③ 内置 validate_action_links() 校验承接关系（开放项必须承接、关闭项不得重复进入）。
 
-格式（reference/weekly-action-linking.md）：A4 / 边距30·30·30·25mm / 微软雅黑 /
-标题18pt加粗居中行距240% / 正文10.5pt / 表格 Table Grid 全黑边框 / 中文编号。
 
-用法：
-  python weekly_minutes_docx.py --sample > content.json          # 导出内容模板
-  python weekly_minutes_docx.py --content content.json --out 甲方A-周例会-会议纪要-20260606.docx
 
-content.json schema 见 SAMPLE_CONTENT。追踪事项 Excel 用同一份 content JSON 调
-build_action_tracker.py 生成。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import argparse, json, re, sys
 from docx import Document
 from docx.shared import Pt, Mm, RGBColor
@@ -148,7 +148,7 @@ OPEN_PRIOR_STATUSES = {"进行中", "未启动", "阻塞"}
 
 
 def responsible(item):
-    """优先使用新字段“负责人”，兼容旧 JSON 的“责任人”键。"""
+
     return item.get("负责人", item.get("责任人", ""))
 
 
@@ -157,7 +157,7 @@ def join_parts(*parts):
 
 
 def validate_action_links(c):
-    """校验上周状态、本周编号和承接关系，避免开放事项在周际衔接中丢失。"""
+
     prior = c.get("prior_action_items", [])
     current = c.get("action_items", [])
 
@@ -220,12 +220,12 @@ def build_weekly_minutes(c, out):
     sec = doc.sections[0]
     sec.top_margin = Mm(30); sec.left_margin = Mm(30)
     sec.right_margin = Mm(30); sec.bottom_margin = Mm(25)
-    # 默认样式字体
+    
     st = doc.styles["Normal"]
     st.font.name = FONT; st.font.size = Pt(10.5)
     st.element.rPr.rFonts.set(qn("w:eastAsia"), FONT)
 
-    # 标题 / 副标题 / 保密标注
+    
     para(doc, c["title"], size=18, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER,
          line=2.4, after=2)
     if c.get("subtitle"):
@@ -234,7 +234,7 @@ def build_weekly_minutes(c, out):
         para(doc, c["confidential_note"], size=9, align=WD_ALIGN_PARAGRAPH.CENTER,
              line=1.2, after=6, color=(0x88, 0x88, 0x88))
 
-    # 表1 · 会议基本信息
+    
     meta = c["meta"]
     t1 = doc.add_table(rows=len(meta), cols=2)
     t1.style = "Table Grid"; t1.autofit = False; fixed_layout(t1, [1700, 7922])
@@ -245,12 +245,12 @@ def build_weekly_minutes(c, out):
         twip_w(t1.rows[i].cells[1], 7922)
     para(doc, after=2)
 
-    # 一、会议议程
+    
     para(doc, "一、会议议程", size=12, bold=True, line=1.4, before=4, after=2)
     for i, a in enumerate(c.get("agenda", []), 1):
         para(doc, f"{i}、{a}", size=10.5, line=1.4, after=1)
 
-    # 二、会议小结与决议
+    
     para(doc, "二、会议小结与决议", size=12, bold=True, line=1.4, before=6, after=2)
     for s in c.get("sections", []):
         para(doc, s["title"], size=10.5, bold=True, line=1.4, before=3, after=1)
@@ -259,7 +259,7 @@ def build_weekly_minutes(c, out):
             p.paragraph_format.left_indent = Pt(12)
             set_font(p.add_run("· " + b), 10.5)
 
-    # 三、待办事项跟踪（恒为最后实质段落）
+    
     para(doc, "三、待办事项跟踪", size=12, bold=True, line=1.4, before=8, after=2)
 
     prior_items = c.get("prior_action_items", [])
@@ -305,7 +305,7 @@ def build_weekly_minutes(c, out):
             twip_w(t2.rows[i].cells[j], widths[j])
     para(doc, after=2)
 
-    # 页脚表
+    
     f = c.get("footer", {"整理人": "项目组", "抄送": "项目相关部门"})
     t3 = doc.add_table(rows=1, cols=4)
     fw = [1468, 3343, 1468, 3343]

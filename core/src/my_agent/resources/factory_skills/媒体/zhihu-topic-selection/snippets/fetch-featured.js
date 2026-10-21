@@ -1,28 +1,28 @@
 #!/usr/bin/env node
-/**
- * 知乎创作中心推荐/邀请问题获取 - Creator Featured Questions Fetcher
- * 三级认证降级机制: Browser Profile → File Cookie → Fallback
- *
- * 支持模式:
- *   recommend - 推荐问题 https://www.zhihu.com/creator/featured-question/recommend
- *   invited   - 邀请回答 https://www.zhihu.com/creator/featured-question/invited
- *
- * 用法:
- *   node fetch-featured.js recommend 100 --json
- *   node fetch-featured.js invited 100 --json
- *   node fetch-featured.js recommend 50 --json --output file.json
- *
- * 采集字段: 浏览数, 回答数, 关注数, 提问时间, 推荐理由
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const fs = require('fs');
 const path = require('path');
 const RateLimiter = require('./rate-limiter');
 const CookieManager = require('./cookie-manager');
 
-// ---------- 配置 ----------
 
-// 知乎创作中心问题 API (推荐和邀请共用一个端点，通过 page_source 区分)
+
+
 const FEATURED_API = 'https://www.zhihu.com/api/v4/creators/question_route/author_related/recommend';
 const PAGE_SOURCE_MAP = {
   recommend: 'web_author_recommend',
@@ -56,37 +56,37 @@ function parseArgs() {
   return { mode, limit, outputFile, jsonMode };
 }
 
-/**
- * 格式化问题创建时间 (Unix秒数 -> ISO字符串)
- */
+
+
+
 function formatQuestionTime(raw) {
   if (!raw) return '';
-  // 如果是秒级时间戳 (< 10000000000 表示秒)
+  
   const ts = Number(raw);
   if (ts < 10000000000) {
     return new Date(ts * 1000).toISOString();
   }
-  // 毫秒级时间戳
+  
   if (ts < 100000000000) {
     return new Date(ts * 1000).toISOString();
   }
   return new Date(ts).toISOString();
 }
 
-// ---------- Level 1: Browser Profile ----------
+
 
 async function fetchViaBrowser(mode, limit) {
-  // 使用 Cookie Manager 的 refreshFromBrowser 自动从 Edge 提取 Cookie
+  
   const cookieManager = new CookieManager();
   console.error('[AUTH] 从 Edge 浏览器自动获取 Cookie...');
   const fresh = await cookieManager.refreshFromBrowser();
   if (!fresh) return null;
 
-  // Cookie 已刷新，使用 file_cookie 模式继续
+  
   return await fetchViaCookie(mode, limit);
 }
 
-// ---------- Level 2: File Cookie ----------
+
 
 async function fetchViaCookie(mode, limit) {
   const cookieManager = new CookieManager();
@@ -161,14 +161,14 @@ async function fetchViaCookie(mode, limit) {
   return null;
 }
 
-// ---------- Level 3: Fallback ----------
+
 
 async function fetchViaFallback(mode) {
-  // 创作中心推荐/邀请API需要登录态，无公开备用源
+  
   return null;
 }
 
-// ---------- 构建响应 ----------
+
 
 function buildResult(mode, authMethod, questions) {
   return {
@@ -184,7 +184,7 @@ function buildResult(mode, authMethod, questions) {
   };
 }
 
-// ---------- 主入口 ----------
+
 
 async function fetchFeaturedWithFallback(options = {}) {
   const { mode = 'recommend', limit = DEFAULT_LIMIT, authPriority = null } = options;
@@ -229,7 +229,7 @@ async function fetchFeaturedWithFallback(options = {}) {
   };
 }
 
-// ---------- CLI ----------
+
 
 async function main() {
   const { mode, limit, outputFile, jsonMode } = parseArgs();

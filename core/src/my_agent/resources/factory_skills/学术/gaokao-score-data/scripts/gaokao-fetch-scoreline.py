@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""
-高考分数线查询脚本
-用法: python fetch_data.py --place 福建 [--year 2024 2023] [--student 历史 物理]
-"""
+
+
+
+
 
 import argparse
 import json
@@ -18,7 +18,7 @@ SOURCE = "open_tB0fU5wP"
 
 
 def fetch_data(place: str, year: str, student: str, retry_times: int=1) -> list:
-    """从接口获取指定省份的分数线数据，仅读取 lingxi_doc 字段"""
+
     url = f"{BASE_URL}?type=province_score_line&from={SOURCE}"
 
     if place:
@@ -39,15 +39,15 @@ def fetch_data(place: str, year: str, student: str, retry_times: int=1) -> list:
                 raw = resp.read().decode("utf-8")
                 result = json.loads(raw)
                 if result.get("status") != 0:
-                    # print(json.dumps({"error": f"接口返回异常: {result.get('message', '未知错误')}"}, ensure_ascii=False))
+                    
                     continue
 
                 return result.get("data", []).get("地区分数线", [])
         except urllib.error.URLError:
-            # print(json.dumps({"error": f"网络请求失败: {str(e)}"}, ensure_ascii=False))
+            
             continue
         except json.JSONDecodeError:
-            # print(json.dumps({"error": f"JSON 解析失败: {str(e)}"}, ensure_ascii=False))
+            
             continue
 
     if result is None:
@@ -57,21 +57,21 @@ def fetch_data(place: str, year: str, student: str, retry_times: int=1) -> list:
 
 
 def filter_data(records: list, place: str, year: str, student: str, unwanted_keys=None) -> list:
-    """过滤掉不需要的字段"""
+
     if unwanted_keys is None:
         unwanted_keys = []
     filtered = []
     for item in records:
         new_item = {}
-        # if student is not None and item["student"] not in student:
-            # continue
+        
+            
         for kk, vv in item.items():
             if kk in unwanted_keys:
                 continue
             new_item[kk] = vv
         filtered.append(new_item)
 
-    # print(f"根据年份过滤 lingxi_doc 数据，剩余 {len(filtered)} / {len(records)} 条数据。")
+    
 
     return filtered
 
@@ -1199,12 +1199,12 @@ luqupici_summary_pro = {
 
 
 def _build_value_to_keys(summary: dict) -> dict:
-    """
-    将 luqupici_summary_pro.json 的三层结构展开：
-    具体值 -> (大类, 层次)
 
-    例如："本科批" -> ("普通类", "本科")
-    """
+
+
+
+
+
     mapping = {}
     for cat, levels in summary.items():
         for lv, items in levels.items():
@@ -1218,46 +1218,46 @@ def filter_by_luqupici(
     model_luqupici: list,
     luqupici_field: str = "luqupici",
 ) -> list:
-    """
-    根据模型检索到的 luqupici 类别，过滤召回数据中不属于该类别的条目。
 
-    参数：
-        records         : 召回数据列表，每条是 dict，含 luqupici_field 字段
-        model_luqupici  : 模型返回的 luqupici 列表，格式固定为 "大类_层次"
-                          如 ["普通类_本科", "艺术类_专科"]
-                          层次固定为：本科 / 专科 / 不限
-        luqupici_field  : 召回数据中记录批次的字段名，默认 "luqupici"
 
-    返回：
-        过滤后的 records 列表
-    """
+
+
+
+
+
+
+
+
+
+
+
     if not model_luqupici:
         return records
 
-    # 加载召回数据完整值表，展开为：具体值 -> (大类, 层次)
+    
     summary_pro: dict = luqupici_summary_pro
     value_to_keys = _build_value_to_keys(summary_pro)
-    # import pdb;pdb.set_trace()
-    # 模型返回格式固定为 "大类_层次"，用 rsplit("_", 1) 直接解析
-    # 兼容大类名含"/"的情况，如 "预科/民族_本科"
+    
+    
+    
     allowed_keys: set = {
         tuple(item.rsplit("_", 1))
         for item in model_luqupici
         if "_" in item
     }
 
-    # 过滤召回数据
+    
     filtered = []
     for record in records:
         raw_value = record.get(luqupici_field)
         if raw_value is None:
-            # 没有该字段，保留
+            
             filtered.append(record)
             continue
 
         keys = value_to_keys.get(raw_value)
         if keys is None:
-            # 该值不在映射表中，无法判断，保留
+            
             filtered.append(record)
             continue
 
@@ -1304,7 +1304,7 @@ def main():
                 records.extend(fetch_data(place_, year_, student_))
 
     unwanted_keys = [
-        # "item_key", "currentyear", "url", "gaokao", "fenshuxian", "title", "type"
+        
     ]
 
     filtered = filter_data(records, args.place, args.year, args.student, unwanted_keys)
@@ -1316,7 +1316,7 @@ def main():
 
     rnt_data = json.dumps(filtered, ensure_ascii=False, indent=2)
 
-    # 输出结果
+    
     print("接口返回结果：", rnt_data)
 
 

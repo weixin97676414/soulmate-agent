@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Web Mercator 坐标换算：经纬度 → 拼接底图上的像素坐标。
 
-用法:
-  python3 geo.py --meta origin.json --spots spots.json --out pixels.json
 
-spots.json 输入: {"解放碑": [106.5776, 29.5570], ...}  （值 = [经度, 纬度]）
-pixels.json 输出: {"解放碑": [x_px, y_px], ...}
 
-meta 来自 fetch_tiles.py 的输出（origin.json）。
-"""
+
+
+
+
+
+
+
 import argparse, json, math
 
 

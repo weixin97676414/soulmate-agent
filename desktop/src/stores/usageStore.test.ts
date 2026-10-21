@@ -1,16 +1,16 @@
-// @vitest-environment happy-dom
+
 import { describe, expect, it } from 'vitest'
 
 import { budgetStatus } from '@/stores/usageStore'
 import type { UsageSummary } from '@/types'
 
-/**
- * 每日预算判定的口径。
- *
- * 界面上它只表现为"要不要弹那条黄色提示"，而三条边界都**看不出错**：
- * "没配预算"、"还没拿到今日费用"、"刚好花完" —— 前两者必须返回 `null`
- * （见函数自己的注释：把"不知道"显示成"没超"会让用户以为在算，其实根本没算）。
- */
+
+
+
+
+
+
+
 
 const summary = (budget: number | null | undefined, cost: number | null | undefined) =>
   ({ daily_budget: budget, today: cost === undefined ? undefined : { cost } }) as unknown as UsageSummary

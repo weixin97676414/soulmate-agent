@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""
-数据库操作模块 - SQLite Database Operations Module
-极简设计，提供热榜文章、提问问题、抓取日志的CRUD操作
-"""
+
+
+
+
 
 import sys
 import sqlite3
 
-# Windows 编码兼容
+
 if sys.stdout.encoding != 'utf-8':
     try:
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -18,16 +18,16 @@ import json
 import hashlib
 from datetime import datetime, timezone, timedelta
 
-# 北京时间时区
+
 TZ_BEIJING = timezone(timedelta(hours=8))
 
-# 数据库路径
+
 DB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
 DB_PATH = os.path.join(DB_DIR, 'zhihu.db')
 
 
 def get_db():
-    """获取数据库连接，自动创建data目录"""
+
     os.makedirs(DB_DIR, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -37,7 +37,7 @@ def get_db():
 
 
 def _migrate_questions_columns(cursor):
-    """为旧版questions表添加新字段(view_count, question_time, recommend_reason)"""
+
     try:
         cursor.execute("SELECT view_count FROM questions LIMIT 0")
     except sqlite3.OperationalError:
@@ -53,11 +53,11 @@ def _migrate_questions_columns(cursor):
 
 
 def init_database():
-    """初始化数据库表结构"""
+
     conn = get_db()
     cursor = conn.cursor()
 
-    # 文章表: 热榜/搜索数据
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS articles (
             id TEXT PRIMARY KEY,
@@ -77,7 +77,7 @@ def init_database():
         )
     ''')
 
-    # 问题表: 推荐/邀请/等你来答的问题列表
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS questions (
             id TEXT PRIMARY KEY,
@@ -99,10 +99,10 @@ def init_database():
         )
     ''')
 
-    # 迁移: 为旧表添加新字段
+    
     _migrate_questions_columns(cursor)
 
-    # 抓取日志表
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS fetch_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -120,7 +120,7 @@ def init_database():
         )
     ''')
 
-    # 索引
+    
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_articles_date ON articles(fetch_date)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_articles_type ON articles(article_type)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_articles_type_date ON articles(article_type, fetch_date)')
@@ -133,24 +133,24 @@ def init_database():
 
 
 def url_to_id(url):
-    """URL转SHA256 ID"""
+
     return hashlib.sha256(url.encode()).hexdigest()[:32]
 
 
 def now_ts():
-    """获取当前北京时间时间戳"""
+
     return int(datetime.now(TZ_BEIJING).timestamp())
 
 
 def today_str():
-    """获取今天日期字符串 YYYY-MM-DD"""
+
     return datetime.now(TZ_BEIJING).strftime('%Y-%m-%d')
 
 
-# ---------- 文章操作 ----------
+
 
 def save_articles(articles, article_type='hot'):
-    """批量保存文章，返回 (new_count, updated_count)"""
+
     conn = get_db()
     cursor = conn.cursor()
     new_count = 0
@@ -184,7 +184,7 @@ def save_articles(articles, article_type='hot'):
             ''', row)
             new_count += 1
         except sqlite3.IntegrityError:
-            # 同一天同一URL已存在，更新非唯一字段
+            
             cursor.execute('''
                 UPDATE articles SET rank=:rank, title=:title, heat=:heat,
                        author=:author, summary=:summary, raw_data=:raw_data,
@@ -199,7 +199,7 @@ def save_articles(articles, article_type='hot'):
 
 
 def query_articles(fetch_date=None, article_type='hot', keyword=None, min_heat=None, limit=200):
-    """查询文章列表"""
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -238,7 +238,7 @@ def query_articles(fetch_date=None, article_type='hot', keyword=None, min_heat=N
 
 
 def query_stats(days=7):
-    """查询最近N天统计"""
+
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute('''
@@ -253,10 +253,10 @@ def query_stats(days=7):
     return rows
 
 
-# ---------- 问题操作 ----------
+
 
 def save_questions(questions):
-    """批量保存问题，返回 (new_count, updated_count)"""
+
     conn = get_db()
     cursor = conn.cursor()
     new_count = 0
@@ -310,7 +310,7 @@ def save_questions(questions):
 
 
 def query_questions(fetch_date=None, keyword=None, limit=200):
-    """查询问题列表"""
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -335,11 +335,11 @@ def query_questions(fetch_date=None, keyword=None, limit=200):
     return rows
 
 
-# ---------- 日志操作 ----------
+
 
 def log_fetch(source, mode, auth_method=None, count=0, new_count=0, updated_count=0,
               status='success', error_message=None, started_at=None, finished_at=None):
-    """记录抓取日志"""
+
     conn = get_db()
     cursor = conn.cursor()
     duration = (finished_at - started_at) * 1000 if (started_at and finished_at) else 0
@@ -362,7 +362,7 @@ def log_fetch(source, mode, auth_method=None, count=0, new_count=0, updated_coun
 
 
 def query_logs(limit=50):
-    """查询最近抓取日志"""
+
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM fetch_logs ORDER BY started_at DESC LIMIT :limit', {'limit': limit})

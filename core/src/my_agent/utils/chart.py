@@ -1,12 +1,12 @@
-"""纯 Python 的 SVG 图表渲染。
 
-**为什么不用 matplotlib**：它会连带拖进 numpy 等一大串依赖，是 PyInstaller
-打包的主要体积来源与踩坑来源（见开发计划风险表中的"打包体积大"）。
-而本项目需要的只是柱状图/折线图/饼图三种基础图形，手写 SVG 大约 200 行即可，
-产物是矢量图（比 PNG 更清晰），且零依赖。
 
-配色与应用界面保持一致，图表在客户端里看不会显得突兀。
-"""
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ import math
 from collections.abc import Sequence
 from typing import Any
 
-# 与桌面端设计令牌一致
+
 PALETTE = [
     "#2563EB",
     "#16A34A",
@@ -47,29 +47,29 @@ def _escape(text: Any) -> str:
 
 
 def _is_finite(value: Any) -> bool:
-    """判断是不是可以参与计算的有限数。
 
-    ``NaN`` 和 ``±inf`` 会在算术里**静默传播**，直到某处调用 ``math.floor``
-    或 ``math.log10`` 时炸掉 —— 而炸出来的错误信息（"cannot convert float NaN
-    to integer"）完全看不出是原始数据里有一个 NaN。
-    统计类技能从表格里取值，出现空单元格/除零是很常见的事，所以入口就要挡。
-    """
+
+
+
+
+
+
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(
         float(value)
     )
 
 
 def _finite(value: Any, default: float = 0.0) -> float:
-    """把值收成有限浮点数；不可用时返回 default。"""
+
     return float(value) if _is_finite(value) else default
 
 
 def _nice_ceil(value: float) -> float:
-    """把坐标轴上限取整到一个"好看"的数（1、1.5、2、2.5 … 10 的倍数）。
 
-    **必须先挡非有限值**：``math.log10(nan)`` 得到 NaN，``math.floor(NaN)``
-    直接抛 ValueError；``inf`` 则在 ``math.floor`` 抛 OverflowError。
-    """
+
+
+
+
     if not _is_finite(value) or value <= 0:
         return 1.0
     exponent = math.floor(math.log10(value))
@@ -101,7 +101,7 @@ def _truncate(text: str, limit: int = 10) -> str:
 
 
 class _Frame:
-    """统一的画布 / 坐标区 / 标题 / 图例。"""
+
 
     def __init__(self, title: str, width: int, height: int) -> None:
         self.width = width
@@ -128,7 +128,7 @@ class _Frame:
     def _render_legend(self) -> list[str]:
         if not self.legend:
             return []
-        # 图例居中排布在顶部标题下方
+        
         item_width = 110
         total = len(self.legend) * item_width
         start = (self.width - total) / 2
@@ -154,7 +154,7 @@ def _axes(
     y_max: float,
     ticks: int = 5,
 ) -> tuple[float, float]:
-    """画 y 轴刻度与网格线，返回绘图区高度。"""
+
     height = bottom - top
     for index in range(ticks + 1):
         ratio = index / ticks
@@ -168,7 +168,7 @@ def _axes(
             f'<text x="{left - 10:.1f}" y="{y + 4:.1f}" text-anchor="end" '
             f'font-size="11" fill="{INK_FAINT}">{_escape(_format_number(value))}</text>'
         )
-    # 轴线
+    
     frame.parts.append(
         f'<line x1="{left}" y1="{top}" x2="{left}" y2="{bottom}" stroke="{LINE}"/>'
     )
@@ -183,9 +183,9 @@ def _empty_state(frame: _Frame, message: str) -> str:
     return frame.render()
 
 
-# --------------------------------------------------------------------------- #
-# 柱状图
-# --------------------------------------------------------------------------- #
+
+
+
 def render_bar(
     title: str,
     categories: Sequence[str],
@@ -244,9 +244,9 @@ def render_bar(
     return frame.render()
 
 
-# --------------------------------------------------------------------------- #
-# 折线图
-# --------------------------------------------------------------------------- #
+
+
+
 def render_line(
     title: str,
     categories: Sequence[str],
@@ -295,7 +295,7 @@ def render_line(
         for x, y in points:
             frame.parts.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3" fill="{color}"/>')
 
-    # x 轴标签：点太多时隔位显示，避免糊成一片
+    
     stride = max(1, len(categories) // 12)
     for index, category in enumerate(categories):
         if index % stride:
@@ -308,9 +308,9 @@ def render_line(
     return frame.render()
 
 
-# --------------------------------------------------------------------------- #
-# 饼图
-# --------------------------------------------------------------------------- #
+
+
+
 def render_pie(
     title: str,
     categories: Sequence[str],
@@ -320,9 +320,9 @@ def render_pie(
     height: int = DEFAULT_HEIGHT,
 ) -> str:
     frame = _Frame(title, width, height)
-    # strict=True：数量不一致时**当场报错**，而不是按短的那个截断画出一张
-    # 少了几个扇区却看起来很正常的饼图。render_chart 已经提前校验过，
-    # 这里是给直接调用 render_pie 的地方留的护栏。
+    
+    
+    
     data = [(str(c), float(v)) for c, v in zip(categories, values, strict=True) if float(v) > 0]
     if not data:
         return _empty_state(frame, "没有可绘制的数据")
@@ -332,8 +332,8 @@ def render_pie(
     center_y = height / 2 + 6
     radius = min(width * 0.28, height * 0.34)
 
-    angle = -math.pi / 2  # 从 12 点方向开始
-    # 标签只在下面的图例里画，这里用不到 category
+    angle = -math.pi / 2  
+    
     for index, (_category, value) in enumerate(data):
         ratio = value / total
         sweep = ratio * 2 * math.pi
@@ -345,7 +345,7 @@ def render_pie(
         y2 = center_y + radius * math.sin(end)
         color = PALETTE[index % len(PALETTE)]
 
-        # 只有一个分类时圆会退化成空路径，直接画整圆
+        
         if len(data) == 1:
             frame.parts.append(
                 f'<circle cx="{center_x:.1f}" cy="{center_y:.1f}" r="{radius:.1f}" fill="{color}"/>'
@@ -360,7 +360,7 @@ def render_pie(
             frame.parts.append(path)
         angle = end
 
-    # 右侧图例带数值与占比
+    
     legend_x = center_x + radius + 44
     legend_y = center_y - len(data) * 11
     for index, (category, value) in enumerate(data):
@@ -380,9 +380,9 @@ def render_pie(
     return frame.render()
 
 
-# --------------------------------------------------------------------------- #
-# 入口
-# --------------------------------------------------------------------------- #
+
+
+
 CHART_TYPES = ("bar", "line", "pie")
 
 
@@ -395,19 +395,19 @@ def render_chart(
     width: int = DEFAULT_WIDTH,
     height: int = DEFAULT_HEIGHT,
 ) -> str:
-    """按类型渲染 SVG。``series`` 为 ``[{"name": str, "values": [float, ...]}]``。
 
-    饼图只使用第一个系列（饼图表达的就是"一个维度的占比"）。
 
-    ## 为什么必须先校验长度（重要）
 
-    下游的 ``zip`` 与 ``raw[group_index]`` 对"数量对不上"的处理都是**静默的**：
-    ``zip`` 按短的那个截断，柱状图则把缺失值当 **0** 画出来。
 
-    两种结果都是**看起来完全正常、但内容是错的**图表 —— 用户会把它当成真实数据
-    去汇报，而图上没有任何迹象说明少了东西。数据可视化里"错得可信"比"直接报错"
-    危险得多，所以这里在入口一次性拦住，并给出模型能照着改的提示。
-    """
+
+
+
+
+
+
+
+
+
     normalized = (chart_type or "bar").strip().lower()
     if normalized not in CHART_TYPES:
         raise ValueError(f"不支持的图表类型「{chart_type}」，可用值：{', '.join(CHART_TYPES)}")

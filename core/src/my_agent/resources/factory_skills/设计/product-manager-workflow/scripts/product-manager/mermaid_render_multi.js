@@ -1,29 +1,29 @@
-/**
- * mermaid_render_multi.js
- * 跨平台 Mermaid → PNG 渲染器
- * 自动检测: Chrome → Edge → Firefox → Chromium
- * 支持: Windows / macOS / Linux (含 WSL 环境)
- *
- * 用法: node mermaid_render_multi.js <input.mmd> <output.png> [theme]
- */
+
+
+
+
+
+
+
+
 
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-// ============== 平台检测 ==============
+
 function getPlatform() {
   const platform = process.platform;
   if (platform === 'win32') return 'windows';
   if (platform === 'darwin') return 'macos';
-  // Linux: 检测是否为 WSL（WSL 中 process.platform 是 linux，但能访问 /mnt/c）
+  
   if (fs.existsSync('/mnt/c/Windows/System32')) return 'wsl';
   return 'linux';
 }
 
-// ============== 浏览器路径检测 ==============
 
-// Windows 原生 registry 查询
+
+
 function queryWinBrowser(key, name) {
   try {
     const out = execSync(`reg query "${key}" /v Path`, { encoding: 'utf8', timeout: 5000 }).trim();
@@ -39,28 +39,28 @@ function findWindowsBrowser() {
   const candidates = [];
   const isWsl = getPlatform() === 'wsl';
 
-  // 1. Chrome — registry 查询（Windows 原生）
+  
   const chrome = queryWinBrowser(
     'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\chrome.exe',
     'Chrome'
   );
   if (chrome) candidates.push(chrome);
 
-  // 2. Edge — registry
+  
   const edge = queryWinBrowser(
     'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\msedge.exe',
     'Edge'
   );
   if (edge) candidates.push(edge);
 
-  // 3. Firefox — registry
+  
   const firefox = queryWinBrowser(
     'HKLM\\SOFTWARE\\Mozilla\\Mozilla Firefox',
     'Firefox'
   );
   if (firefox) candidates.push(firefox);
 
-  // 4. 常见安装路径（WSL 使用 /mnt/c/ 前缀，原生使用 C:\）
+  
   const prefixes = isWsl ? ['/mnt/c'] : [''];
   for (const prefix of prefixes) {
     const winPaths = [
@@ -78,7 +78,7 @@ function findWindowsBrowser() {
     }
   }
 
-  // 优先级: Chrome > Edge > Firefox
+  
   const priority = ['chrome', 'edge', 'firefox'];
   for (const t of priority) {
     const found = candidates.find(b => b.type === t);
@@ -139,14 +139,14 @@ function findBrowser() {
   const platform = getPlatform();
   if (platform === 'windows') return findWindowsBrowser();
   if (platform === 'macos') return findMacOSBrowser();
-  // WSL 使用 Windows 浏览器（通过 /mnt/c/ 路径）
+  
   if (platform === 'wsl') return findWindowsBrowser();
-  return findLinuxBrowser(); // 纯 Linux
+  return findLinuxBrowser(); 
 }
 
-// ============== Windows 用户名获取（WSL 专用） ==============
+
 function getWindowsUser() {
-  // 方法1: 从 /mnt/c/Users 目录扫描，找有 AppData/Roaming/npm 的用户
+  
   try {
     const entries = fs.readdirSync('/mnt/c/Users');
     for (const u of entries) {
@@ -157,7 +157,7 @@ function getWindowsUser() {
     }
   } catch (e) {}
 
-  // 方法2: 从 whoami 获取
+  
   try {
     const whoamiOut = execSync(
       '/mnt/c/Windows/System32/whoami.exe', { encoding: 'utf8', timeout: 5000 }
@@ -168,9 +168,9 @@ function getWindowsUser() {
   return null;
 }
 
-// ============== puppeteer-core 查找 ==============
+
 function findPuppeteerCore() {
-  // 方法1: 从脚本所在目录向上搜索 node_modules
+  
   const scriptDir = path.dirname(process.argv[1] || __filename);
   let dir = scriptDir;
   for (let i = 0; i < 6; i++) {
@@ -183,21 +183,21 @@ function findPuppeteerCore() {
     dir = parent;
   }
 
-  // 方法2: npm root -g
+  
   try {
     const npmRoot = execSync('npm root -g', { encoding: 'utf8', timeout: 5000 }).trim();
     const pp = path.join(npmRoot, 'puppeteer-core');
     if (fs.existsSync(path.join(pp, 'package.json'))) {
       return pp;
     }
-    // 也检查 @mermaid-js/mermaid-cli 的 bundled puppeteer-core
+    
     const mmdc = path.join(npmRoot, '@mermaid-js', 'mermaid-cli', 'node_modules', 'puppeteer-core');
     if (fs.existsSync(path.join(mmdc, 'package.json'))) {
       return mmdc;
     }
   } catch (e) {}
 
-  // 方法3: WSL 下从 /mnt/c 找用户 npm 全局路径
+  
   if (fs.existsSync('/mnt/c/Users')) {
     try {
       const entries = fs.readdirSync('/mnt/c/Users');
@@ -218,22 +218,22 @@ function findPuppeteerCore() {
   return null;
 }
 
-// ============== mermaid.min.js 查找（本地文件，无 CDN） ==============
+
 function findMermaidMinJs(tmpDir) {
-  // 优先：tmpDir 目录（已预置的 mermaid.min.js）
+  
   const tmpPath = path.join(tmpDir, 'mermaid.min.js');
   if (fs.existsSync(tmpPath)) return tmpPath;
 
-  // 标准路径搜索
+  
   const searchPaths = [
-    // WSL 共享目录
+    
     '/home/yhongm/.share/hermes-assets/mermaid/mermaid.min.js',
-    // Windows npm 全局
+    
     'C:\\Users\\yhong\\AppData\\Roaming\\npm\\node_modules\\@mermaid-js\\mermaid-cli\\node_modules\\mermaid\\dist\\mermaid.min.js',
     'C:\\Users\\yhongm\\AppData\\Roaming\\npm\\node_modules\\@mermaid-js\\mermaid-cli\\node_modules\\mermaid\\dist\\mermaid.min.js',
-    // Windows 用户目录
+    
     'C:\\Users\\yhong\\AppData\\Local\\Temp\\mermaid.min.js',
-    // WSL npm 全局
+    
     '/home/yhongm/.hermes/node/lib/node_modules/@mermaid-js/mermaid-cli/node_modules/mermaid/dist/mermaid.min.js',
   ];
 
@@ -241,7 +241,7 @@ function findMermaidMinJs(tmpDir) {
     if (fs.existsSync(p)) return p;
   }
 
-  // 动态搜索：向上查 node_modules
+  
   const scriptDir = path.dirname(process.argv[1] || __filename);
   let dir = scriptDir;
   for (let i = 0; i < 6; i++) {
@@ -255,7 +255,7 @@ function findMermaidMinJs(tmpDir) {
   return null;
 }
 
-// ============== 临时目录 ==============
+
 function getTempDir() {
   const platform = getPlatform();
 
@@ -266,8 +266,8 @@ function getTempDir() {
     return process.env.TMPDIR || '/tmp';
   }
   if (platform === 'wsl') {
-    // WSL: 必须写入 Windows Temp 目录（/mnt/c/Users/{user}/AppData/Local/Temp）
-    // Windows Chrome 无法访问 WSL 的 /tmp
+    
+    
     const winUser = getWindowsUser();
     if (winUser) {
       return `/mnt/c/Users/${winUser}/AppData/Local/Temp`;
@@ -276,7 +276,7 @@ function getTempDir() {
   return '/tmp';
 }
 
-// ============== 浏览器启动 ==============
+
 async function launchBrowser(executablePath, type) {
   const puppeteerCorePath = findPuppeteerCore();
   if (!puppeteerCorePath) {
@@ -285,7 +285,7 @@ async function launchBrowser(executablePath, type) {
   const puppeteer = require(puppeteerCorePath);
 
   const args = ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'];
-  // Chrome/Edge 需要允许 file:// 访问
+  
   if (type !== 'firefox') {
     args.push('--allow-file-access-from-files');
   }
@@ -297,7 +297,7 @@ async function launchBrowser(executablePath, type) {
   });
 }
 
-// ============== Mermaid 渲染 ==============
+
 async function renderMermaid(mmdContent, outputPath, theme = 'default') {
   const browserInfo = findBrowser();
   if (!browserInfo) {
@@ -305,7 +305,7 @@ async function renderMermaid(mmdContent, outputPath, theme = 'default') {
   }
   console.error(`Using browser: ${browserInfo.name} (${browserInfo.path})`);
 
-  // 优先使用本地 mermaid.min.js（WSL 环境下 CDN 不可用）
+  
   const tmpDir = getTempDir();
   const mmScriptPath = findMermaidMinJs(tmpDir);
   if (!mmScriptPath) {
@@ -347,17 +347,17 @@ ${mmScriptContent}
   const htmlPath = path.join(tmpDir, `mermaid_render_${Date.now()}.html`);
   fs.writeFileSync(htmlPath, htmlContent);
 
-  // file:// URL 跨平台处理
+  
   let fileUrl;
   const platform = getPlatform();
   if (platform === 'windows') {
-    // Windows: C:\path\to\file -> file:///C:/path/to/file
+    
     fileUrl = 'file:///' + htmlPath.replace(/\\/g, '/');
   } else if (platform === 'wsl') {
-    // WSL: /mnt/c/Users/... -> file:///C:/Users/...
+    
     fileUrl = 'file://' + htmlPath.replace('/mnt/c/', '/C:/').replace(/\\/g, '/');
   } else {
-    // macOS / Linux
+    
     fileUrl = 'file://' + htmlPath;
   }
 
@@ -392,7 +392,7 @@ ${mmScriptContent}
   }
 }
 
-// ============== 主函数 ==============
+
 const inputFile = process.argv[2];
 const outputFile = process.argv[3];
 const theme = process.argv[4] || 'default';

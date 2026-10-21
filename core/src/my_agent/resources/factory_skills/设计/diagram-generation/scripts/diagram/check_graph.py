@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""图模型校验：id 唯一 / 边引用有效 / 无孤立节点 / type 合法 / 说明齐全。
 
-有 ERROR 时退出码 1，阻断后续产出。
-用法: python check_graph.py graph.json [--md 报告.md]
-"""
+
+
+
+
 import argparse
 import json
 import math
@@ -11,7 +11,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from lib_graph import (load, VALID_TYPES, GRAPH_TYPES, MAX_LABEL,  # noqa: E402
+from lib_graph import (load, VALID_TYPES, GRAPH_TYPES, MAX_LABEL,  
                        node_size, text_width)
 
 
@@ -27,7 +27,7 @@ def check(g):
     def W(code, detail):
         warns.append({"code": code, "detail": detail})
 
-    # --- meta ---
+    
     for f, label in (("title", "标题"), ("purpose", "图的目的")):
         if not (meta.get(f) or "").strip():
             E("E1", "meta.%s（%s）缺失" % (f, label))
@@ -37,7 +37,7 @@ def check(g):
         E("E1", "meta.graph_type 非法：%s（应为 %s）"
           % (gtype, " / ".join(sorted(GRAPH_TYPES))))
 
-    # --- id 唯一 ---
+    
     for kind, items in (("node", nodes), ("edge", edges), ("group", groups)):
         seen, dup = set(), []
         for x in items:
@@ -54,7 +54,7 @@ def check(g):
     ids = {n.get("id") for n in nodes}
     gids = {x.get("id") for x in groups}
 
-    # --- 节点 ---
+    
     for n in nodes:
         nid = n.get("id")
         if not (n.get("label") or "").strip():
@@ -73,7 +73,7 @@ def check(g):
         gg = n.get("group")
         if gg and gg not in gids:
             E("E2", "节点 %s 引用了不存在的 group：%s" % (nid, gg))
-        # 文本溢出：所需行数超过节点高度会压边（等于打开乱版）
+        
         if n.get("label"):
             w, h = node_size(n)
             need = math.ceil(text_width(n["label"], 12) / max(40, w - 20))
@@ -81,7 +81,7 @@ def check(g):
                 W("W7", "节点 %s 标签需 %d 行（%dpx）超出节点高度 %dpx，会压边，"
                   "建议缩短至 %d 字内" % (nid, need, need * 16, h, MAX_LABEL))
 
-    # --- 边 ---
+    
     for e in edges:
         s, t = e.get("source"), e.get("target")
         if s not in ids:
@@ -93,7 +93,7 @@ def check(g):
         if gtype == "sequence" and not isinstance(e.get("seq"), int):
             E("E5", "时序图消息 %s 缺 seq，无法确定时序" % e.get("id"))
 
-    # --- 孤立节点 ---
+    
     linked = set()
     for e in edges:
         linked.add(e.get("source"))
@@ -103,7 +103,7 @@ def check(g):
             W("W1", "孤立节点：%s（%s）——既无入边也无出边"
               % (n.get("id"), (n.get("label") or "")[:20]))
 
-    # --- 类型专有规则 ---
+    
     types = [n.get("type") for n in nodes]
     if gtype == "flowchart":
         if "start" not in types:

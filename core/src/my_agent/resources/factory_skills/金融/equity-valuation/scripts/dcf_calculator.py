@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-DCF (现金流折现) 估值计算器 - 基于《股市真规则》晨星公司标准
 
 
-使用许可:
-- 允许个人学习、研究、非商业用途使用
-- 允许修改后个人使用
-- 禁止直接复制核心算法用于商业产品或竞争性服务
 
-免责声明: 本脚本提供的分析结果仅供参考，不构成投资建议。
 
-参考: 《股市真规则》帕特·多尔西 (Pat Dorsey)
-"""
+
+
+
+
+
+
+
+
+
 
 import argparse
 import json
@@ -21,7 +21,7 @@ from datetime import datetime
 from typing import List, Dict, Tuple
 
 
-# 晨星公司标准参数
+
 MORNINGSTAR_BENCHMARKS = {
     "strong_moat": {
         "name": "强竞争优势公司",
@@ -43,7 +43,7 @@ MORNINGSTAR_BENCHMARKS = {
     }
 }
 
-# 折现率调整因素（6个风险因素）
+
 RISK_ADJUSTMENTS = {
     "small_size": {"desc": "小市值", "adjustment": 0.015},
     "high_leverage": {"desc": "高负债", "adjustment": 0.015},
@@ -58,16 +58,16 @@ def calculate_discount_rate(
     base_rate: float = 0.105,
     risk_factors: List[str] = None
 ) -> Tuple[float, str]:
-    """
-    计算折现率 - 基于晨星6因素风险调整法
-    
-    Args:
-        base_rate: 基准折现率（默认10.5%晨星标准）
-        risk_factors: 风险因素列表
-        
-    Returns:
-        (调整后的折现率, 调整说明)
-    """
+
+
+
+
+
+
+
+
+
+
     if risk_factors is None:
         return base_rate, f"基准折现率: {base_rate*100:.1f}%"
     
@@ -87,15 +87,15 @@ def calculate_discount_rate(
 
 
 def get_morningstar_preset(preset_name: str) -> Dict:
-    """
-    获取晨星预设参数
-    
-    Args:
-        preset_name: 'strong_moat', 'average', 'high_risk'
-        
-    Returns:
-        预设参数字典
-    """
+
+
+
+
+
+
+
+
+
     if preset_name in MORNINGSTAR_BENCHMARKS:
         return MORNINGSTAR_BENCHMARKS[preset_name]
     return MORNINGSTAR_BENCHMARKS["average"]
@@ -109,22 +109,22 @@ def calculate_dcf(
     net_debt: float = 0,
     shares_outstanding: float = 1
 ) -> Dict:
-    """
-    计算 DCF 估值 - 晨星标准5步法
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
-    Args:
-        current_fcf: 当前年度自由现金流（亿元）
-        growth_rates: 预测期增速列表（10年）
-        terminal_growth: 永续增速（通常3%，衰退行业2%）
-        discount_rate: 折现率
-        net_debt: 净负债（亿元，负数为净现金）
-        shares_outstanding: 总股本（亿股）
     
-    Returns:
-        dict: 包含每股内在价值、安全边际等
-    """
-    
-    # 预测期现金流折现
     pv_fcf = 0
     fcf = current_fcf
     fcf_projections = []
@@ -141,19 +141,19 @@ def calculate_dcf(
             "pv": pv
         })
     
-    # 终值计算（永续年金价值）
-    # 公式: TV = FCF_10 × (1 + g) / (R - g)
+    
+    
     terminal_fcf = fcf * (1 + terminal_growth)
     terminal_value = terminal_fcf / (discount_rate - terminal_growth)
     pv_terminal = terminal_value / ((1 + discount_rate) ** len(growth_rates))
     
-    # 企业价值
+    
     enterprise_value = pv_fcf + pv_terminal
     
-    # 股权价值
+    
     equity_value = enterprise_value - net_debt
     
-    # 每股内在价值
+    
     intrinsic_value_per_share = equity_value / shares_outstanding
     
     return {
@@ -179,10 +179,10 @@ def calculate_safety_margin(
     intrinsic_value: float,
     current_price: float
 ) -> float:
-    """
-    计算安全边际
-    公式: (内在价值 - 当前价格) / 内在价值
-    """
+
+
+
+
     if intrinsic_value <= 0:
         return 0
     return (intrinsic_value - current_price) / intrinsic_value
@@ -193,17 +193,17 @@ def evaluate_investment_opportunity(
     current_price: float,
     moat_strength: str
 ) -> Dict:
-    """
-    评估投资机会 - 基于晨星安全边际标准
-    
-    Args:
-        intrinsic_value: 每股内在价值
-        current_price: 当前股价
-        moat_strength: 'strong', 'average', 'weak'
-    """
+
+
+
+
+
+
+
+
     margin = calculate_safety_margin(intrinsic_value, current_price)
     
-    # 根据护城河强度确定要求的安全边际
+    
     requirements = {
         "strong": (0.20, "强竞争优势公司"),
         "average": (0.35, "一般公司"),
@@ -212,7 +212,7 @@ def evaluate_investment_opportunity(
     
     required_margin, category = requirements.get(moat_strength, (0.35, "一般公司"))
     
-    # 评估结果
+    
     if margin >= required_margin:
         action = "买入"
         recommendation = f"安全边际{margin*100:.1f}% > 要求{required_margin*100:.0f}%，符合买入标准"
@@ -237,19 +237,19 @@ def generate_growth_rates(
     decay_rate: float = 0.2,
     years: int = 10
 ) -> List[float]:
-    """
-    生成递减的增长率序列
-    
-    Args:
-        base_growth: 前5年平均增速
-        decay_rate: 衰减率（默认20%每年）
-        years: 预测年数
-    """
+
+
+
+
+
+
+
+
     rates = []
     growth = base_growth
     
     for i in range(years):
-        if i >= 5:  # 第6年开始衰减
+        if i >= 5:  
             growth = growth * (1 - decay_rate)
         rates.append(growth)
     
@@ -265,9 +265,9 @@ def scenario_analysis(
     shares_outstanding: float,
     current_price: float
 ) -> Dict:
-    """
-    情景分析 - 乐观/中性/悲观
-    """
+
+
+
     scenarios = {
         "optimistic": {
             "growth_factor": 1.2,
@@ -318,9 +318,9 @@ def scenario_analysis(
 
 def format_dcf_report(result, current_price=None, moat_strength="average", 
                       risk_factors=None, scenario_results=None):
-    """
-    格式化 DCF 报告 - 晨星标准格式
-    """
+
+
+
     params = result["parameters"]
     
     report = f"""
@@ -334,7 +334,7 @@ def format_dcf_report(result, current_price=None, moat_strength="average",
   总股本: {result['shares_outstanding']:.2f} 亿股
 """
     
-    # 折现率说明
+    
     report += f"\n📈 折现率设定: {params['discount_rate']*100:.2f}%\n"
     if risk_factors:
         report += "  风险调整因素:\n"
@@ -342,13 +342,13 @@ def format_dcf_report(result, current_price=None, moat_strength="average",
             if factor in RISK_ADJUSTMENTS:
                 report += f"    • {RISK_ADJUSTMENTS[factor]['desc']}: +{RISK_ADJUSTMENTS[factor]['adjustment']*100:.1f}%\n"
     
-    # 增长假设
+    
     report += f"\n📊 增长假设\n"
     report += f"  永续增长率: {params['terminal_growth']*100:.1f}% (GDP平均)\n"
     report += f"  预测期: {len(params['growth_rates'])}年\n"
     report += f"  前5年平均增速: {sum(params['growth_rates'][:5])/5*100:.1f}%\n"
     
-    # 10年预测详情（简化显示前5年和最后一年）
+    
     report += f"\n📈 现金流预测（10年）\n"
     for proj in result["projections"][:5]:
         report += f"  第{proj['year']:2d}年: FCF={proj['fcf']:8.2f}亿, 增速={proj['growth']*100:5.1f}%, 现值={proj['pv']:7.2f}亿\n"
@@ -356,7 +356,7 @@ def format_dcf_report(result, current_price=None, moat_strength="average",
     final_proj = result["projections"][-1]
     report += f"  第{final_proj['year']:2d}年: FCF={final_proj['fcf']:8.2f}亿, 增速={final_proj['growth']*100:5.1f}%, 现值={final_proj['pv']:7.2f}亿\n"
     
-    # 估值结果
+    
     report += f"""
 💰 估值结果
   预测期现值:     {result['pv_forecast_period']:10.2f} 亿元
@@ -369,7 +369,7 @@ def format_dcf_report(result, current_price=None, moat_strength="average",
   🎯 每股内在价值: {result['intrinsic_value_per_share']:8.2f} 元
 """
     
-    # 安全边际分析
+    
     if current_price and current_price > 0:
         evaluation = evaluate_investment_opportunity(
             result['intrinsic_value_per_share'],
@@ -390,7 +390,7 @@ def format_dcf_report(result, current_price=None, moat_strength="average",
   📝 说明: {evaluation['recommendation']}
 """
         
-        # 情景分析结果
+        
         if scenario_results:
             report += f"\n📊 情景分析（不同增长假设）\n"
             report += "─" * 50 + "\n"
@@ -434,13 +434,13 @@ def main():
         """
     )
     
-    # 基本参数
+    
     parser.add_argument('--fcf', type=float, required=True, help='当前年度自由现金流（亿元）')
     parser.add_argument('--shares', type=float, required=True, help='总股本（亿股）')
     parser.add_argument('--current-price', type=float, help='当前股价（用于计算安全边际）')
     parser.add_argument('--net-debt', type=float, default=0, help='净负债（亿元，负数为净现金，默认0）')
     
-    # 增长参数
+    
     growth_group = parser.add_mutually_exclusive_group()
     growth_group.add_argument('--growth', type=str, help='前5年增速，逗号分隔 (如 "0.15,0.12,0.10,0.08,0.06")')
     growth_group.add_argument('--base-growth', type=float, help='前5年平均增速（用于自动生成10年递减增速）')
@@ -448,7 +448,7 @@ def main():
     parser.add_argument('--terminal', type=float, default=0.03, help='永续增速 (默认 0.03=3%)')
     parser.add_argument('--decay', type=float, default=0.2, help='增速衰减率，第6年后 (默认 0.2=20%)')
     
-    # 折现率参数
+    
     discount_group = parser.add_mutually_exclusive_group()
     discount_group.add_argument('--preset', type=str, choices=['strong_moat', 'average', 'high_risk'],
                                help='晨星预设: strong_moat(9%), average(10.5%), high_risk(14%)')
@@ -459,7 +459,7 @@ def main():
     parser.add_argument('--risk', type=str, 
                        help='风险调整因素，逗号分隔 (small_size,high_leverage,cyclical,poor_management,weak_moat,complexity)')
     
-    # 其他选项
+    
     parser.add_argument('--moat', type=str, default='average', 
                        choices=['strong', 'average', 'weak'],
                        help='护城河强度 (影响安全边际要求)')
@@ -469,7 +469,7 @@ def main():
     
     args = parser.parse_args()
     
-    # 确定折现率
+    
     risk_factors = None
     if args.preset:
         preset = get_morningstar_preset(args.preset)
@@ -480,21 +480,21 @@ def main():
         risk_factors = args.risk.split(',') if args.risk else []
         discount_rate, _ = calculate_discount_rate(args.base_rate, risk_factors)
     
-    # 确定增长率
+    
     if args.growth:
         growth_list = [float(g.strip()) for g in args.growth.split(',')]
         if len(growth_list) < 10:
-            # 如果不足10年，最后一年重复
+            
             growth_rates = growth_list + [growth_list[-1]] * (10 - len(growth_list))
         else:
             growth_rates = growth_list[:10]
     elif args.base_growth:
         growth_rates = generate_growth_rates(args.base_growth, args.decay)
     else:
-        # 默认10年，前5年10%，后5年递减
+        
         growth_rates = generate_growth_rates(0.10, args.decay)
     
-    # 计算 DCF
+    
     result = calculate_dcf(
         current_fcf=args.fcf,
         growth_rates=growth_rates,
@@ -504,7 +504,7 @@ def main():
         shares_outstanding=args.shares
     )
     
-    # 情景分析
+    
     scenario_results = None
     if args.scenario and args.current_price:
         base_growth = sum(growth_rates[:5]) / 5 if not args.base_growth else args.base_growth
@@ -513,7 +513,7 @@ def main():
             args.net_debt, args.shares, args.current_price
         )
     
-    # 生成报告
+    
     report = format_dcf_report(
         result, 
         args.current_price, 
@@ -523,7 +523,7 @@ def main():
     )
     print(report)
     
-    # JSON输出
+    
     if args.json:
         output = {
             "dcf_result": result,

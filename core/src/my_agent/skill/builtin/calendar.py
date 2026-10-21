@@ -1,24 +1,24 @@
-"""日历技能：查看、新建、修改、删除日程。
 
-## 时间怎么理解
 
-**复用提醒技能那套宽松解析**（`life/reminder.py::parse_when`）：用户会说
-「明天早上 8 点」「2026-09-25 14:30」「下周三不行，那就周四」，模型转述时格式
-也不统一。让日历自己再写一套时间解析，两边迟早会出现"提醒听得懂、日历听不懂"
-这种莫名其妙的差异。
 
-## 默认用哪个日历
 
-由 ``settings.calendar.mode`` 决定（auto = 配了 CalDAV 就用在线，没配就用本地
-`.ics` 文件）。技能只认 ``ctx.service("calendar")`` 这个门面，不自己判断 ——
-返回值里会带上"这次写进了哪个日历"，避免用户以为写进了手机日历其实只落在本机。
 
-## 已知限制（如实说明，不假装支持）
 
-- **不展开重复日程**：带 RRULE 的日程（每周例会）在列表里只出现一条，
-  读取时会带 `repeats` 字段告诉模型"这条是重复的"；
-- 非 UTC 时区的日程按本机时间对待。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ def _to_skill_error(exc: CalendarError) -> SkillExecutionError:
 
 
 def _parse_day(value: str, *, fallback: date) -> date:
-    """解析 ``2026-09-25`` 这类日期；解析不了就返回兜底值。"""
+
     for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%Y年%m月%d日"):
         try:
             return datetime.strptime(value.strip(), fmt).date()

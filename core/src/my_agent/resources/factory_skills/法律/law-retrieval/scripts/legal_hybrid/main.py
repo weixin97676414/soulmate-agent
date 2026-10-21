@@ -10,11 +10,11 @@ class Skill:
         self.author = "doubao"
         self.timeout = 8
 
-        # 本地兜底库
+        
         self.law_db = self._load_json("law_db.json")
         self.case_db = self._load_json("case_db.json")
 
-        # 你指定的 官方可用API（无密钥）
+        
         self.api_url = "https://flk.npc.gov.cn/api/"
 
     def _load_json(self, fn):
@@ -25,7 +25,7 @@ class Skill:
             return {}
 
     def _api_search(self, query):
-        """调用官方法律API"""
+
         params = {
             "type": "flfg",
             "searchType": "title;vague",
@@ -44,7 +44,7 @@ class Skill:
             return None
 
     def _search_local_laws(self, query):
-        """本地法条兜底搜索"""
+
         matches = []
         for name, content in self.law_db.items():
             if query in name or query in content:
@@ -52,7 +52,7 @@ class Skill:
         return matches
 
     def _search_local_cases(self, query):
-        """本地案例兜底搜索（完美适配你的case_db.json）"""
+
         matches = []
         for case in self.case_db:
             keywords = " ".join(case.get("keywords", []))
@@ -71,7 +71,7 @@ class Skill:
         if not query:
             return "请输入法律问题关键词，例如：试用期辞退、借钱不还、工伤、租房押金"
 
-        # ===================== 1. 优先走官方API =====================
+        
         law_list = []
         api_data = self._api_search(query)
 
@@ -81,14 +81,14 @@ class Skill:
                 content = item.get("content", "").replace("<br>", "\n").strip()
                 law_list.append({"name": title, "content": content})
 
-        # ===================== 2. API无结果 → 本地法条兜底 =====================
+        
         if not law_list:
             law_list = self._search_local_laws(query)
 
-        # ===================== 3. 本地案例兜底（ always 可用） =====================
+        
         case_list = self._search_local_cases(query)
 
-        # ===================== 4. 输出格式化结果 =====================
+        
         output = []
 
         if law_list:

@@ -1,9 +1,9 @@
-"""MCP（Model Context Protocol）集成。
 
-把第三方 MCP Server 的工具自动包装成 Skill，纳入统一的工具列表交给模型
-（开发文档第 6 章）。官方 ``mcp`` SDK 是**可选依赖**，未安装时本模块
-依然可以导入，只是所有 Server 会被标记为「依赖缺失」。
-"""
+
+
+
+
+
 
 from .client import McpClient, sdk_available
 from .manager import MAX_AUTO_RESTARTS, McpManager

@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""PDF text-size auditor: flags text spans below the journal minimum.
 
-Scans every text span in a PDF and reports those under a size threshold
-(default 7pt — the safe line for print figures). Mirrors the behaviour of
-nature-figure's audit_pdf_text.py: report-only by default, hard-fail with
---fail-below for CI pipelines.
 
-Usage:
-  python audit_pdf.py figure.pdf
-  python audit_pdf.py figure.pdf --min-size 6 --fail-below
-"""
+
+
+
+
+
+
+
+
+
 import argparse
 import sys
 
@@ -23,7 +23,7 @@ MIN_SIZE = 7.0
 
 
 def audit(pdf_path, min_size=MIN_SIZE):
-    """Return [(page_no, size, text, bbox)] for spans below min_size."""
+
     offenders = []
     doc = fitz.open(pdf_path)
     try:

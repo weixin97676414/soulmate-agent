@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""开源项目扫描器：模块树 / 依赖 / 入口 / 框架特征
 
-用法:
-    python scan_project.py <项目路径> [-o report.json] [--top N] [--max-depth N]
 
-输出 JSON + 控制台摘要。用于阶段1，为阶段2-3 的分析提供事实基础。
-所有结论都可回溯到具体文件与行号。
-"""
+
+
+
+
+
+
 import argparse
 import json
 import os
@@ -33,7 +33,7 @@ BUILD_FILES = {
     "composer.json": "composer", "CMakeLists.txt": "cmake",
 }
 
-# Spring 相关注解
+
 SPRING_ANN = ["SpringBootApplication", "Configuration", "Bean", "Component", "Service",
               "Repository", "Controller", "RestController", "Autowired", "Qualifier",
               "Primary", "Value", "Resource", "Inject", "Profile", "Scope",
@@ -54,7 +54,7 @@ def read_lines(path, limit=4000):
 
 
 def strip_comments(text):
-    """去掉块注释与行注释——避免 Javadoc 里提到的 @Service 被当成真注解统计"""
+
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
     return "\n".join(ln for ln in text.splitlines()
                      if not ln.strip().startswith(("//", "*")))
@@ -170,7 +170,7 @@ def parse_dependencies(root):
 
 
 def find_entry_points(root, lang):
-    """入口：Java main / Spring Boot 启动类 / Python __main__ / Go main"""
+
     entries = []
     for root_dir, dirs, fs in os.walk(root):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
@@ -181,7 +181,7 @@ def find_entry_points(root, lang):
             if ext == ".java":
                 lines = read_lines(p)
                 for i, ln in enumerate(lines, 1):
-                    idx = i - 1          # 转成 0-based 索引
+                    idx = i - 1          
                     if "public static void main" in ln:
                         cls = None
                         for j in range(max(0, idx - 25), idx + 1):
@@ -216,7 +216,7 @@ def find_entry_points(root, lang):
                         entries.append({"file": rel, "line": i, "symbol": "main",
                                         "kind": "go-main", "annotations": []})
 
-    # 去重：同一个类可能同时命中 spring-boot 与 java-main，保留信息更全的那条
+    
     seen = {}
     for e in entries:
         key = (e["file"], e["symbol"])
@@ -226,7 +226,7 @@ def find_entry_points(root, lang):
 
 
 def analyze_spring(root):
-    """Spring 专项：注解统计 + 依赖注入方式识别"""
+
     ann_counter = Counter()
     inject = {"field": [], "constructor": [], "setter": []}
     beans, configs = [], []
@@ -241,13 +241,13 @@ def analyze_spring(root):
             lines = read_lines(p)
             cls_name = os.path.splitext(f)[0]
 
-            # 隐式构造器注入识别：Spring 4.3+ 允许「单构造器且无 @Autowired」
-            # 这类写法在现代代码里是主流，只按注解扫描会漏判成"全是字段注入"
+            
+            
             full = "".join(lines)
-            code = strip_comments(full)   # 注释里提到的 @Xxx 不参与统计
+            code = strip_comments(full)   
             if re.search(r"@(Component|Service|Repository|Controller|RestController"
                          r"|Configuration)\b", code):
-                # 参数部分允许一层嵌套括号，否则 @Qualifier("x") PayClient p 匹配不到
+                
                 for cm in re.finditer(
                         r"(?:^|\n)[ \t]*(?:public|protected|private)?\s*(\w+)\s*"
                         r"\(((?:[^()]|\([^()]*\))*)\)\s*\{", code):
@@ -272,7 +272,7 @@ def analyze_spring(root):
             for i, ln in enumerate(lines):
                 s0 = ln.strip()
                 if s0.startswith(("//", "*", "/*")):
-                    continue      # 跳过注释行，防止 Javadoc 中的注解被计入
+                    continue      
                 for a in SPRING_ANN:
                     if re.search(r"@" + a + r"\b", ln):
                         ann_counter[a] += 1
@@ -291,7 +291,7 @@ def analyze_spring(root):
                                           "name": m.group(2) if m else "?"})
                         if a == "Configuration":
                             configs.append({"file": rel, "line": i + 1})
-                # 注入方式：注解行之后 1-4 行内的第一个非注解声明行
+                
                 if any(re.search(r"@" + a + r"\b", ln) for a in INJECT_ANN):
                     ann_name = next((a for a in INJECT_ANN
                                      if re.search(r"@" + a + r"\b", ln)), "Autowired")
@@ -336,7 +336,7 @@ def scan(root, max_depth=6, top=12):
         depth = root_dir[len(root):].count(os.sep)
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
         if depth > max_depth:
-            dirs[:] = []      # 不再往下递归，但当前层文件照常统计
+            dirs[:] = []      
         rel_dir = os.path.relpath(root_dir, root)
         for f in fs:
             ext = os.path.splitext(f)[1].lower()
@@ -375,7 +375,7 @@ def scan(root, max_depth=6, top=12):
         "config_files": sorted(set(config_files))[:30],
     }
 
-    # 框架识别
+    
     dep_blob = " ".join(d["artifact"].lower() for d in deps).lower()
     fw = []
     if "spring-boot" in dep_blob or "spring-boot" in dep_blob:

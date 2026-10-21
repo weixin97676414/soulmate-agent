@@ -14,12 +14,12 @@ function formatSize(bytes: number): string {
   return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`
 }
 
-/**
- * 时间列：交给 `lib/format`（第 92 批，M-36 改用 `Intl`）。
- *
- * ⚠️ 保留的**只有那个 `—` 兜底**，而且它是**页面口径**、不是格式问题：
- * 早前的记录可能没有时间戳，那时显示破折号远比显示 1970 年好。
- */
+
+
+
+
+
+
 const formatTime = (seconds: number): string => (seconds ? formatDateTime(seconds) : '—')
 
 function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {

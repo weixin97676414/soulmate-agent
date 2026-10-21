@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-/* eslint-disable */
-/* 攻略 Word 模板生成器：吃 content.json（纯数据），产出 12 节结构的 .docx。
- *
- * 消灭的手写工作：每次重写 docx-js 代码（约 10KB），以及颜色/表格/图片的 API 坑。
- * 用法:  NODE_PATH=$(npm root -g) node make_docx.js content.json [out.docx]
- *
- * content.json 结构见文末示例；所有章节可选，缺失即跳过。
- * 图片尺寸自动读取并按最大宽高缩放，无需手填 w/h。
- */
+
+
+
+
+
+
+
+
+
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -17,8 +17,8 @@ const {
 } = require('docx');
 
 const FONT = 'Microsoft YaHei';
-const CW = 9026; // A4 内容宽 DXA
-const MAX_W = 560, MAX_H = 760; // 图片默认最大宽高（px @96dpi）
+const CW = 9026; 
+const MAX_W = 560, MAX_H = 760; 
 
 const r = (t, o = {}) => new TextRun({ text: t, font: FONT, size: o.size || 21,
   bold: o.bold, color: o.color, italics: o.italics });
@@ -31,7 +31,7 @@ const H1 = (t) => new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { be
 const H2 = (t) => new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 100 },
   children: [r(t, { size: 24, bold: true, color: '8E44AD' })] });
 const cb = (t) => new Paragraph({ bullet: { level: 0 }, children: [r('☐  ' + t, { size: 21 })] });
-/* 一级章节标题：带 bookmark（唯一 id），供目录点击跳转 */
+
 function secHeading(title, idx) {
   return new Paragraph({ pageBreakBefore: true, heading: HeadingLevel.HEADING_1,
     children: [
@@ -41,13 +41,13 @@ function secHeading(title, idx) {
     ] });
 }
 
-/* ---------- 图片尺寸自动读取（PNG / JPEG） ---------- */
+
 function imgDims(file) {
   const b = fs.readFileSync(file);
-  if (b[0] === 0x89 && b[1] === 0x50) { // PNG: bytes 16..24
+  if (b[0] === 0x89 && b[1] === 0x50) { 
     return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
   }
-  if (b[0] === 0xFF && b[1] === 0xD8) { // JPEG: 找 SOF 标记
+  if (b[0] === 0xFF && b[1] === 0xD8) { 
     for (let i = 2; i < b.length - 9;) {
       if (b[i] !== 0xFF) { i++; continue; }
       const m = b[i + 1];
@@ -74,7 +74,7 @@ function imgP(imgPath, override) {
     children: [new ImageRun({ data: fs.readFileSync(imgPath), type: 'jpg', transformation: { width: w, height: h } })] });
 }
 
-/* ---------- 表格 ---------- */
+
 function cell(text, w, { bold, fill } = {}) {
   return new TableCell({
     width: { size: w, type: WidthType.DXA },
@@ -92,7 +92,7 @@ function T(headers, rows, widths, headerFill = 'FDEBD0') {
     ] });
 }
 
-/* ---------- 章节渲染 ---------- */
+
 function renderSection(s, imgs, idx) {
   const out = [];
   switch (s.type) {
@@ -156,7 +156,7 @@ function main() {
   const imgs = (name) => path.join(imgDir, name);
 
   const doc = [];
-  // 1 封面
+  
   const cv = content.cover || {};
   if (cv.city) {
     doc.push(
@@ -170,7 +170,7 @@ function main() {
       new Paragraph({ spacing: { before: 1200 }, alignment: AlignmentType.CENTER, children: [r('底图 © 高德地图 ｜ 照片 © Wikimedia Commons（CC协议）', { size: 16, color: '999999' })] }),
     );
   }
-  // 2 目录（静态、开箱即有内容，点击跳转）
+  
   doc.push(
     new Paragraph({ pageBreakBefore: true, spacing: { after: 240 }, children: [r('目录', { size: 32, bold: true, color: 'C0392B' })] }),
   );
@@ -179,9 +179,9 @@ function main() {
       children: [new InternalHyperlink({ anchor: 'sec' + i, children: [r('▸ ' + s.title, { size: 24, color: '2E86C1' })] })] }));
   });
   doc.push(new Paragraph({ spacing: { before: 200 }, children: [r(content.toc_note || '※ 点击目录条目可跳转到对应章节。', { size: 18, color: '999999' })] }));
-  // 3+ 章节
+  
   for (let i = 0; i < (content.sections || []).length; i++) doc.push(...renderSection(content.sections[i], imgs, i));
-  // 尾注
+  
   for (const n of content.notes || []) doc.push(new Paragraph({ spacing: { before: 200 }, children: [r(n, { size: 18, color: '999999' })] }));
 
   const document = new Document({

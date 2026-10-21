@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-AI视频剪辑 - 字幕生成脚本
-功能：使用Whisper自动识别语音生成字幕，支持中英双语
-"""
+
+
+
+
 
 import os
 import json
@@ -19,8 +19,8 @@ except ImportError:
     WHISPER_AVAILABLE = False
 
 DEFAULT_CONFIG = {
-    "model": "base",  # tiny/base/small/medium/large
-    "language": "zh",  # 中文: zh, 英文: en, 自动: None
+    "model": "base",  
+    "language": "zh",  
     "subtitle_style": {
         "font": "Arial",
         "font_size": 36,
@@ -28,7 +28,7 @@ DEFAULT_CONFIG = {
         "bg_color": "black@0.5",
         "position": "bottom_center"
     },
-    "output_format": "srt"  # srt/vtt
+    "output_format": "srt"  
 }
 
 class SubtitleGenerator:
@@ -38,7 +38,7 @@ class SubtitleGenerator:
         self.ffprobe_path = "ffprobe"
         
     def extract_audio(self, video_file: str, output_dir: str) -> str:
-        """从视频提取音频"""
+
         audio_file = os.path.join(output_dir, "temp_audio.wav")
         cmd = [
             self.ffmpeg_path, "-i", video_file,
@@ -50,7 +50,7 @@ class SubtitleGenerator:
         return audio_file
     
     def transcribe(self, audio_file: str) -> List[Dict]:
-        """使用Whisper进行语音识别"""
+
         if not WHISPER_AVAILABLE:
             print("[字幕] 警告: Whisper未安装，使用模拟数据")
             return self._mock_transcribe(audio_file)
@@ -76,7 +76,7 @@ class SubtitleGenerator:
         return segments
     
     def _mock_transcribe(self, audio_file: str) -> List[Dict]:
-        """模拟语音识别结果（Whisper未安装时使用）"""
+
         print("[字幕] 使用模拟字幕数据...")
         return [
             {"start": 0.0, "end": 3.5, "text": "这是第一句台词"},
@@ -85,7 +85,7 @@ class SubtitleGenerator:
         ]
     
     def generate_srt(self, segments: List[Dict], output_file: str) -> str:
-        """生成SRT字幕文件"""
+
         with open(output_file, "w", encoding="utf-8") as f:
             for i, seg in enumerate(segments, 1):
                 start_time = self._format_srt_time(seg["start"])
@@ -98,7 +98,7 @@ class SubtitleGenerator:
         return output_file
     
     def generate_vtt(self, segments: List[Dict], output_file: str) -> str:
-        """生成VTT字幕文件"""
+
         with open(output_file, "w", encoding="utf-8") as f:
             f.write("WEBVTT\n\n")
             for i, seg in enumerate(segments, 1):
@@ -112,17 +112,17 @@ class SubtitleGenerator:
         return output_file
     
     def burn_subtitles(self, video_file: str, subtitle_file: str, output_file: str) -> str:
-        """将字幕烧录到视频"""
+
         print("[字幕] 正在烧录字幕到视频...")
         
         style = self.config["subtitle_style"]
         
-        # 构建字幕样式
+        
         font_size = style.get("font_size", 36)
         color = style.get("color", "white")
         position = style.get("position", "bottom_center")
         
-        # 字幕位置映射
+        
         position_map = {
             "top_center": "x=(w-text_w)/2:y=50",
             "bottom_center": f"x=(w-text_w)/2:y=h-text_h-{font_size}",
@@ -153,7 +153,7 @@ class SubtitleGenerator:
             return video_file
     
     def _burn_subtitles_fallback(self, video_file: str, subtitle_file: str, output_file: str) -> str:
-        """备用字幕烧录方案"""
+
         cmd = [
             self.ffmpeg_path, "-i", video_file,
             "-i", subtitle_file,
@@ -168,7 +168,7 @@ class SubtitleGenerator:
         return output_file if os.path.exists(output_file) else video_file
     
     def _format_srt_time(self, seconds: float) -> str:
-        """格式化SRT时间"""
+
         hours = int(seconds // 3600)
         minutes = int((seconds % 3600) // 60)
         secs = int(seconds % 60)
@@ -176,7 +176,7 @@ class SubtitleGenerator:
         return f"{hours:02d}:{minutes:02d}:{secs:02d},{millisecs:03d}"
     
     def _format_vtt_time(self, seconds: float) -> str:
-        """格式化VTT时间"""
+
         hours = int(seconds // 3600)
         minutes = int((seconds % 3600) // 60)
         secs = int(seconds % 60)
@@ -184,7 +184,7 @@ class SubtitleGenerator:
         return f"{hours:02d}:{minutes:02d}:{secs:02d}.{millisecs:03d}"
     
     def generate(self, video_file: str, output_dir: str = None) -> str:
-        """执行字幕生成流程"""
+
         if output_dir is None:
             output_dir = os.path.dirname(video_file)
         os.makedirs(output_dir, exist_ok=True)
@@ -195,10 +195,10 @@ class SubtitleGenerator:
         print(f"[字幕] 模型: {self.config['model']}")
         print(f"[字幕] ============================================")
         
-        # 1. 提取音频
+        
         audio_file = self.extract_audio(video_file, output_dir)
         
-        # 2. 语音识别
+        
         segments = self.transcribe(audio_file)
         
         if not segments:
@@ -207,7 +207,7 @@ class SubtitleGenerator:
         
         print(f"[字幕] 识别到 {len(segments)} 条字幕")
         
-        # 3. 生成字幕文件
+        
         base_name = os.path.splitext(os.path.basename(video_file))[0]
         subtitle_file = os.path.join(output_dir, f"{base_name}.{self.config['output_format']}")
         
@@ -216,11 +216,11 @@ class SubtitleGenerator:
         else:
             self.generate_vtt(segments, subtitle_file)
         
-        # 4. 烧录字幕
+        
         output_file = os.path.join(output_dir, f"{base_name}_with_subs.{self.config['output_format']}")
         final_file = self.burn_subtitles(video_file, subtitle_file, output_file)
         
-        # 清理临时文件
+        
         if os.path.exists(audio_file):
             try:
                 os.remove(audio_file)

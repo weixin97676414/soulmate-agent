@@ -1,4 +1,4 @@
-"""内置生活技能。"""
+
 
 from .expense import ExpenseAnalyzeSkill, ExpenseRecordSkill
 from .reminder import ReminderCancelSkill, ReminderCreateSkill, ReminderListSkill

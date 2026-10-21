@@ -3,12 +3,12 @@ import { useState } from 'react'
 import { Button, Field, Input, Modal, Spinner } from '@/components/ui'
 import { useAccountStore } from '@/stores/accountStore'
 
-/**
- * 补填邀请码（文档 §5.12 + §5.2）。
- *
- * 只可补一次：填官方码 `XJX` 得 20 token，填其他有效码得 30 token。
- * 按文档 §5.2，输入框**默认填官方码 XJX** 并明确说明（不能只是默默填上）。
- */
+
+
+
+
+
+
 export function InviteModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const invite = useAccountStore((state) => state.invite)
   const [code, setCode] = useState('XJX')

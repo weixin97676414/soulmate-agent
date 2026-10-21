@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""
-API Test Automation - Unit Tests
 
-Comprehensive test suite for the API Test Automation Skill.
 
-Run with:
-    pytest tests/test_api_suite.py -v
-    pytest tests/test_api_suite.py -v --cov=src
-    pytest tests/test_api_suite.py -v --alluredir=./allure-results
-"""
+
+
+
+
+
+
+
+
 
 import asyncio
 import json
@@ -21,7 +21,7 @@ import pytest
 import httpx
 import requests
 
-# Add src to path
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from rest_client import RestClient, RestConfig, AsyncRestClient
@@ -33,13 +33,13 @@ from contract_tester import ContractTester, ContractValidationError
 from assertions import Assertions
 
 
-# ============================================================
-# Fixtures
-# ============================================================
+
+
+
 
 @pytest.fixture
 def rest_config():
-    """Create a test REST config."""
+
     return RestConfig(
         base_url="https://jsonplaceholder.typicode.com",
         timeout=30,
@@ -49,13 +49,13 @@ def rest_config():
 
 @pytest.fixture
 def rest_client(rest_config):
-    """Create a test REST client."""
+
     return RestClient(rest_config)
 
 
 @pytest.fixture
 def graphql_client():
-    """Create a test GraphQL client."""
+
     return GraphQLClient(
         endpoint="https://api.example.com/graphql",
         headers={"Authorization": "Bearer test-token"}
@@ -64,49 +64,49 @@ def graphql_client():
 
 @pytest.fixture
 def mock_server():
-    """Create and manage a mock server."""
+
     server = MockServer(host="127.0.0.1", port=8888)
     yield server
     server.stop()
 
 
-# ============================================================
-# REST Client Tests
-# ============================================================
+
+
+
 
 class TestRestClient:
-    """Tests for REST Client."""
+
     
     def test_client_initialization(self, rest_config):
-        """Test client initialization."""
+
         client = RestClient(rest_config)
         assert client.config == rest_config
         assert client.session is not None
         client.close()
     
     def test_default_config(self):
-        """Test default configuration."""
+
         client = RestClient()
         assert client.config.base_url == ""
         assert client.config.timeout == 30
         client.close()
     
     def test_set_auth_bearer(self):
-        """Test bearer token authentication."""
+
         client = RestClient()
         client.set_auth(token="test-token")
         assert client.session.headers["Authorization"] == "Bearer test-token"
         client.close()
     
     def test_set_auth_basic(self):
-        """Test basic authentication."""
+
         client = RestClient()
         client.set_auth(username="user", password="pass")
         assert client.session.auth == ("user", "pass")
         client.close()
     
     def test_url_building_with_base(self):
-        """Test URL building with base URL."""
+
         config = RestConfig(base_url="https://api.example.com")
         client = RestClient(config)
         url = client._url("/users")
@@ -114,7 +114,7 @@ class TestRestClient:
         client.close()
     
     def test_url_building_without_base(self):
-        """Test URL building without base URL."""
+
         client = RestClient()
         url = client._url("https://api.example.com/users")
         assert url == "https://api.example.com/users"
@@ -122,7 +122,7 @@ class TestRestClient:
     
     @patch('requests.Session.request')
     def test_get_request(self, mock_request, rest_client):
-        """Test GET request."""
+
         mock_response = Mock()
         mock_response.status_code = 200
         mock_request.return_value = mock_response
@@ -135,7 +135,7 @@ class TestRestClient:
     
     @patch('requests.Session.request')
     def test_post_request(self, mock_request, rest_client):
-        """Test POST request."""
+
         mock_response = Mock()
         mock_response.status_code = 201
         mock_request.return_value = mock_response
@@ -148,7 +148,7 @@ class TestRestClient:
     
     @patch('requests.Session.request')
     def test_interceptors(self, mock_request, rest_client):
-        """Test request/response interceptors."""
+
         interceptor = Mock()
         interceptor.before_request = Mock()
         interceptor.after_response = Mock()
@@ -167,11 +167,11 @@ class TestRestClient:
 
 
 class TestAsyncRestClient:
-    """Tests for Async REST Client."""
+
     
     @pytest.mark.asyncio
     async def test_async_get(self):
-        """Test async GET request."""
+
         config = RestConfig(base_url="https://jsonplaceholder.typicode.com")
         
         async with RestClient(config).async_session() as client:
@@ -180,7 +180,7 @@ class TestAsyncRestClient:
     
     @pytest.mark.asyncio
     async def test_async_post(self):
-        """Test async POST request."""
+
         config = RestConfig(base_url="https://jsonplaceholder.typicode.com")
         
         async with RestClient(config).async_session() as client:
@@ -190,7 +190,7 @@ class TestAsyncRestClient:
     
     @pytest.mark.asyncio
     async def test_concurrent_requests(self):
-        """Test concurrent async requests."""
+
         config = RestConfig(base_url="https://jsonplaceholder.typicode.com")
         
         async with RestClient(config).async_session() as client:
@@ -204,26 +204,26 @@ class TestAsyncRestClient:
             assert all(r.status_code == 200 for r in responses)
 
 
-# ============================================================
-# GraphQL Client Tests
-# ============================================================
+
+
+
 
 class TestGraphQLClient:
-    """Tests for GraphQL Client."""
+
     
     def test_initialization(self, graphql_client):
-        """Test client initialization."""
+
         assert graphql_client.endpoint == "https://api.example.com/graphql"
         assert graphql_client.headers["Content-Type"] == "application/json"
     
     def test_set_auth(self, graphql_client):
-        """Test authentication."""
+
         graphql_client.set_auth("new-token")
         assert graphql_client.headers["Authorization"] == "Bearer new-token"
     
     @patch('requests.post')
     def test_query_execution(self, mock_post, graphql_client):
-        """Test query execution."""
+
         mock_response = Mock()
         mock_response.json.return_value = {"data": {"user": {"id": "1", "name": "Test"}}}
         mock_response.raise_for_status = Mock()
@@ -237,7 +237,7 @@ class TestGraphQLClient:
     
     @patch('requests.post')
     def test_query_with_variables(self, mock_post, graphql_client):
-        """Test query with variables."""
+
         mock_response = Mock()
         mock_response.json.return_value = {"data": {"user": {"id": "123"}}}
         mock_response.raise_for_status = Mock()
@@ -250,7 +250,7 @@ class TestGraphQLClient:
     
     @patch('requests.post')
     def test_mutation(self, mock_post, graphql_client):
-        """Test mutation execution."""
+
         mock_response = Mock()
         mock_response.json.return_value = {"data": {"createUser": {"id": "1"}}}
         mock_response.raise_for_status = Mock()
@@ -263,7 +263,7 @@ class TestGraphQLClient:
     
     @patch('requests.post')
     def test_graphql_error(self, mock_post, graphql_client):
-        """Test GraphQL error handling."""
+
         mock_response = Mock()
         mock_response.json.return_value = {"errors": [{"message": "User not found"}]}
         mock_response.raise_for_status = Mock()
@@ -275,7 +275,7 @@ class TestGraphQLClient:
         assert "User not found" in str(exc_info.value)
     
     def test_validate_valid_query(self, graphql_client):
-        """Test valid query validation."""
+
         valid_queries = [
             "{ users { id } }",
             "query GetUsers { users { id } }",
@@ -287,7 +287,7 @@ class TestGraphQLClient:
             assert graphql_client.validate_query(query) is True
     
     def test_validate_invalid_query(self, graphql_client):
-        """Test invalid query validation."""
+
         invalid_queries = [
             "",
             "not a query",
@@ -298,16 +298,16 @@ class TestGraphQLClient:
             assert graphql_client.validate_query(query) is False
 
 
-# ============================================================
-# Performance Testing Tests
-# ============================================================
+
+
+
 
 class TestPerformanceTester:
-    """Tests for Performance Tester."""
+
     
     @pytest.mark.asyncio
     async def test_load_test(self):
-        """Test load testing."""
+
         tester = PerformanceTester(
             base_url="https://jsonplaceholder.typicode.com",
             concurrency=5
@@ -325,7 +325,7 @@ class TestPerformanceTester:
         assert isinstance(results.throughput, float)
     
     def test_performance_results(self):
-        """Test performance results calculation."""
+
         results = PerformanceResults()
         results.total_requests = 100
         results.successful_requests = 95
@@ -341,7 +341,7 @@ class TestPerformanceTester:
         assert "p90" in percentiles
     
     def test_performance_results_empty(self):
-        """Test empty performance results."""
+
         results = PerformanceResults()
         
         assert results.throughput == 0.0
@@ -349,22 +349,22 @@ class TestPerformanceTester:
         assert results.percentiles == {}
 
 
-# ============================================================
-# Mock Server Tests
-# ============================================================
+
+
+
 
 class TestMockServer:
-    """Tests for Mock Server."""
+
     
     def test_initialization(self):
-        """Test server initialization."""
+
         server = MockServer(host="127.0.0.1", port=9999)
         assert server.host == "127.0.0.1"
         assert server.port == 9999
         assert len(server.routes) == 0
     
     def test_add_route(self):
-        """Test adding routes."""
+
         server = MockServer()
         route = MockRoute().method("GET").path("/test").response(200, {"test": True})
         
@@ -373,7 +373,7 @@ class TestMockServer:
         assert len(server.routes) == 1
     
     def test_add_json_endpoint(self):
-        """Test adding JSON endpoint."""
+
         server = MockServer()
         server.add_json_endpoint("/users", [{"id": 1}], method="GET", status=200)
         
@@ -381,7 +381,7 @@ class TestMockServer:
         assert server.routes[0].path == "/users"
     
     def test_route_matching(self):
-        """Test route matching."""
+
         route = MockRoute().method("GET").path("/users")
         
         assert route.match("GET", "/users") is True
@@ -389,7 +389,7 @@ class TestMockServer:
         assert route.match("GET", "/posts") is False
     
     def test_mock_route_builder(self):
-        """Test mock route builder pattern."""
+
         route = (
             MockRoute()
             .method("POST")
@@ -404,20 +404,20 @@ class TestMockServer:
         assert route.delay == 0.1
 
 
-# ============================================================
-# Reporter Tests
-# ============================================================
+
+
+
 
 class TestReporter:
-    """Tests for Test Reporter."""
+
     
     def test_initialization(self, tmp_path):
-        """Test reporter initialization."""
+
         reporter = TestReporter(output_dir=str(tmp_path))
         assert reporter.output_dir == tmp_path
     
     def test_generate_html_report(self, tmp_path):
-        """Test HTML report generation."""
+
         reporter = TestReporter(output_dir=str(tmp_path))
         
         results = [
@@ -434,7 +434,7 @@ class TestReporter:
         assert "passed" in content
     
     def test_generate_json_report(self, tmp_path):
-        """Test JSON report generation."""
+
         reporter = TestReporter(output_dir=str(tmp_path))
         
         results = [
@@ -450,7 +450,7 @@ class TestReporter:
         assert data["tests"][0]["name"] == "test1"
     
     def test_generate_junit_xml(self, tmp_path):
-        """Test JUnit XML report generation."""
+
         reporter = TestReporter(output_dir=str(tmp_path))
         
         results = [
@@ -468,10 +468,10 @@ class TestReporter:
 
 
 class TestTestReport:
-    """Tests for Test Report."""
+
     
     def test_report_calculations(self):
-        """Test report calculations."""
+
         results = [
             TestResult(name="t1", status="passed"),
             TestResult(name="t2", status="passed"),
@@ -487,15 +487,15 @@ class TestTestReport:
         assert report.pass_rate == 50.0
 
 
-# ============================================================
-# Contract Testing Tests
-# ============================================================
+
+
+
 
 class TestContractTester:
-    """Tests for Contract Tester."""
+
     
     def test_from_openapi(self, tmp_path):
-        """Test loading from OpenAPI file."""
+
         openapi = {
             "openapi": "3.0.0",
             "info": {"title": "Test API", "version": "1.0.0"},
@@ -519,7 +519,7 @@ class TestContractTester:
         assert tester.schema is not None
     
     def test_validate_endpoint(self):
-        """Test endpoint validation."""
+
         schema = {
             "paths": {
                 "/users": {
@@ -538,7 +538,7 @@ class TestContractTester:
             tester.validate_endpoint("/users", "POST")
     
     def test_validate_response(self):
-        """Test response validation."""
+
         schema = {
             "components": {
                 "schemas": {
@@ -563,7 +563,7 @@ class TestContractTester:
             tester.validate_response(invalid_data, schema_ref="User")
     
     def test_generate_test_data(self):
-        """Test test data generation."""
+
         schema = {
             "components": {
                 "schemas": {
@@ -588,7 +588,7 @@ class TestContractTester:
         assert data[0]["email"] == "test@example.com"
     
     def test_extract_endpoints(self):
-        """Test endpoint extraction."""
+
         schema = {
             "paths": {
                 "/users": {
@@ -606,107 +606,107 @@ class TestContractTester:
         assert any(e["path"] == "/users" and e["method"] == "POST" for e in endpoints)
 
 
-# ============================================================
-# Assertions Tests
-# ============================================================
+
+
+
 
 class TestAssertions:
-    """Tests for Assertions."""
+
     
     def test_assert_status_code_single(self):
-        """Test status code assertion with single code."""
+
         response = Mock()
         response.status_code = 200
         
-        Assertions.assert_status_code(response, 200)  # Should not raise
+        Assertions.assert_status_code(response, 200)  
         
         with pytest.raises(AssertionError):
             Assertions.assert_status_code(response, 201)
     
     def test_assert_status_code_multiple(self):
-        """Test status code assertion with multiple codes."""
+
         response = Mock()
         response.status_code = 201
         
-        Assertions.assert_status_code(response, [200, 201])  # Should not raise
+        Assertions.assert_status_code(response, [200, 201])  
         
         with pytest.raises(AssertionError):
             Assertions.assert_status_code(response, [200, 202])
     
     def test_assert_ok(self):
-        """Test OK assertion."""
+
         response = Mock()
         response.status_code = 200
         
-        Assertions.assert_ok(response)  # Should not raise
+        Assertions.assert_ok(response)  
         
         response.status_code = 400
         with pytest.raises(AssertionError):
             Assertions.assert_ok(response)
     
     def test_assert_json_content_type(self):
-        """Test JSON content type assertion."""
+
         response = Mock()
         response.headers = {"content-type": "application/json"}
         
-        Assertions.assert_json_content_type(response)  # Should not raise
+        Assertions.assert_json_content_type(response)  
         
         response.headers = {"content-type": "text/html"}
         with pytest.raises(AssertionError):
             Assertions.assert_json_content_type(response)
     
     def test_assert_json_contains(self):
-        """Test JSON contains assertion."""
+
         response = Mock()
         response.json.return_value = {"id": 1, "name": "Test"}
         
-        Assertions.assert_json_contains(response, "id")  # Should not raise
+        Assertions.assert_json_contains(response, "id")  
         
         with pytest.raises(AssertionError):
             Assertions.assert_json_contains(response, "nonexistent")
     
     def test_assert_json_path(self):
-        """Test JSON path assertion."""
+
         response = Mock()
         response.json.return_value = {"user": {"id": 1, "name": "Test"}}
         
-        Assertions.assert_json_path(response, "user.name", "Test")  # Should not raise
+        Assertions.assert_json_path(response, "user.name", "Test")  
         
         with pytest.raises(AssertionError):
             Assertions.assert_json_path(response, "user.name", "Wrong")
     
     def test_assert_header_contains(self):
-        """Test header contains assertion."""
+
         response = Mock()
         response.headers = {"content-type": "application/json; charset=utf-8"}
         
-        Assertions.assert_header_contains(response, "content-type", "json")  # Should not raise
+        Assertions.assert_header_contains(response, "content-type", "json")  
         
         with pytest.raises(AssertionError):
             Assertions.assert_header_contains(response, "content-type", "xml")
     
     def test_assert_not_empty(self):
-        """Test not empty assertion."""
+
         response = Mock()
         response.json.return_value = {"users": [1, 2, 3]}
         
-        Assertions.assert_not_empty(response, "users")  # Should not raise
+        Assertions.assert_not_empty(response, "users")  
         
         response.json.return_value = {"users": []}
         with pytest.raises(AssertionError):
             Assertions.assert_not_empty(response, "users")
 
 
-# ============================================================
-# Integration Tests
-# ============================================================
+
+
+
 
 @pytest.mark.integration
 class TestIntegration:
-    """Integration tests against real APIs."""
+
     
     def test_real_api_get(self):
-        """Test GET against real API."""
+
         config = RestConfig(base_url="https://jsonplaceholder.typicode.com")
         client = RestClient(config)
         
@@ -719,7 +719,7 @@ class TestIntegration:
     
     @pytest.mark.asyncio
     async def test_real_api_async(self):
-        """Test async requests against real API."""
+
         config = RestConfig(base_url="https://jsonplaceholder.typicode.com")
         
         async with RestClient(config).async_session() as client:
@@ -729,9 +729,9 @@ class TestIntegration:
             assert "id" in data
 
 
-# ============================================================
-# Run Tests
-# ============================================================
+
+
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

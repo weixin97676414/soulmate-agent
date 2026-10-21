@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-演示材料结构化整理 —— 公共库
 
-中间层：materials.json（素材库 S-x） + outline.json（演示大纲 P-x / 要点 T-x）
-所有页面要点必须锚定素材原文，脚本做逐字比对，杜绝杜撰。
-"""
+
+
+
+
+
 import json
 import os
 import re
@@ -14,10 +14,10 @@ import unicodedata
 MATERIALS_SCHEMA = "demo-materials/v1"
 OUTLINE_SCHEMA = "demo-outline/v1"
 
-# 页面角色（主线骨架）
+
 ROLES = ("封面", "背景", "痛点", "方案", "能力", "价值", "案例", "路线", "保障", "收尾")
 
-# 默认讲稿时长配比参考（分钟）
+
 ROLE_MINUTES = {"封面": 0.5, "背景": 1.5, "痛点": 2, "方案": 3, "能力": 4,
                 "价值": 2, "案例": 3, "路线": 2, "保障": 1.5, "收尾": 1}
 
@@ -29,7 +29,7 @@ HEADING_ALPHA = re.compile(r"^\s*[（(]?([一二三四五六七八九十]+|[A-Z]
 BULLET = re.compile(r"^\s*[-*·•]\s+")
 
 
-# ---------------------------------------------------------------- 基础工具
+
 
 def die(msg, code=1):
     sys.stderr.write("[ERROR] %s\n" % msg)
@@ -51,7 +51,7 @@ def save_json(path, obj):
 
 
 def norm(s):
-    """归一化：全角转半角、去空白、去标点。用于逐字比对。"""
+
     s = unicodedata.normalize("NFKC", s or "")
     s = re.sub(r"\s+", "", s)
     s = re.sub(r"[，。；：、！？,.;:!?\"'“”‘’（）()\[\]【】{}《》<>·…—\-_/\\|~`*#]+", "", s)
@@ -73,16 +73,16 @@ def similarity(a, b):
     return inter / min(len(ga), len(gb)) if min(len(ga), len(gb)) else 0.0
 
 
-# ---------------------------------------------------------------- 素材切片
+
 
 def is_heading(line):
-    """
-    判断一行是否为标题，返回标题文本（去掉标记）或 None。
 
-    关键规则：以句读结尾或过长的行一律不判为标题。
-    否则「第一条，检验记录仍以纸质表单为主，一张表单平均流转 3 天……」
-    会被整行当成标题，正文反而丢失。
-    """
+
+
+
+
+
+
     s = (line or "").strip()
     if not s:
         return None
@@ -106,10 +106,10 @@ def is_heading(line):
 
 
 def slice_text(text, source, min_len=8):
-    """
-    把一段长文本切成素材条目：按标题分层，空行分段。
-    返回 [{"source","section","text"}]
-    """
+
+
+
+
     lines = text.splitlines()
     items = []
     cur_sec = ""
@@ -144,10 +144,10 @@ def slice_text(text, source, min_len=8):
 
 
 def split_long(items, max_chars=300):
-    """
-    过长的素材条目按句二次切分，避免一条素材塞进整篇内容导致引用粒度太粗。
-    每段不超过 max_chars，切分只在句号/分号/换行处断开。
-    """
+
+
+
+
     out = []
     for it in items:
         text = it.get("text", "") or ""
@@ -175,9 +175,9 @@ def split_long(items, max_chars=300):
 
 
 def docx_paragraphs(path):
-    """读取 docx，返回 [(style_name, text)]。"""
+
     try:
-        import docx  # noqa: F401
+        import docx  
     except ImportError:
         die("未安装 python-docx，无法解析 .docx。请先在隔离环境执行：pip install python-docx")
     from docx import Document
@@ -186,7 +186,7 @@ def docx_paragraphs(path):
 
 
 def read_docx_sections(path):
-    """按 Heading 样式或标题正则把 docx 切成素材条目。"""
+
     items = []
     cur_sec = ""
     buf = []
@@ -221,7 +221,7 @@ TEXT_EXT = (".md", ".markdown", ".txt", ".text")
 
 
 def collect_files(path):
-    """路径可以是目录或单文件，返回待解析文件列表。"""
+
     if os.path.isfile(path):
         return [path]
     out = []
@@ -236,7 +236,7 @@ def collect_files(path):
 
 
 def build_materials(paths):
-    """从若干文件/目录构建素材条目列表。"""
+
     raw = []
     for p in paths:
         for f in collect_files(p):
@@ -251,7 +251,7 @@ def build_materials(paths):
 
 
 def make_materials(raw, source_name=""):
-    """给素材编号 S-1..Sn，输出 materials.json 结构。"""
+
     mats = []
     for i, r in enumerate(raw, 1):
         mats.append({
@@ -270,7 +270,7 @@ def make_materials(raw, source_name=""):
 
 
 def find_quote(mats, quote):
-    """在素材库中逐字定位引文，返回素材 id 列表。"""
+
     nq = norm(quote)
     if not nq:
         return []
@@ -280,7 +280,7 @@ def find_quote(mats, quote):
             hits.append(m["id"])
     if hits:
         return hits
-    # 未整段命中时，允许按句子拆分的宽松匹配（仍要求逐字）
+    
     parts = [p for p in re.split(r"[。；;！？!?\n]", quote) if len(norm(p)) >= 6]
     if parts:
         for m in mats:
@@ -294,7 +294,7 @@ def material_index(mats):
     return {m["id"]: m for m in mats}
 
 
-# ---------------------------------------------------------------- 大纲模型
+
 
 DEFAULT_PAGES = [
     {"role": "封面", "title": "开场", "goal": "交代主题与价值主张，让听众立刻知道要听什么"},

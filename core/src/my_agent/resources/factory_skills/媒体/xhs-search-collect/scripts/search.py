@@ -11,7 +11,7 @@ import unicodedata
 from xiaohongshu_links import convert, XiaohongshuLinkError
 
 class SearchError(RuntimeError):
-    """A safe-to-display failure without raw platform payloads."""
+    pass
 
 SORTS = ('comprehensive', 'latest', 'most-liked', 'most-commented', 'most-collected')
 PUBLISH_TIMES = ('anytime', 'day', 'week', 'half-year')
@@ -27,7 +27,7 @@ def resolve_command(opencli_js=None):
     if not executable:
         raise SearchError('OpenCLI not found in this agent process PATH; read references/setup.md.')
     if Path(executable).suffix.lower() in ('.cmd', '.bat', '.ps1'):
-        # Do not send user queries through Windows cmd.exe / PowerShell shims.
+        
         entry = Path(executable).parent / 'node_modules/@jackwener/opencli/dist/src/main.js'
         if entry.is_file():
             return resolve_command(str(entry))

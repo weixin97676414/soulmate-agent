@@ -12,7 +12,7 @@ import sys
 
 
 def read_plain(path: str) -> str:
-    """Read UTF-8 TXT/MD strictly, preserving whitespace and line endings."""
+
     if Path(path).suffix.lower() not in {".txt", ".md"}:
         raise ValueError(f"仅支持 UTF-8 TXT/MD: {path}")
     return Path(path).read_bytes().decode("utf-8-sig")
@@ -47,7 +47,7 @@ def locate(text: str, literal: str) -> list[dict]:
 def compare_material(source: str, draft: str, literals: list[str]) -> dict:
     if not literals:
         raise ValueError("必须明确选择至少一个 literal")
-    # Validate before deduplicating so invalid inputs produce a useful error.
+    
     for literal in literals:
         if not isinstance(literal, str) or not literal:
             raise ValueError("literal 必须为非空字符串")

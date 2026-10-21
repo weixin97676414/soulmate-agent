@@ -1,10 +1,10 @@
-"""
-合规检查脚本
-Compliance Check Script
 
-功能：核对合同是否符合法律法规的强制性规定
-支持格式条款审查、时效条款检查、管辖约定合法性验证等
-"""
+
+
+
+
+
+
 
 import re
 import json
@@ -18,18 +18,18 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 @dataclass
 class ComplianceIssue:
-    """合规问题"""
-    clause: str                     # 相关条款
-    issue_type: str               # 问题类型
-    severity: str                 # 严重程度
-    problem: str                  # 问题描述
-    legal_basis: str              # 法律依据
-    suggestion: str              # 修改建议
-    regulation: str               # 具体法规
+
+    clause: str                     
+    issue_type: str               
+    severity: str                 
+    problem: str                  
+    legal_basis: str              
+    suggestion: str              
+    regulation: str               
 
 
 class ComplianceChecker:
-    """合规检查器"""
+
     
     def __init__(self):
         self.mandatory_rules = self._init_mandatory_rules()
@@ -37,51 +37,51 @@ class ComplianceChecker:
     
     def check(self, contract_text: str, clauses_data: Dict, 
               contract_type: str) -> Dict:
-        """
-        执行合规检查
-        
-        Args:
-            contract_text: 合同全文
-            clauses_data: 条款提取结果
-            contract_type: 合同类型
-            
-        Returns:
-            合规检查结果
-        """
+
+
+
+
+
+
+
+
+
+
+
         issues = {
-            "mandatory_violations": [],    # 强制性规定违反
-            "format_clause_issues": [],    # 格式条款问题
-            "pending_validity": [],        # 效力待定条款
-            "jurisdiction_issues": []      # 管辖问题
+            "mandatory_violations": [],    
+            "format_clause_issues": [],    
+            "pending_validity": [],        
+            "jurisdiction_issues": []      
         }
         
         clauses = clauses_data.get("clauses", [])
         
-        # 1. 检查强制性规定违反
+        
         mandatory_violations = self._check_mandatory_rules(
             contract_text, clauses, contract_type
         )
         issues["mandatory_violations"] = mandatory_violations
         
-        # 2. 检查格式条款问题
+        
         format_issues = self._check_format_clauses(
             contract_text, clauses, contract_type
         )
         issues["format_clause_issues"] = format_issues
         
-        # 3. 检查效力待定条款
+        
         pending_issues = self._check_pending_validity(
             contract_text, clauses, contract_type
         )
         issues["pending_validity"] = pending_issues
         
-        # 4. 检查管辖约定
+        
         jurisdiction_issues = self._check_jurisdiction(
             contract_text, clauses, contract_type
         )
         issues["jurisdiction_issues"] = jurisdiction_issues
         
-        # 合并所有问题
+        
         all_issues = (
             issues["mandatory_violations"] + 
             issues["format_clause_issues"] + 
@@ -100,7 +100,7 @@ class ComplianceChecker:
         }
     
     def _init_mandatory_rules(self) -> Dict:
-        """初始化强制性规定检查规则"""
+
         return {
             "劳动类": [
                 {
@@ -187,7 +187,7 @@ class ComplianceChecker:
         }
     
     def _init_format_clause_rules(self) -> Dict:
-        """初始化格式条款审查规则"""
+
         return {
             "invalid_format_clauses": [
                 {
@@ -268,10 +268,10 @@ class ComplianceChecker:
     
     def _check_mandatory_rules(self, text: str, clauses: List[Dict], 
                                contract_type: str) -> List[ComplianceIssue]:
-        """检查强制性规定违反"""
+
         issues = []
         
-        # 确定适用的规则类别
+        
         if contract_type in ["劳动合同", "劳务合同"]:
             rule_category = "劳动类"
         else:
@@ -283,10 +283,10 @@ class ComplianceChecker:
             for pattern in rule["patterns"]:
                 matches = re.finditer(pattern, text, re.IGNORECASE)
                 for match in matches:
-                    # 提取相关条款
+                    
                     clause_text = self._extract_relevant_clause(text, match.start())
                     
-                    # 检查是否有限定词（如"不低于"）
+                    
                     context = text[max(0, match.start()-20):match.end()+20]
                     
                     issue = ComplianceIssue(
@@ -299,20 +299,20 @@ class ComplianceChecker:
                         regulation=f"规则编号: {rule['rule_id']}"
                     )
                     
-                    # 检查是否有否定限定（如"不低于"是合法的）
+                    
                     if "不低于" in context or "高于" in context:
-                        # 可能不是问题
-                        if rule["rule_id"] not in ["L001"]:  # 最低工资是例外
+                        
+                        if rule["rule_id"] not in ["L001"]:  
                             continue
                     
                     issues.append(issue)
-                    break  # 匹配一次即可
+                    break  
         
         return issues
     
     def _check_format_clauses(self, text: str, clauses: List[Dict],
                              contract_type: str) -> List[ComplianceIssue]:
-        """检查格式条款问题"""
+
         issues = []
         
         all_rules = self.format_clause_rules.get("invalid_format_clauses", [])
@@ -337,10 +337,10 @@ class ComplianceChecker:
     
     def _check_pending_validity(self, text: str, clauses: List[Dict],
                                 contract_type: str) -> List[ComplianceIssue]:
-        """检查效力待定条款"""
+
         issues = []
         
-        # 效力待定条款检测
+        
         pending_patterns = [
             {
                 "pattern": r"合同[^\n]*(?:经|待|尚)[^\n]*(?:批准|审批|授权|确认)",
@@ -372,10 +372,10 @@ class ComplianceChecker:
     
     def _check_jurisdiction(self, text: str, clauses: List[Dict],
                            contract_type: str) -> List[ComplianceIssue]:
-        """检查管辖约定"""
+
         issues = []
         
-        # 管辖条款检测
+        
         jurisdiction_patterns = [
             {
                 "pattern": r"提交[^\n]*(?:仲裁|诉讼)[^\n]*(?:委员会|法院)",
@@ -406,15 +406,15 @@ class ComplianceChecker:
         return issues
     
     def _extract_relevant_clause(self, text: str, position: int) -> str:
-        """提取相关条款内容"""
-        # 向前向后各取200字符
+
+        
         start = max(0, position - 200)
         end = min(len(text), position + 200)
         return text[start:end]
     
     def _find_clause_number(self, text: str, position: int) -> str:
-        """查找条款编号"""
-        # 在位置前后查找条款编号
+
+        
         search_text = text[max(0, position-300):min(len(text), position+100)]
         match = re.search(r'第[零一二三四五六七八九十百\d]+条', search_text)
         if match:
@@ -422,7 +422,7 @@ class ComplianceChecker:
         return "相关条款"
     
     def _calculate_compliance_score(self, issues: Dict) -> float:
-        """计算合规评分"""
+
         total_issues = (
             len(issues["mandatory_violations"]) +
             len(issues["format_clause_issues"]) +
@@ -433,10 +433,10 @@ class ComplianceChecker:
         if total_issues == 0:
             return 100.0
         
-        # 扣分计算
+        
         deductions = 0.0
         
-        # 严重问题每个扣20分
+        
         severe_count = sum(1 for issue in (
             issues["mandatory_violations"] + 
             issues["format_clause_issues"] + 
@@ -445,7 +445,7 @@ class ComplianceChecker:
         ) if getattr(issue, 'severity', '') == "严重")
         deductions += severe_count * 20
         
-        # 警告问题每个扣10分
+        
         warning_count = sum(1 for issue in (
             issues["mandatory_violations"] + 
             issues["format_clause_issues"] + 
@@ -454,7 +454,7 @@ class ComplianceChecker:
         ) if getattr(issue, 'severity', '') == "警告")
         deductions += warning_count * 10
         
-        # 提示问题每个扣5分
+        
         tip_count = sum(1 for issue in (
             issues["mandatory_violations"] + 
             issues["format_clause_issues"] + 
@@ -468,7 +468,7 @@ class ComplianceChecker:
 
 
 def main():
-    """测试函数"""
+
     from scripts.clause_extraction import ClauseExtractor
     
     extractor = ClauseExtractor()

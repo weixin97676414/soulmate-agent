@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""
-看板生成器 — 根据工作流结果动态生成 dashboard.html
-用法:
-  python generate_dashboard.py --mode answer --date 2026-07-01
-  python generate_dashboard.py --mode article --date 2026-07-01
-  python generate_dashboard.py --mode both --date 2026-07-01
-"""
+
+
+
+
+
+
+
 
 import sys
 import json
@@ -26,16 +26,16 @@ def generate_dashboard(
     answer_data: dict = None,
     article_data: dict = None,
 ):
-    """
-    生成看板 HTML。
 
-    Args:
-        output_path: 输出文件路径
-        mode: "answer" | "article" | "both"
-        date_str: 日期字符串 YYYY-MM-DD
-        answer_data: 回答工作流数据 {"stats": {...}, "questions": [...], "answers": [...]}
-        article_data: 文章工作流数据 {"stats": {...}, "articles": [...], "backup_topics": [...]}
-    """
+
+
+
+
+
+
+
+
+
     if date_str is None:
         date_str = datetime.now().strftime("%Y-%m-%d")
 
@@ -43,11 +43,11 @@ def generate_dashboard(
         print(f"[ERROR] 模板文件不存在: {TEMPLATE_FILE}")
         return False
 
-    # 加载模板
+    
     with open(TEMPLATE_FILE, "r", encoding="utf-8") as f:
         template = f.read()
 
-    # 默认数据
+    
     if answer_data is None:
         answer_data = {
             "stats": {"recommend": 100, "invited": 100, "hot": 30, "matched": 0, "selected": 0},
@@ -61,17 +61,17 @@ def generate_dashboard(
             "backup_topics": [],
         }
 
-    # 替换模板变量
+    
     template = template.replace("{{DATE}}", date_str)
     template = template.replace("{{MODE}}", mode)
 
-    # 统计数据
+    
     for key, val in answer_data.get("stats", {}).items():
         template = template.replace(f"{{{{ANSWER_STATS_{key.upper()}}}}}", str(val))
     for key, val in article_data.get("stats", {}).items():
         template = template.replace(f"{{{{ARTICLE_STATS_{key.upper()}}}}}", str(val))
 
-    # 问题列表
+    
     questions_html = ""
     for i, q in enumerate(answer_data.get("questions", []), 1):
         questions_html += f"""
@@ -98,7 +98,7 @@ def generate_dashboard(
 
     template = template.replace("{{QUESTIONS}}", questions_html)
 
-    # 文章列表
+    
     articles_html = ""
     for art in article_data.get("articles", []):
         articles_html += f"""
@@ -123,14 +123,14 @@ def generate_dashboard(
 
     template = template.replace("{{ARTICLES}}", articles_html)
 
-    # 备选选题
+    
     backup_html = ""
     for i, topic in enumerate(article_data.get("backup_topics", [])):
         backup_html += f'      <div class="backup-item"><strong>方向{i+2}</strong> — {topic.get("title", "")} | 热度源：{topic.get("source", "")}</div>\n'
 
     template = template.replace("{{BACKUP_TOPICS}}", backup_html)
 
-    # 写入输出文件
+    
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
