@@ -1,10 +1,10 @@
-"""
-风险检测脚本
-Risk Detection Script
 
-功能：智能检测合同中的各类风险，包括高风险、中风险、低风险条款
-支持显性风险（明确不利条款）和隐性风险（模糊表述、灰色地带）的识别
-"""
+
+
+
+
+
+
 
 import re
 import json
@@ -18,44 +18,44 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 class RiskLevel(Enum):
-    """风险等级枚举"""
-    HIGH = "high"      # 高风险
-    MEDIUM = "medium"   # 中风险
-    LOW = "low"        # 低风险
+
+    HIGH = "high"      
+    MEDIUM = "medium"   
+    LOW = "low"        
 
 
 @dataclass
 class DetectedRisk:
-    """检测到的风险"""
-    clause: str                    # 相关条款
-    clause_type: str               # 条款类型
-    risk_type: str                 # 风险类型
-    risk_level: str               # 风险等级
-    description: str              # 风险描述
-    problem: str                  # 问题分析
-    suggestion: str               # 修改建议
-    legal_basis: Optional[str]    # 法律依据
-    severity_score: float         # 严重程度评分(0-10)
+
+    clause: str                    
+    clause_type: str               
+    risk_type: str                 
+    risk_level: str               
+    description: str              
+    problem: str                  
+    suggestion: str               
+    legal_basis: Optional[str]    
+    severity_score: float         
 
 
 class RiskDetector:
-    """风险检测器"""
+
     
     def __init__(self):
         self.risk_rules = self._init_risk_rules()
         self.legal_basis_db = self._init_legal_basis_db()
     
     def detect(self, clauses_data: Dict, contract_type: str) -> Dict:
-        """
-        检测合同风险
-        
-        Args:
-            clauses_data: 条款提取结果
-            contract_type: 合同类型
-            
-        Returns:
-            包含高、中、低风险条款的字典
-        """
+
+
+
+
+
+
+
+
+
+
         risks = {
             "high_risk": [],
             "medium_risk": [],
@@ -66,13 +66,13 @@ class RiskDetector:
         clauses = clauses_data.get("clauses", [])
         key_elements = clauses_data.get("key_elements", {})
         
-        # 遍历每个条款进行风险检测
+        
         for clause in clauses:
             clause_type = clause.get("clause_type", "")
             clause_content = clause.get("clause_content", "")
             clause_number = clause.get("clause_number", "")
             
-            # 获取该条款类型的风险规则
+            
             type_rules = self.risk_rules.get(clause_type, [])
             
             for rule in type_rules:
@@ -85,7 +85,7 @@ class RiskDetector:
                         contract_type=contract_type
                     )
                     
-                    # 根据风险等级分类
+                    
                     if detected_risk.risk_level == RiskLevel.HIGH.value:
                         risks["high_risk"].append(asdict(detected_risk))
                     elif detected_risk.risk_level == RiskLevel.MEDIUM.value:
@@ -93,7 +93,7 @@ class RiskDetector:
                     else:
                         risks["low_risk"].append(asdict(detected_risk))
         
-        # 进行跨条款关联分析
+        
         cross_clause_risks = self._analyze_cross_clause_risks(clauses, contract_type)
         for risk in cross_clause_risks:
             if risk.risk_level == RiskLevel.HIGH.value:
@@ -103,15 +103,15 @@ class RiskDetector:
             else:
                 risks["low_risk"].append(asdict(risk))
         
-        # 生成风险摘要
+        
         risks["risk_summary"] = self._generate_risk_summary(risks)
         
         return risks
     
     def _init_risk_rules(self) -> Dict:
-        """初始化风险检测规则"""
+
         return {
-            # 违约责任条款风险
+            
             "breach": [
                 {
                     "name": "违约金过高",
@@ -140,7 +140,7 @@ class RiskDetector:
                 }
             ],
             
-            # 竞业限制条款风险
+            
             "non_compete": [
                 {
                     "name": "竞业限制期限过长",
@@ -180,7 +180,7 @@ class RiskDetector:
                 }
             ],
             
-            # 保密条款风险
+            
             "confidentiality": [
                 {
                     "name": "保密范围过宽",
@@ -207,7 +207,7 @@ class RiskDetector:
                 }
             ],
             
-            # 加班条款风险
+            
             "time_period": [
                 {
                     "name": "加班费计算标准违法",
@@ -224,7 +224,7 @@ class RiskDetector:
                 }
             ],
             
-            # 质量条款风险
+            
             "quality": [
                 {
                     "name": "质量标准模糊",
@@ -240,7 +240,7 @@ class RiskDetector:
                 }
             ],
             
-            # 期限条款风险
+            
             "time_period": [
                 {
                     "name": "合同期限过长",
@@ -255,7 +255,7 @@ class RiskDetector:
                 }
             ],
             
-            # 解除条款风险
+            
             "termination": [
                 {
                     "name": "单方解除权限制过多",
@@ -283,7 +283,7 @@ class RiskDetector:
                 }
             ],
             
-            # 管辖条款风险
+            
             "dispute": [
                 {
                     "name": "管辖约定不明确",
@@ -313,7 +313,7 @@ class RiskDetector:
         }
     
     def _init_legal_basis_db(self) -> Dict:
-        """初始化法律依据数据库"""
+
         return {
             "劳动法": {
                 "第44条": "安排劳动者延长工作时间的，支付不低于工资的150%的工资报酬；休息日安排工作又不能安排补休的，支付不低于工资的200%的工资报酬；法定休假日安排工作的，支付不低于工资的300%的工资报酬。",
@@ -328,7 +328,7 @@ class RiskDetector:
         }
     
     def _check_rule_match(self, text: str, rule: Dict) -> bool:
-        """检查文本是否匹配风险规则"""
+
         for pattern in rule.get("patterns", []):
             if re.search(pattern, text, re.IGNORECASE):
                 return True
@@ -336,13 +336,13 @@ class RiskDetector:
     
     def _create_risk(self, clause_number: str, clause_type: str, 
                     clause_content: str, rule: Dict, contract_type: str) -> DetectedRisk:
-        """创建风险对象"""
-        # 计算严重程度评分
+
+        
         severity_score = self._calculate_severity(
             clause_content, rule, contract_type
         )
         
-        # 确定风险等级
+        
         risk_level = rule["risk_level"].value
         
         return DetectedRisk(
@@ -358,20 +358,20 @@ class RiskDetector:
         )
     
     def _calculate_severity(self, text: str, rule: Dict, contract_type: str) -> float:
-        """计算风险严重程度评分"""
+
         base_score = {
             RiskLevel.HIGH: 8.0,
             RiskLevel.MEDIUM: 5.0,
             RiskLevel.LOW: 3.0
         }.get(rule["risk_level"], 5.0)
         
-        # 关键词加成
+        
         risk_keywords = ["无", "任何", "所有", "无条件", "绝对", "随时"]
         for kw in risk_keywords:
             if kw in text:
                 base_score += 0.5
         
-        # 金额数字加成（检测到具体金额）
+        
         if re.search(r'\d+\s*(?:万|亿|%)', text):
             base_score += 1.0
         
@@ -379,31 +379,31 @@ class RiskDetector:
     
     def _analyze_cross_clause_risks(self, clauses: List[Dict], 
                                    contract_type: str) -> List[DetectedRisk]:
-        """进行跨条款关联风险分析"""
+
         risks = []
         
-        # 收集关键要素
+        
         amounts = []
         periods = []
         
         for clause in clauses:
             content = clause.get("clause_content", "")
-            # 提取金额
+            
             amount_matches = re.findall(r'(\d+(?:\.\d+)?)\s*(?:万|亿|元|%)', content)
             amounts.extend([float(a) for a in amount_matches])
-            # 提取期限
+            
             period_matches = re.findall(r'(\d+)\s*(?:年|个月?|日)', content)
             periods.extend([int(p) for p in period_matches])
         
-        # 关联风险检测
-        # 1. 违约金与金额的关系
+        
+        
         if amounts:
             max_amount = max(amounts)
             for clause in clauses:
                 content = clause.get("clause_content", "")
                 clause_number = clause.get("clause_number", "")
                 
-                # 检测到固定金额违约金超过合同金额30%
+                
                 amount_in_clause = re.findall(r'(\d+(?:\.\d+)?)', content)
                 if amount_in_clause:
                     clause_amount = max([float(a) for a in amount_in_clause])
@@ -421,7 +421,7 @@ class RiskDetector:
                                 severity_score=6.5
                             ))
         
-        # 2. 竞业限制与其他条款的关联
+        
         has_non_compete = any(c.get("clause_type") == "non_compete" for c in clauses)
         has_confidentiality = any(c.get("clause_type") == "confidentiality" for c in clauses)
         
@@ -443,19 +443,19 @@ class RiskDetector:
         return risks
     
     def _generate_risk_summary(self, risks: Dict) -> Dict:
-        """生成风险摘要"""
+
         high_count = len(risks.get("high_risk", []))
         medium_count = len(risks.get("medium_risk", []))
         low_count = len(risks.get("low_risk", []))
         
-        # 统计风险类型分布
+        
         risk_types = {}
         for level in ["high_risk", "medium_risk", "low_risk"]:
             for risk in risks.get(level, []):
                 risk_type = risk.get("risk_type", "")
                 risk_types[risk_type] = risk_types.get(risk_type, 0) + 1
         
-        # 识别高风险条款类型
+        
         high_risk_types = [r.get("risk_type", "") for r in risks.get("high_risk", [])]
         
         return {
@@ -470,7 +470,7 @@ class RiskDetector:
 
 
 def main():
-    """测试函数"""
+
     from scripts.clause_extraction import ClauseExtractor
     
     extractor = ClauseExtractor()

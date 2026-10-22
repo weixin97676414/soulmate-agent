@@ -1,10 +1,10 @@
-"""本轮新增的 Agent 能力：并行工具、终止标记、文本工具协议、路由、计划、自检。
 
-这组用例的重点是**边界**而不是功能本身：
-- 并行只在"互不冲突"时才允许（同名工具、需要确认的工具必须串行）；
-- 终止标记必须真的能提前收尾，否则它只是个装饰；
-- 文本工具协议解析失败时必须按普通文本处理，不能让整轮失败。
-"""
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -24,11 +24,11 @@ from my_agent.skill.base import BaseSkill, SkillContext, SkillMeta, mark_termina
 from my_agent.skill.manager import SkillManager
 
 
-# --------------------------------------------------------------------------- #
-# 测试替身
-# --------------------------------------------------------------------------- #
+
+
+
 class ScriptedLLM(BaseLLM):
-    """按脚本逐轮返回内容的假模型。"""
+
 
     def __init__(self, script: list[tuple[str, list[ToolCall] | None]]) -> None:
         super().__init__(model_name="scripted")
@@ -50,7 +50,7 @@ class ScriptedLLM(BaseLLM):
 
 
 class Probe:
-    """记录"同时有几个工具在跑"，用来区分并行与串行。"""
+
 
     def __init__(self) -> None:
         self.active = 0
@@ -59,7 +59,7 @@ class Probe:
     async def run(self) -> str:
         self.active += 1
         self.max_active = max(self.max_active, self.active)
-        # 让出控制权，给"另一边"开始执行的机会
+        
         await asyncio.sleep(0.05)
         self.active -= 1
         return "done"
@@ -98,13 +98,13 @@ async def collect(agent: Agent, text: str) -> list:
     return [event async for event in agent.run_stream(text)]
 
 
-# --------------------------------------------------------------------------- #
-# 并行工具调用
-# --------------------------------------------------------------------------- #
+
+
+
 class TestParallelTools:
     @pytest.mark.asyncio
     async def test_distinct_safe_tools_run_concurrently(self):
-        """「查天气 + 查日程」这类互不冲突的调用不该串起来等。"""
+
         probe = Probe()
         calls = [
             ToolCall(id="1", name="alpha", arguments={}),
@@ -121,7 +121,7 @@ class TestParallelTools:
 
     @pytest.mark.asyncio
     async def test_same_tool_is_serialized(self):
-        """同名工具并发写同一目标，最终结果取决于调度顺序 —— 必须串行。"""
+
         probe = Probe()
         calls = [
             ToolCall(id="1", name="writer", arguments={"n": 1}),
@@ -137,7 +137,7 @@ class TestParallelTools:
         assert probe.max_active == 1
 
     def test_confirm_level_tools_are_not_parallelized(self):
-        """需要确认的工具并发执行时，用户分不清自己在批准哪一件。"""
+
         agent = build_agent(ScriptedLLM([("x", None)]), [])
         safe = SkillMeta(name="a", description="", permission_level="safe")
         confirm = SkillMeta(name="b", description="", permission_level="confirm")
@@ -152,13 +152,13 @@ class TestParallelTools:
         assert not agent._can_run_parallel([(ToolCall(id="1", name="a", arguments={}), meta, "a")])
 
 
-# --------------------------------------------------------------------------- #
-# 终止标记与越权
-# --------------------------------------------------------------------------- #
+
+
+
 class TestTerminationAndGuards:
     @pytest.mark.asyncio
     async def test_termination_marker_stops_the_loop(self):
-        """工具打了终止标记就该收工，不该再让模型多跑一轮。"""
+
 
         class Finisher(BaseSkill):
             meta = SkillMeta(name="finish", description="收尾")
@@ -182,7 +182,7 @@ class TestTerminationAndGuards:
 
     @pytest.mark.asyncio
     async def test_disabled_skill_cannot_be_executed(self):
-        """B11：模型凭历史消息或幻觉发出调用时，禁用状态必须真正拦住它。"""
+
         probe = Probe()
         manager = SkillManager()
         skill = manager.register(make_probe_skill("probe", probe))
@@ -201,7 +201,7 @@ class TestTerminationAndGuards:
         assert probe.max_active == 0, "被禁用的工具不该被执行"
         results = [e for e in events if e.type == "tool_result"]
         assert results and results[0].data["status"] == "denied"
-        # 顺便确认没被误改成"失败"——被拒绝和崩溃是两件不同的事
+        
         assert skill.meta.enabled is False
 
     @pytest.mark.asyncio
@@ -221,12 +221,12 @@ class TestTerminationAndGuards:
         )
 
 
-# --------------------------------------------------------------------------- #
-# requires 依赖
-# --------------------------------------------------------------------------- #
+
+
+
 class TestRequires:
     def test_dependencies_are_pulled_in(self):
-        """选了"导出 Excel"就该自动带上它依赖的"读表格"。"""
+
         manager = SkillManager()
 
         class NeedsOther(BaseSkill):
@@ -268,9 +268,9 @@ class TestRequires:
         assert manager.requires_closure({"a"}) == {"a", "b"}
 
 
-# --------------------------------------------------------------------------- #
-# 文本工具协议
-# --------------------------------------------------------------------------- #
+
+
+
 class TestTextTools:
     def test_renders_tool_list_into_prompt(self):
         specs = [
@@ -300,7 +300,7 @@ class TestTextTools:
         assert len(calls) == 1
         assert calls[0].name == "weather"
         assert calls[0].arguments == {"city": "北京"}
-        # 代码块要从正文里拿掉，否则用户会看到一大段原始 JSON
+        
         assert "tool_call" not in cleaned
         assert cleaned.strip() == "我来查一下。"
 
@@ -315,7 +315,7 @@ class TestTextTools:
         assert [c.name for c in calls] == ["a", "b"]
 
     def test_malformed_block_is_kept_as_plain_text(self):
-        """解析不了就原样保留 —— 静默吞掉模型真的想调用的内容更糟。"""
+
         reply = '看这个：\n```tool_call\n{这不是 JSON}\n```'
 
         cleaned, calls = extract_text_tool_calls(reply)
@@ -330,7 +330,7 @@ class TestTextTools:
         assert cleaned == "就是普通回答"
 
     def test_ordinary_code_block_is_not_a_tool_call(self):
-        """模型经常在回答里放普通代码块，那些不能被当成工具调用。"""
+
         reply = "示例：\n```python\nprint(1)\n```"
 
         _, calls = extract_text_tool_calls(reply)
@@ -338,15 +338,15 @@ class TestTextTools:
         assert calls == []
 
 
-# --------------------------------------------------------------------------- #
-# 模型路由
-# --------------------------------------------------------------------------- #
+
+
+
 def spec(model_id: str, tier: str) -> ModelSpec:
     return ModelSpec(
         id=model_id,
         model_name=model_id,
         base_url="https://x.example.com/v1",
-        tier=tier,  # type: ignore[arg-type]
+        tier=tier,  
     )
 
 
@@ -383,7 +383,7 @@ class TestModelRouter:
         assert router.pick(text="翻译") is None
 
     def test_only_single_model_configured(self):
-        """只配了一个模型时路由必须老实返回它，不能挑出个不存在的。"""
+
         router = ModelRouter(default_id="only", candidates=[spec("only", "standard")])
 
         assert router.pick(text="随便") == "only"
@@ -394,7 +394,7 @@ class TestModelRouter:
             candidates=[spec("cheap", "cheap"), spec("mid", "standard")],
         )
 
-        # 允许范围里没有 cheap，就该落到 standard
+        
         assert router.pick(text="翻译", within={"mid"}) == "mid"
 
     @pytest.mark.parametrize(
@@ -410,9 +410,9 @@ class TestModelRouter:
         )
 
 
-# --------------------------------------------------------------------------- #
-# Planner / Reflection
-# --------------------------------------------------------------------------- #
+
+
+
 class TestPlanner:
     def test_disabled_by_default(self):
         assert not Planner().should_plan("帮我做一份报告然后导出", need_tools=True)
@@ -432,11 +432,11 @@ class TestPlanner:
                 raise RuntimeError("boom")
 
             async def stream(self, *a, **kw):
-                yield  # pragma: no cover
+                yield  
 
         planner = Planner(enabled=True)
 
-        # 规划失败不是任务失败：返回 None，引擎按原来的 ReAct 继续
+        
         assert await planner.make_plan(Broken(model_name="b"), user_input="做点事") is None
 
     @pytest.mark.asyncio
@@ -450,7 +450,7 @@ class TestPlanner:
                 )
 
             async def stream(self, *a, **kw):
-                yield  # pragma: no cover
+                yield  
 
         plan = await Planner(enabled=True).make_plan(Fake(model_name="f"), user_input="做月报")
 
@@ -461,14 +461,14 @@ class TestPlanner:
 
     @pytest.mark.asyncio
     async def test_numbered_text_falls_back(self):
-        """模型不按 JSON 输出时的回退：解析编号行，保住"至少有计划"。"""
+
 
         class Fake(BaseLLM):
             async def chat(self, *a, **kw):
                 return LLMResponse(content="1. 先查数据\n2. 再整理表格", finish_reason="stop")
 
             async def stream(self, *a, **kw):
-                yield  # pragma: no cover
+                yield  
 
         plan = await Planner(enabled=True).make_plan(Fake(model_name="f"), user_input="做月报")
 
@@ -477,7 +477,7 @@ class TestPlanner:
 
     @pytest.mark.asyncio
     async def test_single_step_is_not_a_plan(self):
-        """只有一步 = 不是多步任务：不出计划卡片，别打扰用户。"""
+
 
         class Fake(BaseLLM):
             async def chat(self, *a, **kw):
@@ -486,7 +486,7 @@ class TestPlanner:
                 )
 
             async def stream(self, *a, **kw):
-                yield  # pragma: no cover
+                yield  
 
         assert await Planner(enabled=True).make_plan(Fake(model_name="f"), user_input="你好") is None
 
@@ -511,7 +511,7 @@ class TestReflector:
                 return LLMResponse(content="OK", finish_reason="stop")
 
             async def stream(self, *a, **kw):
-                yield  # pragma: no cover
+                yield  
 
         result = await Reflector(enabled=True).review(
             Reviewer(model_name="r"), user_input="问", answer="答"
@@ -526,7 +526,7 @@ class TestReflector:
                 return LLMResponse(content="REVISE: 漏了第二条要求", finish_reason="stop")
 
             async def stream(self, *a, **kw):
-                yield  # pragma: no cover
+                yield  
 
         result = await Reflector(enabled=True).review(
             Reviewer(model_name="r"), user_input="问", answer="答"
@@ -537,14 +537,14 @@ class TestReflector:
 
     @pytest.mark.asyncio
     async def test_review_failure_never_blocks(self):
-        """自检是增强，它自己出问题不能卡住回答交付。"""
+
 
         class Broken(BaseLLM):
             async def chat(self, *a, **kw):
                 raise RuntimeError("boom")
 
             async def stream(self, *a, **kw):
-                yield  # pragma: no cover
+                yield  
 
         result = await Reflector(enabled=True).review(
             Broken(model_name="b"), user_input="问", answer="答"

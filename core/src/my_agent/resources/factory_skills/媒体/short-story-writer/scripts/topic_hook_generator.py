@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-短篇爆款选题+开头钩子生成器 (topic_hook_generator.py)
-===================================================
-输入题材关键词 → 生成 10 个爆款选题 + 对应开头钩子（知乎/番茄双版本）。
-零依赖，纯本地运行。
 
-用法:
-    python topic_hook_generator.py 悬疑
-    python topic_hook_generator.py 甜宠 --count 15
-    python topic_hook_generator.py -i
-    python topic_hook_generator.py --list-themes
-"""
+
+
+
+
+
+
+
+
+
+
+
 
 import argparse, re, sys, random
 
-# ============================================================
-# 安全清洗
-# ============================================================
+
+
+
 
 def sanitize(text):
     if not text:
@@ -29,11 +29,11 @@ def sanitize(text):
     s = re.sub(r'(?i)(请|please).{0,10}(忽略|ignore)', '[已过滤]', s)
     return s.strip()[:30]
 
-# ============================================================
-# 题材知识库
-# ============================================================
 
-# 每个题材：选题骨架 × 钩子公式
+
+
+
+
 THEMES = {
     "悬疑": {
         "选题骨架": [
@@ -123,11 +123,11 @@ THEMES = {
     },
 }
 
-# 通用钩子升级词（让钩子更抓人）
+
 HOOK_BOOSTERS = ["凌晨三点", "监控里", "第108天", "最后一通电话", "没人知道", "从那天起"]
 
 def generate_topics(theme, count=10):
-    """生成选题 + 钩子"""
+
     if theme not in THEMES:
         return None
     data = THEMES[theme]
@@ -135,7 +135,7 @@ def generate_topics(theme, count=10):
     skeletons = data["选题骨架"]
     hooks = data["钩子公式"]
 
-    # 生成选题
+    
     for i in range(count):
         skeleton = skeletons[i % len(skeletons)]
         booster = random.choice(HOOK_BOOSTERS)

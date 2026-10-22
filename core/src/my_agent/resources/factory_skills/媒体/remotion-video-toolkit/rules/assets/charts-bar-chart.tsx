@@ -9,7 +9,7 @@ const COLOR_MUTED = '#888888';
 const COLOR_BG = '#0a0a0a';
 const COLOR_AXIS = '#333333';
 
-// Ideal composition size: 1280x720
+
 
 const Title: React.FC<{children: React.ReactNode}> = ({children}) => (
 	<div style={{textAlign: 'center', marginBottom: 40}}>

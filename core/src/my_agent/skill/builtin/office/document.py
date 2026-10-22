@@ -1,9 +1,9 @@
-"""文档解析技能：PDF / Word / 纯文本 / CSV。
 
-设计要点：**输出必须带截断标记**。模型很容易把整篇文档塞进上下文导致溢出，
-所以这里统一限制返回字符数，并在被截断时明确告知模型"还有多少没给你"，
-让它知道该分段读取而不是以为文档就这么短。
-"""
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from ....skill.decorator import skill
 from .._deps import require
 
 TEXT_SUFFIXES = {".txt", ".md", ".markdown", ".log", ".json", ".yaml", ".yml", ".py", ".sql"}
-# 依次尝试的编码：中文 Windows 上的文本文件经常是 GBK
+
 ENCODINGS = ("utf-8-sig", "utf-8", "gb18030", "utf-16", "latin-1")
 
 
@@ -49,10 +49,10 @@ def _parse_pdf(path: Path, max_chars: int, max_pages: int) -> dict[str, Any]:
         for index in range(limit):
             try:
                 chunks.append(reader.pages[index].extract_text() or "")
-            except Exception as exc:  # noqa: BLE001 - 单页损坏不该让整篇失败
+            except Exception as exc:  
                 chunks.append(f"[第 {index + 1} 页解析失败：{exc}]")
         text = "\n\n".join(chunk.strip() for chunk in chunks if chunk.strip())
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  
         raise SkillExecutionError(f"无法解析 PDF：{exc}") from exc
 
     content, truncated, length = _truncate(text, max_chars)
@@ -75,7 +75,7 @@ def _parse_docx(path: Path, max_chars: int) -> dict[str, Any]:
     docx = require("docx", "解析 Word 文档")
     try:
         document = docx.Document(str(path))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  
         raise SkillExecutionError(f"无法解析 Word 文档：{exc}") from exc
 
     paragraphs = [p.text.strip() for p in document.paragraphs if p.text.strip()]
@@ -103,14 +103,14 @@ def _parse_docx(path: Path, max_chars: int) -> dict[str, Any]:
 
 
 def _parse_csv(path: Path, max_chars: int, max_rows: int) -> dict[str, Any]:
-    """解析 CSV。
 
-    **流式读取，不把整个文件物化成二维列表。**
-    原实现是 ``rows = list(reader)``，一个几十万行的 CSV 会先被整份载进内存，
-    而这里其实只需要"表头 + 前 max_rows 行 + 一个总行数"。
-    （``read_bytes()`` 那一步仍在内存里，那是编码探测所必需的；
-    但把解析结果再放大一倍完全没有必要，而且正好放大在最大的那一类文件上。）
-    """
+
+
+
+
+
+
+
     raw, encoding = _decode(path.read_bytes())
     reader = csv.reader(io.StringIO(raw))
 
@@ -122,7 +122,7 @@ def _parse_csv(path: Path, max_chars: int, max_rows: int) -> dict[str, Any]:
             header = row
             continue
         body_rows += 1
-        # 只留够渲染预览的那些行，后面的只计数
+        
         if len(preview) < max_rows:
             preview.append(row)
 
@@ -173,9 +173,9 @@ def _parse_text(path: Path, max_chars: int) -> dict[str, Any]:
 
 class DocParseParams(BaseModel):
     file_path: str = Field(..., description="文档的绝对路径")
-    # 上限刻意放得很宽：这些是"这一次返回多少"的窗口，不是"能看到多少内容"的天花板。
-    # 想要全文就把数值填够；真装不下模型的一次上下文时由 memory/spill.py
-    # 无损外置并给出续读指引（模型可自行读完）。详见 memory/short_term.py 顶部。
+    
+    
+    
     max_chars: int = Field(
         12000, ge=500, le=20_000_000, description="最多返回多少字符（填大即可返回全文）"
     )
@@ -220,7 +220,7 @@ class DocParseSkill(BaseSkill):
                 f"{suffix} 是 Excel 文件，请改用 excel_read（查看数据）或 excel_analyze（做统计）。"
             )
         else:
-            # 未知后缀按纯文本尽力解析，总比直接拒绝有用
+            
             result = _parse_text(path, args.max_chars)
             result["note"] = f"未知文件类型 {suffix}，已按纯文本尝试解析。"
 

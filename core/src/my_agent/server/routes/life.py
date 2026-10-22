@@ -1,8 +1,8 @@
-"""生活数据接口：提醒与记账。
 
-供界面直接查看/管理，不必绕道让模型调用技能。技能写进去的数据
-在这里能看到，两边共用同一套仓储。
-"""
+
+
+
+
 
 from __future__ import annotations
 
@@ -24,9 +24,9 @@ def _require_db(runtime: AppRuntime) -> None:
         )
 
 
-# --------------------------------------------------------------------------- #
-# 提醒
-# --------------------------------------------------------------------------- #
+
+
+
 @router.get("/v1/reminders")
 async def list_reminders(
     request: Request,
@@ -54,16 +54,16 @@ async def delete_reminder(reminder_id: int, request: Request) -> dict[str, Any]:
 
 @router.post("/v1/reminders/check")
 async def check_reminders(request: Request) -> dict[str, Any]:
-    """立即检查一次到点提醒，用于调试与手动触发。"""
+
     runtime: AppRuntime = get_runtime(request)
     _require_db(runtime)
     fired = await runtime.reminder_scheduler.check_once()
     return {"ok": True, "fired": fired}
 
 
-# --------------------------------------------------------------------------- #
-# 记账
-# --------------------------------------------------------------------------- #
+
+
+
 @router.get("/v1/expenses")
 async def list_expenses(
     request: Request,

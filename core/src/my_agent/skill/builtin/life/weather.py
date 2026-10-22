@@ -1,12 +1,12 @@
-"""天气查询技能。
 
-默认走 `wttr.in <https://wttr.in>`_：它**不需要 API Key**，装上就能用。
-这一点很重要——如果要求用户先去注册和风天气再拿 Key，这个技能在"第一次
-打开应用"时就是不可用的，体验上等于没有。
 
-自动补充穿衣建议，因为"今天杭州适合穿什么"才是用户的真实诉求，
-单纯报温度等于把判断工作丢回给用户。
-"""
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ TIMEOUT = 20.0
 
 
 def _clothing_advice(temp: float, description: str, wind_kmph: float) -> str:
-    """按温度给出穿衣建议。"""
+
     if temp >= 30:
         base = "短袖短裤，尽量待在阴凉处"
     elif temp >= 26:
@@ -127,7 +127,7 @@ class WeatherQuerySkill(BaseSkill):
 
         forecast: list[dict[str, Any]] = []
         for day in (data.get("weather") or [])[: args.days]:
-            # wttr.in 的每日描述藏在 hourly 里，索引 4 对应正午时段
+            
             hourly = day.get("hourly") or []
             noon = hourly[4] if len(hourly) > 4 else (hourly[0] if hourly else {})
             day_desc_list = (noon.get("lang_zh") or noon.get("weatherDesc") or [])
@@ -152,8 +152,8 @@ class WeatherQuerySkill(BaseSkill):
             if area_names:
                 resolved_area = str(area_names[0].get("value", "")).strip()
 
-        # 穿衣建议用「当前温度 + 今天整体天气」来算：
-        # 此刻是多云、但今天有雷阵雨时，只按"多云"给建议会漏掉带伞提醒。
+        
+        
         today_description = (forecast[0]["description"] if forecast else "") or description
 
         return {

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""
-LegalDoc AI - Contract Clause Extractor
-Extracts and analyzes specific clauses from legal documents.
-"""
+
+
+
+
 
 import os
 import sys
@@ -15,7 +15,7 @@ from typing import Optional
 from dataclasses import dataclass, asdict
 from enum import Enum
 
-# Clause type definitions with patterns and risk indicators
+
 CLAUSE_TYPES = {
     "indemnification": {
         "patterns": [
@@ -194,7 +194,7 @@ class RiskLevel(Enum):
 
 @dataclass
 class ExtractedClause:
-    """Represents an extracted clause from a document."""
+
     clause_type: str
     section: Optional[str]
     page: Optional[int]
@@ -209,10 +209,10 @@ class ExtractedClause:
 
 
 def load_document(file_path: str) -> str:
-    """
-    Load document content. Supports PDF, DOCX, TXT.
-    In production, integrate with document parsing libraries.
-    """
+
+
+
+
     path = Path(file_path)
     
     if not path.exists():
@@ -233,7 +233,7 @@ def load_document(file_path: str) -> str:
                 text += page.extract_text() or ""
             return text
         except ImportError:
-            # Fallback: use external tool
+            
             import subprocess
             result = subprocess.run(
                 ["pdftotext", "-layout", file_path, "-"],
@@ -252,15 +252,15 @@ def load_document(file_path: str) -> str:
             raise RuntimeError("Cannot parse DOCX. Install python-docx: pip install python-docx")
     
     else:
-        # Try as plain text
+        
         return path.read_text(encoding="utf-8", errors="ignore")
 
 
 def find_section_boundaries(text: str) -> list[tuple[str, int, int]]:
-    """Find section headers and their boundaries in the document."""
+
     sections = []
     
-    # Pattern for section headers like "1.", "1.1", "Section 1", "ARTICLE I"
+    
     section_pattern = re.compile(
         r'^(?:(?:SECTION|ARTICLE|§)\s*)?(\d+(?:\.\d+)*\.?)\s*[:\.\s]+([A-Z][A-Za-z\s]+)',
         re.MULTILINE
@@ -279,11 +279,11 @@ def find_section_boundaries(text: str) -> list[tuple[str, int, int]]:
 
 
 def extract_page_number(text: str, position: int) -> Optional[int]:
-    """Extract page number based on position in text."""
-    # Look for [PAGE X] markers
+
+    
     page_pattern = re.compile(r'\[PAGE\s+(\d+)\]')
     
-    # Find all page markers before this position
+    
     text_before = text[:position]
     matches = list(page_pattern.finditer(text_before))
     
@@ -294,23 +294,23 @@ def extract_page_number(text: str, position: int) -> Optional[int]:
 
 
 def assess_risk_level(text: str, clause_type: str) -> tuple[RiskLevel, str]:
-    """Assess risk level of a clause based on indicators."""
+
     clause_config = CLAUSE_TYPES.get(clause_type, {})
     risk_indicators = clause_config.get("risk_indicators", {})
     
     text_lower = text.lower()
     
-    # Check for high risk indicators
+    
     high_matches = [ind for ind in risk_indicators.get("high", []) if ind.lower() in text_lower]
     if high_matches:
         return RiskLevel.HIGH, f"Contains high-risk terms: {', '.join(high_matches)}"
     
-    # Check for medium risk indicators
+    
     medium_matches = [ind for ind in risk_indicators.get("medium", []) if ind.lower() in text_lower]
     if medium_matches:
         return RiskLevel.MEDIUM, f"Contains standard terms: {', '.join(medium_matches)}"
     
-    # Check for low risk indicators
+    
     low_matches = [ind for ind in risk_indicators.get("low", []) if ind.lower() in text_lower]
     if low_matches:
         return RiskLevel.LOW, f"Contains favorable terms: {', '.join(low_matches)}"
@@ -319,7 +319,7 @@ def assess_risk_level(text: str, clause_type: str) -> tuple[RiskLevel, str]:
 
 
 def generate_revision_suggestion(clause_type: str, risk_level: RiskLevel) -> Optional[str]:
-    """Generate suggested revisions based on clause type and risk."""
+
     suggestions = {
         "indemnification": {
             RiskLevel.HIGH: "Consider: (1) Add mutual indemnification, (2) Cap at contract value or insurance limits, (3) Add carve-outs for gross negligence/willful misconduct, (4) Require prompt notice and cooperation",
@@ -352,7 +352,7 @@ def extract_clauses(
     clause_types: Optional[list[str]] = None,
     min_confidence: float = 0.5
 ) -> list[ExtractedClause]:
-    """Extract specified clause types from document text."""
+
     
     if clause_types is None:
         clause_types = list(CLAUSE_TYPES.keys())
@@ -367,16 +367,16 @@ def extract_clauses(
         config = CLAUSE_TYPES[clause_type]
         patterns = config["patterns"]
         
-        # Search for clause patterns
+        
         for pattern in patterns:
             regex = re.compile(pattern, re.IGNORECASE)
             
             for match in regex.finditer(text):
-                # Find surrounding context (paragraph)
+                
                 start = max(0, match.start() - 500)
                 end = min(len(text), match.end() + 1500)
                 
-                # Expand to paragraph boundaries
+                
                 while start > 0 and text[start] != '\n':
                     start -= 1
                 while end < len(text) and text[end] != '\n':
@@ -384,27 +384,27 @@ def extract_clauses(
                 
                 context = text[start:end].strip()
                 
-                # Skip if too short
+                
                 if len(context) < 100:
                     continue
                 
-                # Find section
+                
                 section = None
                 for sec_name, sec_start, sec_end in sections:
                     if sec_start <= match.start() < sec_end:
                         section = sec_name
                         break
                 
-                # Get page number
+                
                 page = extract_page_number(text, match.start())
                 
-                # Assess risk
+                
                 risk_level, risk_notes = assess_risk_level(context, clause_type)
                 
-                # Generate suggestion
+                
                 suggestion = generate_revision_suggestion(clause_type, risk_level)
                 
-                # Calculate confidence based on pattern match quality
+                
                 confidence = 0.7 if len(context) > 300 else 0.5
                 if section:
                     confidence += 0.1
@@ -418,16 +418,16 @@ def extract_clauses(
                         clause_type=clause_type,
                         section=section,
                         page=page,
-                        text=context[:2000],  # Limit text length
+                        text=context[:2000],  
                         risk_level=risk_level.value,
                         risk_notes=risk_notes,
                         suggested_revision=suggestion,
                         confidence=round(confidence, 2)
                     ))
                 
-                break  # One match per pattern type is enough
+                break  
     
-    # Deduplicate by position (keep highest confidence)
+    
     seen_positions = {}
     unique_extracted = []
     
@@ -446,7 +446,7 @@ def format_output(
     document_name: str,
     output_format: str = "markdown"
 ) -> str:
-    """Format extracted clauses for output."""
+
     
     if output_format == "json":
         return json.dumps({
@@ -468,7 +468,7 @@ def format_output(
             )
         return "\n".join(lines)
     
-    else:  # markdown
+    else:  
         risk_emoji = {"high": "🔴", "medium": "🟡", "low": "🟢", "unknown": "⚪"}
         
         lines = [
@@ -543,20 +543,20 @@ def main():
             print(f"  - {ct}")
         return
     
-    # Parse clause types
+    
     clause_types = None
     if args.type:
         clause_types = [t.strip() for t in args.type.split(",")]
     
     try:
-        # Load and process document
+        
         print(f"Loading document: {args.file_path}", file=sys.stderr)
         text = load_document(args.file_path)
         
         print(f"Extracting clauses...", file=sys.stderr)
         clauses = extract_clauses(text, clause_types, args.min_confidence)
         
-        # Format and output
+        
         document_name = Path(args.file_path).name
         output = format_output(clauses, document_name, args.output)
         print(output)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""数据库初始化 - Initialize Database"""
+
 import sys
 import os
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')

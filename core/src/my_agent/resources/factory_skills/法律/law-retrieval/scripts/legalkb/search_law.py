@@ -1,15 +1,15 @@
-"""
-法律条文查询脚本（最终版）
-数据源：
-  1. lawtext/laws GitHub（git clone，git grep 搜索，全量法律）
-  2. just-laws GitHub（备用，git cat-file，民法典等主要法律）
 
-用法：
-  python search_law.py <关键词> [--repo <仓库路径>] [--local <目录>]
 
-首次设置：
-  git clone --depth=1 https://github.com/lawtext/laws <目标路径>
-"""
+
+
+
+
+
+
+
+
+
+
 import sys
 import os
 import re
@@ -19,7 +19,7 @@ from pathlib import Path
 
 
 def run_git(repo: str, args: list, timeout: int = 30) -> subprocess.CompletedProcess:
-    """运行 git 命令"""
+
     cmd = ['git', '-C', repo] + args
     try:
         return subprocess.run(cmd, capture_output=True, text=True,
@@ -29,17 +29,17 @@ def run_git(repo: str, args: list, timeout: int = 30) -> subprocess.CompletedPro
 
 
 def git_grep(repo: str, keyword: str, max_results: int = 30) -> list:
-    """用 git grep 搜索本地仓库（全程 git 命令，绕过 HTTP）"""
+
     try:
         result = run_git(repo, ['grep', '-n', '-B', '1', '-A', '1', '--', '*.md', keyword], timeout=30)
-        # 0=找到，1=未找到，>1=错误
+        
         if result.returncode not in (0, 1):
             return []
         if not result.stdout.strip():
             return []
 
-        # 解析 git grep 输出：filepath:linenum:content
-        # filepath 可能包含 : ，从最后一个 : 分割得到 linenum:content
+        
+        
         results = []
         current_file = None
         current_lines = []
@@ -47,17 +47,17 @@ def git_grep(repo: str, keyword: str, max_results: int = 30) -> list:
         for line in result.stdout.splitlines():
             if not line.strip():
                 continue
-            # 找最后一个冒号（linenum:content 分隔）
+            
             last_colon = line.rfind(':')
             if last_colon == -1:
                 continue
             before = line[:last_colon]
             after = line[last_colon+1:]
 
-            # before 中最后一个冒号前面是 filepath
+            
             filepath = before.rsplit(':', 1)[-1] if ':' in before else before
 
-            # 检查是否是行号（after 的开头）
+            
             colon2 = after.find(':')
             if colon2 > 0 and after[:colon2].isdigit():
                 linenum = after[:colon2]
@@ -66,7 +66,7 @@ def git_grep(repo: str, keyword: str, max_results: int = 30) -> list:
                 linenum = ''
                 content = after
 
-            # 去掉引号
+            
             filepath = filepath.strip('"\'')
 
             if filepath != current_file:
@@ -92,8 +92,8 @@ def git_grep(repo: str, keyword: str, max_results: int = 30) -> list:
 
 
 def just_laws_grep(repo: str, keyword: str, max_results: int = 20) -> list:
-    """在 just-laws 仓库中搜索（通过 git cat-file，绕过 HTTP）"""
-    # just-laws 的法律索引
+
+    
     JUST_LAWS_FILES = {
         '民法典-总则': 'docs/civil-and-commercial/civil-code/01-general-principles.md',
         '民法典-物权编': 'docs/civil-and-commercial/civil-code/02-property-rights.md',
@@ -114,7 +114,7 @@ def just_laws_grep(repo: str, keyword: str, max_results: int = 20) -> list:
 
     results = []
     for name, path in JUST_LAWS_FILES.items():
-        # 先搜索
+        
         grep_result = run_git(repo, [
             'grep', '-n', '-B', '1', '-A', '1',
             '--', f'docs/{path}', keyword
@@ -136,7 +136,7 @@ def just_laws_grep(repo: str, keyword: str, max_results: int = 20) -> list:
 
 
 def search_local(directory: str, keywords: list) -> list:
-    """搜索本地 PDF/DOCX"""
+
     if not os.path.exists(directory):
         return []
     matches = []
@@ -153,7 +153,7 @@ def search_local(directory: str, keywords: list) -> list:
 
 
 def guess_category(filepath: str) -> str:
-    """猜测分类"""
+
     f = filepath.lower()
     if 'appendix' in f or '附录' in filepath:
         return '附录/司法解释'
@@ -184,7 +184,7 @@ def format_output(keyword: str, grep_results: list, just_results: list, local_re
 
     if total_grep > 0:
         lines.append(f'\n[全国法律数据库] 共 {total_grep} 条匹配\n')
-        # 按分类汇总
+        
         by_cat = {}
         for r in grep_results:
             cat = guess_category(r['file'])
@@ -218,13 +218,13 @@ def format_output(keyword: str, grep_results: list, just_results: list, local_re
     return '\n'.join(lines)
 
 
-# ─── 主程序 ─────────────────────────────────────────────────
+
 
 def main():
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')
 
-    # 查找 lawtext/laws 仓库
+    
     repo = os.environ.get('LAWTEXT_REPO', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'laws'))
 
     parser = argparse.ArgumentParser(
@@ -272,20 +272,20 @@ def main():
     keyword = keyword.strip()
     print(f'[搜索中] 关键词: {keyword}', file=sys.stderr)
 
-    # 1. git grep 搜索 lawtext/laws
+    
     grep_results = []
     if os.path.exists(os.path.join(args.repo, '.git')):
         print(f'[1/2] 搜索 lawtext/laws 本地库...', file=sys.stderr)
         grep_results = git_grep(args.repo, keyword, args.max)
         print(f'  -> 找到 {len(grep_results)} 条', file=sys.stderr)
 
-    # 2. just-laws 备用（通过 git）
+    
     just_results = []
     print('[2/2] 搜索 just-laws 主要法律...', file=sys.stderr)
     just_results = just_laws_grep(args.repo, keyword, max_results=20)
     print(f'  -> {len(just_results)} 条', file=sys.stderr)
 
-    # 3. 本地文件兜底
+    
     local_results = []
     if args.local:
         local_results = search_local(args.local, keyword.split())

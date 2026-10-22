@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-/**
- * 简单测试脚本 - Simple Test Script
- * 测试 fallback source 是否可用
- */
+
+
+
+
 
 const FallbackFetcher = require('./fallback');
 

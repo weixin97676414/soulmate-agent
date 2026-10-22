@@ -32,16 +32,16 @@ function formatSize(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
-/**
- * 搭子 / 搭子群的导入面板（两种导入共用）。
- *
- * 三件事写死在这里：
- * 1. **拖进来就能用** —— 用户拿到的是别人发来的压缩包，拖进来比"点选择文件、
- *    再翻目录"少两步；
- * 2. **逐条回报** —— 一个包里可能装了好几个技能，只说"导入失败"等于没说，
- *    所以成功/失败/已存在都逐行列出（后端也是这么返回的）；
- * 3. **导入中不许关窗** —— 中途关掉会留下一半的搭子与一半的技能。
- */
+
+
+
+
+
+
+
+
+
+
 export function BuddyImportPanel({
   open,
   kind,
@@ -77,8 +77,8 @@ export function BuddyImportPanel({
       const result =
         kind === 'buddy' ? await api.importBuddyPackage(file) : await api.importBuddyGroup(file)
       setOutcome(result)
-      // 清单要立刻跟上：后端也推了 assistants_changed/groups_changed，
-      // 但这里显式再拉一次，"导入完就能在左边看到它"这件事不该取决于事件时序
+      
+      
       await useAssistantStore.getState().load()
       if (kind === 'group') await useGroupStore.getState().loadGroups()
       useNotificationStore.getState().push({
@@ -89,7 +89,7 @@ export function BuddyImportPanel({
           : '详情见导入面板里的逐条结果。',
       })
     } catch (exc) {
-      // 后端给的是 4xx + 人话（"这个包里没找到搭子文件"这类），原样显示
+      
       setError(exc instanceof Error ? exc.message : String(exc))
     } finally {
       setBusy(false)
@@ -150,7 +150,7 @@ export function BuddyImportPanel({
           disabled={busy}
           onClick={() => inputRef.current?.click()}
           onDragOver={(event) => {
-            // 不 preventDefault 的话浏览器会直接打开拖进来的那个文件
+            
             event.preventDefault()
             setDragging(true)
           }}

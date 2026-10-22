@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""academic-figures 一键环境准备：依赖检测/安装、中文字体检测、字体缓存清理、自检报告。"""
+
 import os
 import shutil
 import subprocess
 import sys
 
-# v3.7：版本下限精确化（boundary 评测靶点：多库依赖具体版本要求）
+
 REQUIRED = {
     "matplotlib": "matplotlib>=3.5",
     "numpy": "numpy>=1.21",

@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-估值监控 Watchlist 管理工具
 
 
-使用许可:
-- 允许个人学习、研究、非商业用途使用
-- 允许修改后个人使用
-- 禁止直接复制核心算法用于商业产品或竞争性服务
 
-免责声明: 本脚本提供的分析结果仅供参考，不构成投资建议。
-"""
+
+
+
+
+
+
+
+
 
 import json
 import os
 import argparse
 from datetime import datetime
 
-# 数据文件路径
+
 WATCHLIST_FILE = os.path.expanduser("~/.valuation_watchlist.json")
 
 
 def load_watchlist():
-    """加载 watchlist"""
+
     if os.path.exists(WATCHLIST_FILE):
         try:
             with open(WATCHLIST_FILE, 'r', encoding='utf-8') as f:
@@ -33,7 +33,7 @@ def load_watchlist():
 
 
 def save_watchlist(watchlist):
-    """保存 watchlist"""
+
     watchlist["updated_at"] = datetime.now().isoformat()
     with open(WATCHLIST_FILE, 'w', encoding='utf-8') as f:
         json.dump(watchlist, f, ensure_ascii=False, indent=2)
@@ -41,17 +41,17 @@ def save_watchlist(watchlist):
 
 def add_stock(code, name=None, target_pe_low=None, target_pe_high=None, 
               target_pb_low=None, target_pb_high=None, notes=None):
-    """
-    添加股票到 watchlist
-    
-    Args:
-        target_pe_low: 目标买入 PE（低于此值视为机会）
-        target_pe_high: 目标卖出 PE（高于此值视为高估）
-        target_pb_low/high: 同理，针对 PB
-    """
+
+
+
+
+
+
+
+
     watchlist = load_watchlist()
     
-    # 检查是否已存在
+    
     for stock in watchlist["stocks"]:
         if stock["code"] == code:
             print(f"股票 {code} 已在 watchlist 中")
@@ -78,7 +78,7 @@ def add_stock(code, name=None, target_pe_low=None, target_pe_high=None,
 
 
 def remove_stock(code):
-    """从 watchlist 移除股票"""
+
     watchlist = load_watchlist()
     
     original_len = len(watchlist["stocks"])
@@ -94,7 +94,7 @@ def remove_stock(code):
 
 
 def list_stocks():
-    """列出所有 watchlist 股票"""
+
     watchlist = load_watchlist()
     
     if not watchlist["stocks"]:
@@ -119,10 +119,10 @@ def list_stocks():
 
 
 def check_alerts():
-    """
-    检查估值预警
-    需要配合 valuation_snapshot.py 使用
-    """
+
+
+
+
     import sys
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from valuation_snapshot import get_stock_valuation
@@ -137,7 +137,7 @@ def check_alerts():
         code = stock["code"]
         target = stock.get("target", {})
         
-        # 获取实时估值
+        
         val = get_stock_valuation(code)
         if not val:
             continue
@@ -147,13 +147,13 @@ def check_alerts():
         
         alert_msgs = []
         
-        # PE 预警
+        
         if current_pe and target.get("pe_low") and current_pe <= target["pe_low"]:
             alert_msgs.append(f"PE {current_pe:.2f} ≤ 目标 {target['pe_low']}")
         if current_pe and target.get("pe_high") and current_pe >= target["pe_high"]:
             alert_msgs.append(f"PE {current_pe:.2f} ≥ 目标 {target['pe_high']}")
         
-        # PB 预警
+        
         if current_pb and target.get("pb_low") and current_pb <= target["pb_low"]:
             alert_msgs.append(f"PB {current_pb:.2f} ≤ 目标 {target['pb_low']}")
         if current_pb and target.get("pb_high") and current_pb >= target["pb_high"]:
@@ -186,7 +186,7 @@ def main():
     parser = argparse.ArgumentParser(description='估值监控 Watchlist 管理')
     subparsers = parser.add_subparsers(dest='command', help='子命令')
     
-    # add 命令
+    
     add_parser = subparsers.add_parser('add', help='添加股票')
     add_parser.add_argument('code', help='股票代码')
     add_parser.add_argument('--name', help='股票名称')
@@ -196,14 +196,14 @@ def main():
     add_parser.add_argument('--pb-high', type=float, help='目标卖出 PB')
     add_parser.add_argument('--notes', help='备注')
     
-    # remove 命令
+    
     remove_parser = subparsers.add_parser('remove', help='移除股票')
     remove_parser.add_argument('code', help='股票代码')
     
-    # list 命令
+    
     subparsers.add_parser('list', help='列出所有股票')
     
-    # check 命令
+    
     subparsers.add_parser('check', help='检查估值预警')
     
     args = parser.parse_args()

@@ -1,13 +1,13 @@
-"""文档转换技能：Word ↔ Markdown ↔ PDF。
 
-四个方向都做成独立技能，而不是一个带 `direction` 参数的"万能转换"：
 
-- 权限级别不一样（**读取** PDF 是 safe，生成文件是 confirm）；
-- 描述里能写清"什么时候用它"，模型的选择准确率高得多 ——
-  一个参数有六种取值的万能工具，模型很容易选错方向。
 
-产出统一落进产物目录并登记，用户能在右侧产物区直接预览。
-"""
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ def _read_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
-        # 老文件可能是 GBK：这在国内用户手里很常见，硬要 UTF-8 会直接报错
+        
         return path.read_text(encoding="gbk", errors="replace")
     except OSError as exc:
         raise SkillExecutionError(f"文件读不出来：{exc}") from exc

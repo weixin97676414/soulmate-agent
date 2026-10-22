@@ -1,27 +1,27 @@
-"""心鉴学报告代取：凭证留在核心内存，模型只拿到报告。
 
-## 为什么必须由核心代发（而不是让模型自己发 HTTP）
 
-以前那条路是让模型用 `http_request` 自己拼请求。问题是：**凭证一旦进了模型的
-上下文，它早晚会被写进回复、导出文件、或某一版日志里**。产品约定
-是"凭证由核心代发"——模型从头到尾看不到钥匙，只看得到门后的东西。
 
-所以：
-- 凭证从 ``AppRuntime.session_token``（进程内存）取，**不落盘、不过 IPC 到渲染层**；
-- 只在**请求头**里用一次，不写进任何返回值或日志（日志只记 status 与路径）；
-- 服务端返回的内容再走一遍 ``security.redact`` —— 万一服务端把凭证回显了，
-  也不能就这么交给模型。
 
-## 为什么在本地先拦一道必填字段
 
-``person`` 里那四项（出生年月日 / 性别 / 现居城市 / 现居国家）服务端会校验，
-但**每次提交都要扣 token**（换分析对象更贵）。与其让用户白花一次，
-不如在这里直接拦住并告诉模型"去问用户"——见 ``_missing_fields``。
 
-字段口径与四份 SKILL.md 的《2.1 要问用户哪些信息》**保持一致**：
-出生时间只到「年月日」时出生地可以不问；到「年月日时分」时必须问
-（真太阳时校正需要地点，没有地点算出来的时段是错的，而用户看不出来）。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -42,14 +42,14 @@ from . import xjx
 
 _TIMEOUT = httpx.Timeout(60.0, connect=10.0)
 
-# 出生时间的两种合法形态：只有日期，或日期 + 时分
+
 _DATE_ONLY = re.compile(r"^\d{4}-\d{1,2}-\d{1,2}$")
 _DATE_TIME = re.compile(r"^\d{4}-\d{1,2}-\d{1,2}\s+\d{1,2}:\d{2}$")
 
 
 @dataclass
 class XjxHttpResult:
-    """一次请求的结果。``status == 0`` 表示**压根没收到响应**（网络层失败）。"""
+
 
     status: int
     text: str
@@ -57,17 +57,17 @@ class XjxHttpResult:
 
 
 class XjxGateway:
-    """心鉴学服务端访问的**唯一出口**（作为 ``ctx.service("xjx")`` 注入给技能）。
 
-    为什么要做成门面而不是把 runtime 直接给技能：把 runtime 递出去，技能就能
-    顺手读到凭证、改线路、翻配置；将来再加一个技能时没人会记得"别那么干"。
-    门面只开三个口：当前线路、有没有凭证、发一次报告请求。
-    """
+
+
+
+
+
 
     def __init__(self, runtime: Any) -> None:
         self._runtime = runtime
 
-    # ------------------------------------------------------------------ #
+    
     @property
     def line(self) -> str:
         return str(getattr(self._runtime, "line", "") or xjx.LINE_CN)
@@ -83,14 +83,28 @@ class XjxGateway:
         path = xjx.REPORT_PATHS[group]
         return f"{self.base_url()}/api/buddy/v1/{path}"
 
-    # ------------------------------------------------------------------ #
+    
     async def post_report(self, group: str, person: dict[str, Any]) -> XjxHttpResult:
-        """带上核心内存里的凭证，把 ``person`` 提交给对应端点。
 
-        返回**服务端原文**（已脱敏）而不是抛错：400「地点无法识别」/ 401「未登录」/
-        402「余额不足」这些都是**给模型看的信息**，模型要据此决定下一步
-        （补地点 / 让用户登录 / 告知余额）。抛成异常只会剩下一句"工具调用失败"。
-        """
+
+
+
+
+
+        return await self.post_json(
+            f"/api/buddy/v1/{xjx.REPORT_PATHS[group]}",
+            {"person": person},
+            timeout=_TIMEOUT,
+        )
+
+    async def post_json(
+        self, path: str, body: dict[str, Any], *, timeout: httpx.Timeout
+    ) -> XjxHttpResult:
+
+
+
+
+
         if not self.has_token:
             return XjxHttpResult(
                 401,
@@ -98,31 +112,31 @@ class XjxGateway:
                 "模型无法代填、也不需要知道凭证）。",
             )
 
-        url = self.endpoint(group)
+        url = f"{self.base_url()}{path}"
         headers = {
             "Authorization": f"Bearer {getattr(self._runtime, 'session_token', '')}",
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
         try:
-            # 必须走 utils.http.async_client()：裸 httpx.AsyncClient 每次都要重建
-            # SSL 上下文（Windows 上 ~500ms），而且不加载系统信任根 ——
-            # 某些企业网络下会直接握手失败（见 test_http_client.py 的守卫）。
-            async with async_client(timeout=_TIMEOUT) as client:
-                response = await client.post(url, json={"person": person}, headers=headers)
+            
+            
+            
+            async with async_client(timeout=timeout) as client:
+                response = await client.post(url, json=body, headers=headers)
         except httpx.HTTPError as exc:
-            # 只是告诉模型"没连上"，**不带 URL 之外的任何请求细节**（免得把头上
-            # 的东西漏进上下文）
+            
+            
             return XjxHttpResult(0, f"请求心鉴学服务失败：{type(exc).__name__}。请稍后重试。", True)
 
         return XjxHttpResult(response.status_code, redact(response.text or ""))
 
 
-# --------------------------------------------------------------------------- #
-# 必填字段闸门
-# --------------------------------------------------------------------------- #
+
+
+
 def _missing_fields(person: dict[str, Any]) -> list[str]:
-    """列出缺失/不合法字段，附带给用户看的中文名（顺序即"该问的顺序"）。"""
+
     problems: list[str] = []
 
     birth = str(person.get("birth") or "").strip()
@@ -140,7 +154,7 @@ def _missing_fields(person: dict[str, Any]) -> list[str]:
     if not str(person.get("current_country") or "").strip():
         problems.append("current_country（现居国家，如「中国」）")
 
-    # 出生时间到时分 → 要按真太阳时校正，没有出生地就不准（见模块开头）
+    
     if _DATE_TIME.match(birth):
         if not str(person.get("birth_place") or "").strip():
             problems.append(
@@ -191,14 +205,17 @@ class FetchReportParams(BaseModel):
 )
 class XjxFetchReportSkill(BaseSkill):
     async def run(self, ctx: SkillContext, **params: Any) -> Any:
-        if not xjx.may_use_tools(ctx.assistant_id):
+        
+        
+        
+        if not xjx.may_use_tool(ctx.assistant_id, xjx.TOOL_FETCH_REPORT):
             raise SkillExecutionError(
                 "报告代取只为 Soulmate（Soulmate专用）与 Love Buddy / Relation Buddy"
                 "（人际关系运营）开放：当前搭子不在归属名单里，无法使用。"
             )
 
-        # 端点由**搭子 + 当前线路**决定，不由模型传参决定 —— 否则 Love Buddy
-        # 传一句 report="soulmate" 就能去取 Soulmate 的报表
+        
+        
         gateway = ctx.service("xjx")
         group = xjx.group_for_assistant(ctx.assistant_id, gateway.line)
         if group is None:
@@ -223,7 +240,7 @@ class XjxFetchReportSkill(BaseSkill):
             )
 
         result = await gateway.post_report(group, person)
-        # 日志只记状态与端点：凭证绝不能进日志
+        
         ctx.logger.info("心鉴学取报告：line=%s group=%s status=%s", gateway.line, group, result.status)
 
         payload: dict[str, Any] = {

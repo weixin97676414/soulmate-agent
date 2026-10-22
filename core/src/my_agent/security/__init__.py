@@ -1,4 +1,4 @@
-"""安全机制：权限守卫、路径白名单、脱敏、审计事件。"""
+
 
 from .audit import AuditCallback, AuditEntry
 from .confirm import ConfirmCallback, ConfirmRequest

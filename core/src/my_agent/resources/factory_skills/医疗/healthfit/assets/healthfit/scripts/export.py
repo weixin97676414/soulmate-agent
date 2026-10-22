@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-HealthFit 数据导出脚本
-支持导出为 JSON、CSV、Markdown 格式
-"""
+
+
+
+
 
 import json
 import csv
@@ -20,7 +20,7 @@ DB_PATH = DATA_DIR / "db" / "healthfit.db"
 
 
 def export_json_files(output_dir: Path, include_private: bool = False):
-    """导出所有 JSON 文件"""
+
     json_dir = DATA_DIR / "json"
     
     if not json_dir.exists():
@@ -31,13 +31,13 @@ def export_json_files(output_dir: Path, include_private: bool = False):
     skipped_count = 0
     
     for json_file in json_dir.glob("*.json"):
-        # 跳过私密文件（除非明确要求）
+        
         if json_file.name == "private_sexual_health.json" and not include_private:
             print(f"⏭️ 跳过私密文件：{json_file.name}")
             skipped_count += 1
             continue
         
-        # 复制文件
+        
         dest = output_dir / json_file.name
         shutil.copy2(json_file, dest)
         print(f"✅ 导出：{json_file.name}")
@@ -47,7 +47,7 @@ def export_json_files(output_dir: Path, include_private: bool = False):
 
 
 def export_database_to_csv(output_dir: Path):
-    """将数据库表导出为 CSV"""
+
     if not DB_PATH.exists():
         print("⚠️ 数据库不存在，跳过")
         return
@@ -55,7 +55,7 @@ def export_database_to_csv(output_dir: Path):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # 获取所有表名
+    
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = cursor.fetchall()
     
@@ -65,11 +65,11 @@ def export_database_to_csv(output_dir: Path):
         cursor.execute(f"SELECT * FROM {table_name}")
         rows = cursor.fetchall()
         
-        # 获取列名
+        
         cursor.execute(f"PRAGMA table_info({table_name})")
         columns = [col[1] for col in cursor.fetchall()]
         
-        # 写入 CSV
+        
         csv_path = output_dir / f"{table_name}.csv"
         with open(csv_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
@@ -84,14 +84,14 @@ def export_database_to_csv(output_dir: Path):
 
 
 def generate_markdown_report(output_dir: Path):
-    """生成可读的 Markdown 报告"""
+
     report_lines = [
         "# HealthFit 数据导出报告",
         f"\n导出时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n",
         "---\n"
     ]
     
-    # 读取用户档案
+    
     profile_path = DATA_DIR / "json" / "profile.json"
     if profile_path.exists():
         profile = json.loads(profile_path.read_text(encoding="utf-8"))
@@ -103,7 +103,7 @@ def generate_markdown_report(output_dir: Path):
         report_lines.append(f"- 创建时间：{profile.get('created_at', '未知')}")
         report_lines.append(f"- 上次更新：{profile.get('updated_at', '未知')}\n")
     
-    # 统计数据库记录数
+    
     if DB_PATH.exists():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
@@ -130,7 +130,7 @@ def generate_markdown_report(output_dir: Path):
         
         conn.close()
     
-    # 写入 TXT 日志统计
+    
     txt_dir = DATA_DIR / "txt"
     if txt_dir.exists():
         report_lines.append("## 文本日志\n")
@@ -152,7 +152,7 @@ def generate_markdown_report(output_dir: Path):
         
         report_lines.append("")
     
-    # 写入报告
+    
     report_path = output_dir / "export_report.md"
     report_path.write_text("\n".join(report_lines), encoding="utf-8")
     print(f"✅ 生成报告：export_report.md")
@@ -167,7 +167,7 @@ def main():
     
     args = parser.parse_args()
     
-    # 私密数据二次确认
+    
     if args.include_private:
         print("\n" + "="*60)
         print("⚠️  警告：高度敏感数据导出确认  ⚠️")
@@ -186,7 +186,7 @@ def main():
 """)
         print("="*60)
         
-        # 随机验证码确认
+        
         import random
         import string
         verify_code = ''.join(random.choices(string.ascii_uppercase, k=6))
@@ -197,14 +197,14 @@ def main():
             print("❌ 验证码错误，已取消操作")
             return
         
-        # 记录操作日志
+        
         log_path = DATA_DIR / "security_log.txt"
         with open(log_path, "a", encoding="utf-8") as f:
             f.write(f"[{datetime.now()}] 私密数据导出操作已执行\n")
         
         print("✅ 验证通过，继续执行导出...\n")
     
-    # 创建输出目录
+    
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
     
@@ -214,7 +214,7 @@ def main():
     
     print(f"📁 导出目录：{export_dir}\n")
     
-    # 执行导出
+    
     if args.format in ["all", "json"]:
         print("📄 导出 JSON 文件...")
         export_json_files(export_dir, args.include_private)

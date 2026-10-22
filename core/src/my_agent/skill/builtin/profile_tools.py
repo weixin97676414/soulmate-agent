@@ -1,31 +1,31 @@
-"""改搭子的**档案字段**：昵称 / 图标 / 头像 / 温度。
 
-## 为什么必须单独一条路，而不是塞进 ``self_persona_update``
 
-实测反馈问题原话："让 AI 自己修改昵称时，只会修改 md，而不能修改搭子
-中的昵称配置，这导致了昵称设置后，对话中搭子仍然显示的搭子名。"
 
-根因很直白：界面上那个名字读的是 ``assistants.json`` 的 ``nickname`` 字段，
-而 ``self_persona_update`` 改的是 ``IDENTITY.md`` 这类**人格文件** —— 两个地方。
-所以这两件事要分开、并且各自说清楚：
 
-- 人设文本（我是谁、我的规则）→ ``self_persona_update``（confirm 级）；
-- 档案字段（叫什么、什么图标、什么头像、温度多少）→ **本技能**。
 
-## 权限为什么是 ``safe`` 而不是 ``confirm``
 
-``self_persona_update`` 是 confirm 级，理由写在它自己的模块注释里：那等于"让模型写
-自己的系统提示词"，提示词注入的风险是真实的。而本技能改的四样东西**装不下指令**：
 
-- 昵称有长度上限、不许换行（``orchestrator.MAX_NICKNAME_CHARS``）；
-- 图标只收一个短表情；
-- 头像是一张图（按魔数校验格式 + 限大小）；
-- 温度限定在 0~2。
 
-用户要的正是"我说一句它就改掉，别再让我点确认"，所以这里是 ``safe``。
-⚠️ 哪天想给它加"直接改 rules / identity 文本"这类字段，**那一条必须留在 confirm**，
-不要顺手把本技能整体降级。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -85,8 +85,8 @@ class ProfileUpdateParams(BaseModel):
 class UpdateAssistantProfileSkill(BaseSkill):
     async def run(self, ctx: SkillContext, **params: Any) -> dict[str, Any]:
         args = ProfileUpdateParams(**params)
-        # 留空 = 改自己。用 ctx 里的助手 id（**不让模型自己填"我是谁"**：
-        # 它可能猜，猜错就改到别人身上了）
+        
+        
         target = args.assistant_id.strip() or (ctx.assistant_id or "").strip()
         if not target:
             raise SkillExecutionError(
@@ -105,7 +105,7 @@ class UpdateAssistantProfileSkill(BaseSkill):
                 actor_id=ctx.assistant_id,
             )
         except ValueError as exc:
-            # 原样转出去：措辞就是"给用户看的"，模型不该自己另编一套
+            
             raise SkillExecutionError(str(exc)) from exc
         return {
             "updated": result,

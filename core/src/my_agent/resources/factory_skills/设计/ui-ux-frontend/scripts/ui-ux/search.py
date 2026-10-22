@@ -1,31 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-UI/UX Pro Max Search - BM25 search engine for UI/UX style guides
-Usage: python search.py "<query>" [--domain <domain>] [--stack <stack>] [--max-results 3]
-       python search.py "<query>" --design-system [-p "Project Name"]
-       python search.py "<query>" --design-system --persist [-p "Project Name"] [--page "dashboard"]
 
-Domains: style, prompt, color, chart, landing, product, ux, typography
-Stacks: html-tailwind, react, nextjs
 
-Persistence (Master + Overrides pattern):
-  --persist    Save design system to design-system/MASTER.md
-  --page       Also create a page-specific override file in design-system/pages/
-"""
+
+
+
+
+
+
+
+
+
+
+
 
 import argparse
-# Allow both `python search.py ...` and `python -m ...` execution.
+
 try:
     from core import CSV_CONFIG, AVAILABLE_STACKS, MAX_RESULTS, search, search_stack
     from design_system import generate_design_system, persist_design_system
-except ImportError:  # pragma: no cover
+except ImportError:  
     from .core import CSV_CONFIG, AVAILABLE_STACKS, MAX_RESULTS, search, search_stack
     from .design_system import generate_design_system, persist_design_system
 
 
 def format_output(result):
-    """Format results for Claude consumption (token-optimized)"""
+
     if "error" in result:
         return f"Error: {result['error']}"
 
@@ -57,18 +57,18 @@ if __name__ == "__main__":
     parser.add_argument("--stack", "-s", choices=AVAILABLE_STACKS, help="Stack-specific search (html-tailwind, react, nextjs)")
     parser.add_argument("--max-results", "-n", type=int, default=MAX_RESULTS, help="Max results (default: 3)")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
-    # Design system generation
+    
     parser.add_argument("--design-system", "-ds", action="store_true", help="Generate complete design system recommendation")
     parser.add_argument("--project-name", "-p", type=str, default=None, help="Project name for design system output")
     parser.add_argument("--format", "-f", choices=["ascii", "markdown"], default="ascii", help="Output format for design system")
-    # Persistence (Master + Overrides pattern)
+    
     parser.add_argument("--persist", action="store_true", help="Save design system to design-system/MASTER.md (creates hierarchical structure)")
     parser.add_argument("--page", type=str, default=None, help="Create page-specific override file in design-system/pages/")
     parser.add_argument("--output-dir", "-o", type=str, default=None, help="Output directory for persisted files (default: current directory)")
 
     args = parser.parse_args()
 
-    # Design system takes priority
+    
     if args.design_system:
         result = generate_design_system(
             args.query, 
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         )
         print(result)
         
-        # Print persistence confirmation
+        
         if args.persist:
             project_slug = args.project_name.lower().replace(' ', '-') if args.project_name else "default"
             print("\n" + "=" * 60)
@@ -93,7 +93,7 @@ if __name__ == "__main__":
             print(f"📖 Usage: When building a page, check design-system/{project_slug}/pages/[page].md first.")
             print(f"   If exists, its rules override MASTER.md. Otherwise, use MASTER.md.")
             print("=" * 60)
-    # Stack search
+    
     elif args.stack:
         result = search_stack(args.query, args.stack, args.max_results)
         if args.json:
@@ -101,7 +101,7 @@ if __name__ == "__main__":
             print(json.dumps(result, indent=2, ensure_ascii=False))
         else:
             print(format_output(result))
-    # Domain search
+    
     else:
         result = search(args.query, args.domain, args.max_results)
         if args.json:

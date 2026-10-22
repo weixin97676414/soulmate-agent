@@ -1,8 +1,8 @@
-"""
-报告生成模块 - 生成每周金融投研报告 (PDF格式)
-参考西南证券研报格式，使用 HTML+CSS 渲染后通过 weasyprint 转为 PDF。
-内容紧凑排版，嵌入 matplotlib 图表。
-"""
+
+
+
+
+
 from datetime import datetime
 from technical_analysis import TechnicalSignal
 from chart_generator import (
@@ -15,9 +15,9 @@ from weasyprint import HTML
 import pandas as pd
 
 
-# ============================================================
-# CSS
-# ============================================================
+
+
+
 CSS = """
 @page {
     size: A4;
@@ -118,9 +118,9 @@ tr:nth-child(even) td { background: #f9f9f9; }
 """
 
 
-# ============================================================
-# HTML 片段
-# ============================================================
+
+
+
 
 def _cover(report_date, start, end, author, signals):
     bull = sum(1 for s in signals if len(s.buy_signals) > len(s.sell_signals))
@@ -191,10 +191,10 @@ def _market(index_data, breadth, north_flow, headlines, idx_chart_b64, stock_new
     north = north_flow.get("total", 0) if north_flow else 0
     nc = "class='up'" if north > 0 else "class='dn'" if north < 0 else ""
 
-    # 持仓相关资讯（个股新闻）
+    
     stock_news_html = ""
     if stock_news:
-        # 建立 symbol -> name 映射
+        
         name_map = {s.symbol: s.name for s in signals}
         items = ""
         for symbol, news_list in stock_news.items():
@@ -208,7 +208,7 @@ def _market(index_data, breadth, north_flow, headlines, idx_chart_b64, stock_new
 <h3 class="sub">1.4 持仓相关资讯</h3>
 <ul style="font-size:8.5pt">{items}</ul>"""
 
-    # 宏观要闻（精简）
+    
     macro_html = ""
     if headlines:
         macro_items = ""
@@ -247,7 +247,7 @@ def _stock_section(signals, stock_dfs):
         vol_s = "放量" if sig.volume_ratio > 1.5 else "缩量" if sig.volume_ratio < 0.7 else "正常"
         ma_h = "趋势向好" if sig.ma_alignment == "多头排列" else "趋势偏弱" if sig.ma_alignment == "空头排列" else "方向不明"
 
-        # 图表
+        
         df = stock_dfs.get(sig.symbol)
         price_chart = ""
         indicator_chart = ""
@@ -294,7 +294,7 @@ def _stock_section(signals, stock_dfs):
 
 def _sector_flow(sector_flow):
     if not sector_flow:
-        return ""  # 无数据不占空间
+        return ""  
     rows = ""
     for s in sector_flow[:15]:
         rows += f'<tr><td style="text-align:left">{s.get("name","-")}</td><td>{s.get("change","-")}</td><td>{s.get("net_flow","-")}</td><td>{s.get("main_flow","-")}</td></tr>\n'
@@ -359,9 +359,9 @@ def _disclaimer(author):
 </div>"""
 
 
-# ============================================================
-# 公开接口
-# ============================================================
+
+
+
 
 def generate_report(
     report_date: str,
@@ -376,13 +376,13 @@ def generate_report(
     stock_dfs: dict[str, pd.DataFrame] | None = None,
     stock_news: dict[str, list[dict]] | None = None,
 ) -> str:
-    """生成完整 HTML（含内嵌图表），通过 render_pdf 转 PDF"""
+
     start = f"{week_range[0][:4]}-{week_range[0][4:6]}-{week_range[0][6:]}"
     end = f"{week_range[1][:4]}-{week_range[1][4:6]}-{week_range[1][6:]}"
     stock_dfs = stock_dfs or {}
     stock_news = stock_news or {}
 
-    # 生成图表
+    
     idx_chart = chart_index_comparison(index_data)
     sig_chart = chart_signal_summary(stock_signals)
 
@@ -398,7 +398,7 @@ def generate_report(
         _disclaimer(author),
     ])
 
-    # 动态章节编号
+    
     if has_sector:
         body = body.replace("__SEC_SIGNAL__", "4")
         body = body.replace("__SEC_RISK__", "5")
@@ -414,7 +414,7 @@ def generate_report(
 
 
 def render_pdf(html_content: str, output_path: str) -> str:
-    """将 HTML 渲染为 PDF，通过 Ghostscript 优化以兼容 macOS Preview"""
+
     import subprocess, tempfile, shutil, os
 
     tmp_path = output_path + ".tmp.pdf"

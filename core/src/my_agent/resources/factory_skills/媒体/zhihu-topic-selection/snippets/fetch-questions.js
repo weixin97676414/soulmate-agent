@@ -1,20 +1,20 @@
 #!/usr/bin/env node
-/**
- * 知乎"等你来答"问题列表获取 - Questions Waiting to Answer Fetcher
- * 三级认证降级机制: Browser Profile → File Cookie → Fallback Source
- *
- * 用法:
- *   node fetch-questions.js [limit] [--json] [--output file.json]
- */
+
+
+
+
+
+
+
 
 const fs = require('fs');
 const path = require('path');
 const RateLimiter = require('./rate-limiter');
 const CookieManager = require('./cookie-manager');
 
-// ---------- 配置 ----------
 
-// 知乎"等你来答"相关API
+
+
 const ZHIHU_WAITING_API = 'https://www.zhihu.com/api/v3/feed/topstory/answer-question?limit=20';
 const ZHIHU_QUESTIONS_API = 'https://www.zhihu.com/api/v4/questions?limit=20';
 const ZHIHU_NOTIFICATIONS_API = 'https://www.zhihu.com/api/v3/notifications/v3/timeline?limit=20';
@@ -24,7 +24,7 @@ const ZHIHU_WAITING_PAGE = 'https://www.zhihu.com/question/waiting';
 const RATE_LIMIT_MS = parseInt(process.env.RATE_LIMIT || '2000', 10);
 const DEFAULT_LIMIT = 30;
 
-// ---------- 工具函数 ----------
+
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -47,7 +47,7 @@ function parseArgs() {
   return { limit, outputFile, jsonMode };
 }
 
-// ---------- Level 1: Browser Profile ----------
+
 
 async function fetchQuestionsViaBrowser(limit) {
   let puppeteer;
@@ -68,7 +68,7 @@ async function fetchQuestionsViaBrowser(limit) {
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     );
 
-    // 先访问消息页面检查登录状态
+    
     await page.goto(ZHIHU_MESSAGE_PAGE, { waitUntil: 'networkidle2', timeout: 30000 });
 
     const isLoggedIn = await page.evaluate(() => {
@@ -80,11 +80,11 @@ async function fetchQuestionsViaBrowser(limit) {
       return null;
     }
 
-    // 提取问题数据 - 从多个可能的来源
+    
     const questions = await page.evaluate(async (limit) => {
       const results = [];
 
-      // 尝试通过API获取"等你来答"列表
+      
       try {
         const response = await fetch(
           'https://www.zhihu.com/api/v3/feed/topstory/answer-question?limit=20',
@@ -107,7 +107,7 @@ async function fetchQuestionsViaBrowser(limit) {
         }
       } catch {}
 
-      // 也尝试从通知中提取邀请回答
+      
       if (results.length < limit) {
         try {
           const resp = await fetch(
@@ -120,7 +120,7 @@ async function fetchQuestionsViaBrowser(limit) {
           for (const notif of notifications) {
             const target = notif.target || {};
             const notifType = notif.notification_type || '';
-            // 邀请回答类型的通知
+            
             if (notifType.includes('invite') || notifType.includes('question')) {
               const q = target.question || target;
               if (q && q.title) {
@@ -166,7 +166,7 @@ async function fetchQuestionsViaBrowser(limit) {
   }
 }
 
-// ---------- Level 2: File Cookie ----------
+
 
 async function fetchQuestionsViaCookie(limit) {
   const cookieManager = new CookieManager();
@@ -248,11 +248,11 @@ async function fetchQuestionsViaCookie(limit) {
   return null;
 }
 
-// ---------- Level 3: Fallback (questions无可靠备用源) ----------
+
 
 async function fetchQuestionsViaFallback() {
-  // "等你来答"问题列表没有可靠的公开备用源
-  // 但我们可以尝试从知乎公开API获取一些热门问题作为参考
+  
+  
   try {
     const response = await fetch(
       'https://www.zhihu.com/api/v4/creator/questions/recommend?limit=20',
@@ -303,7 +303,7 @@ async function fetchQuestionsViaFallback() {
   }
 }
 
-// ---------- 主入口 ----------
+
 
 async function fetchQuestionsWithFallback(options = {}) {
   const { limit = DEFAULT_LIMIT, authPriority = null } = options;
@@ -358,7 +358,7 @@ async function fetchQuestionsWithFallback(options = {}) {
   };
 }
 
-// ---------- CLI ----------
+
 
 async function main() {
   const { limit, outputFile, jsonMode } = parseArgs();

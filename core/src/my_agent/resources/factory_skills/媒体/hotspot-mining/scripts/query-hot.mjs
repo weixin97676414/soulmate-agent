@@ -1,12 +1,12 @@
-/**
- * Query a specific hot topic from DailyHot API
- * Usage: node scripts/query-hot.mjs <platform> [--limit N]
- * Example: node scripts/query-hot.mjs zhihu --limit 20
- */
+
+
+
+
+
 
 const args = process.argv.slice(2);
 
-// Parse arguments
+
 let platform = args[0] || "all";
 let limit = 10;
 let showAll = false;
@@ -22,7 +22,7 @@ for (let i = 1; i < args.length; i++) {
   }
 }
 
-// Remove leading / if present
+
 platform = platform.replace(/^\//, "");
 
 const BASE_URL = process.env.DAILYHOT_URL || `http://localhost:6688`;
@@ -99,7 +99,7 @@ function formatAll(data) {
   return lines.join("\n");
 }
 
-// Main
+
 if (showAll) {
   const data = await fetchJSON(`${BASE_URL}/all`);
   console.log(formatAll(data));

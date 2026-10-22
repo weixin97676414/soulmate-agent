@@ -1,19 +1,19 @@
-"""读取 PDF 文件文本内容"""
+
 import sys
 import pdfplumber
 from pathlib import Path
 
 
 def read_pdf(file_path: str, page_range: str = None) -> str:
-    """读取 PDF 内容
 
-    Args:
-        file_path: PDF 文件路径
-        page_range: 页码范围，如 "1-10"，None 表示全部
 
-    Returns:
-        PDF 纯文本内容
-    """
+
+
+
+
+
+
+
     path = Path(file_path)
     if not path.exists():
         print(f"[ERROR] 文件不存在: {file_path}")

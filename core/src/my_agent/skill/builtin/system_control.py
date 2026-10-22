@@ -1,17 +1,17 @@
-"""系统控制技能：音量、亮度、锁屏、截图。
 
-## 一条硬规则：做不到就说做不到
 
-亮度是最典型的例子：**台式机与外接显示器根本没有可编程亮度**（那由显示器自己
-的面板控制，系统读不到也改不了）。这时必须如实返回"这台机器不支持"，
-**绝不返回成功** —— 假装成功会让用户以为"功能坏了"，然后反复试、反复失败，
-而真正的原因（硬件不支持）他永远猜不到。
 
-## 权限分级
 
-**纯读是 safe**（读亮度、读音量与静音状态）；音量与亮度的调节、锁屏、截图都是
-confirm：它们会改变机器的可见状态（用户可能正在开会共享屏幕），必须让他点一下。
-"""
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -116,8 +116,8 @@ class VolumeSkill(BaseSkill):
                 }
 
             if args.action == "mute":
-                # 不传 muted 时先读一次当前状态再取反：媒体键做不到这件事（它读不了状态），
-                # 那样"切换"落到哪一边谁也说不清。
+                
+                
                 target = args.muted
                 if target is None:
                     _, current = await windows_api.get_volume_state()
@@ -131,8 +131,8 @@ class VolumeSkill(BaseSkill):
                     "message": "已静音。" if muted else "已取消静音。",
                 }
 
-            # up / down：媒体键的即时反馈（系统会弹音量提示）比精确设值更重要，
-            # 这两条也读不到状态（媒体键是异步处理的），故只报"调了多少"。
+            
+            
             windows_api.volume_step(args.action)
             action_text = {"up": "调高了一点", "down": "调低了一点"}
             return {
@@ -166,7 +166,7 @@ class BrightnessGetSkill(BaseSkill):
         try:
             percent = await windows_api.get_brightness()
         except windows_api.WindowsApiError as exc:
-            # 不支持**不是**执行失败：如实描述事实，让用户知道这是硬件决定的
+            
             return {"supported": False, "message": exc.message}
         return {"supported": True, "percent": percent}
 
@@ -202,7 +202,7 @@ class BrightnessSetSkill(BaseSkill):
         try:
             target = args.percent
             if target is None:
-                # 相对调整要先读当前值 —— 读不到（不支持）时下面会抛出同样的错误
+                
                 current = await windows_api.get_brightness()
                 target = max(0, min(100, current + int(args.delta or 0)))
             applied = await windows_api.set_brightness(int(target))
@@ -290,7 +290,7 @@ class ScreenshotSkill(BaseSkill):
                     await windows_api.set_clipboard_image(target)
                     copied = True
                 except windows_api.WindowsApiError as exc:
-                    # 复制失败不该让"截图白做"：图已经落盘了，如实说明即可
+                    
                     logger.warning("截图已保存但复制到剪贴板失败：%s", exc.message)
         except windows_api.WindowsApiError as exc:
             raise _to_skill_error(exc) from exc

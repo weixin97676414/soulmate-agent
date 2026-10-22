@@ -1,8 +1,8 @@
-"""文件访问白名单测试。
 
-这是所有文件类技能的安全底座，必须覆盖到位：
-一旦这里失效，模型就能读写用户磁盘上的任意文件。
-"""
+
+
+
+
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def other_dir(tmp_path) -> Path:
 
 
 def test_empty_whitelist_means_unrestricted(tmp_path):
-    """不配白名单 = 不限制，这是个人桌面应用的合理默认。"""
+
     policy = PathPolicy([])
     assert policy.is_restricted is False
     assert policy.check(tmp_path / "任意文件.txt").name == "任意文件.txt"
@@ -54,15 +54,15 @@ def test_outside_path_is_rejected(allowed_dir, other_dir):
         policy.check(str(other_dir / "secret.txt"))
     message = str(exc.value)
     assert "白名单之外" in message
-    # 报错信息必须告诉用户怎么解决，而不是只说"不许"
+    
     assert "设置" in message
 
 
 def test_prefix_trap_is_rejected(tmp_path):
-    """`/data/allowed-evil` 不能被 `/data/allowed` 的白名单放行。
 
-    用字符串 startswith 判断会踩这个坑，必须按路径层级比较。
-    """
+
+
+
     allowed = tmp_path / "allowed"
     evil = tmp_path / "allowed-evil"
     allowed.mkdir()
@@ -82,7 +82,7 @@ def test_parent_traversal_is_rejected(allowed_dir, other_dir):
 
 
 def test_always_allowed_dirs_bypass_whitelist(tmp_path, other_dir):
-    """工作区/产物目录必须永远可访问，否则会出现"上传了附件却读不了"。"""
+
     workspace = other_dir / "workspace"
     workspace.mkdir()
     policy = PathPolicy([str(tmp_path / "somewhere")], always_allowed=[workspace])

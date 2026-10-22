@@ -29,7 +29,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from xhs_common import get_logger  # noqa: E402
+from xhs_common import get_logger  
 
 log = get_logger("xhs_pdf")
 
@@ -39,9 +39,9 @@ TEMPLATE = SKILL_DIR / "assets" / "report_template.html"
 SRC_RE = re.compile(r"""src\s*=\s*(['"])(.+?)\1""", re.I)
 
 
-# --------------------------------------------------------------------------- #
-# 打印样式：修正固定纸宽下的排版 + 控制分页
-# --------------------------------------------------------------------------- #
+
+
+
 PRINT_CSS = """
 <style id="xhs-print-fix">
 @page { size: __PAGESIZE__ __ORIENT__; margin: 15mm 13mm 17mm; }
@@ -100,13 +100,13 @@ FOOTER_TPL = """
 """
 
 
-# --------------------------------------------------------------------------- #
-# 文档预处理
-# --------------------------------------------------------------------------- #
+
+
+
 def _compress_copy(p: Path, cache_dir: Path, max_w: int = 440, quality: int = 82) -> Path | None:
-    """关键认知：Chromium 导出 PDF 时会把 JPEG 解码成原始位图再 Flate 压缩嵌入，
-    而不是 JPEG 直通（/DCTDecode）。所以体积只跟「像素尺寸」有关，跟源文件多小无关。
-    画廊里封面只显示 ~170px 宽，源图压到 440px（约 2.5 倍余量）足够清晰。"""
+
+
+
     try:
         from PIL import Image
     except ImportError:
@@ -132,7 +132,7 @@ def _compress_copy(p: Path, cache_dir: Path, max_w: int = 440, quality: int = 82
 def fix_local_images(
     html: str, base: Path, compress: bool = False, cache_dir: Path | None = None
 ) -> str:
-    """把 src 里的本地路径改成 file:// URL，并关掉懒加载（否则 PDF 里是空白框）。"""
+
     seen: dict[str, str] = {}
 
     def repl(m: re.Match) -> str:
@@ -152,7 +152,7 @@ def fix_local_images(
 
         target = p
         if compress and cache_dir is not None:
-            # 无条件压（见 _compress_copy 注释：嵌入体积只由像素尺寸决定）
+            
             cp = _compress_copy(p, cache_dir)
             if cp is not None:
                 target = cp
@@ -164,7 +164,7 @@ def fix_local_images(
         return f"src={q}{uri}{q}"
 
     html = SRC_RE.sub(repl, html)
-    # 懒加载图片在打印时不触发加载
+    
     html = re.sub(r"""loading\s*=\s*(['"])lazy\1""", "loading='eager'", html, flags=re.I)
     return html
 
@@ -178,8 +178,8 @@ def inject_print_css(html: str, page_size: str, landscape: bool) -> str:
 
 
 def md_to_standalone_html(md: str, title: str) -> str:
-    """Markdown → 套用报告模板样式表的独立 HTML。"""
-    from xhs_report import md_to_html  # 复用报告的迷你渲染器
+
+    from xhs_report import md_to_html  
 
     style = ""
     if TEMPLATE.exists():
@@ -195,9 +195,9 @@ def md_to_standalone_html(md: str, title: str) -> str:
     )
 
 
-# --------------------------------------------------------------------------- #
-# 渲染
-# --------------------------------------------------------------------------- #
+
+
+
 def render_pdf(
     html: str,
     out: Path,
@@ -232,11 +232,11 @@ def render_pdf(
             args=["--allow-file-access-from-files", "--font-render-hinting=none"]
         )
         page = browser.new_page()
-        # 关键：强制浅色配色变量，否则跟随系统主题，夜间模式会印出黑底
+        
         page.emulate_media(color_scheme=theme)
         page.goto(tmp.as_uri(), wait_until="load")
 
-        # 等所有图片真正解码完，不等的话封面经常是空白
+        
         try:
             page.wait_for_function(
                 "() => Array.from(document.images).every(i => i.complete)",
@@ -275,7 +275,7 @@ def pdf_pages(path: Path) -> int:
         return -1
 
 
-# --------------------------------------------------------------------------- #
+
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
         description="把小红书账号拆解报告（HTML/Markdown）导出为 PDF",
@@ -344,5 +344,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     from xhs_env import ensure_ready
-    ensure_ready(need_browser=True)      # PDF 用 Chromium 排版渲染
+    ensure_ready(need_browser=True)      
     sys.exit(main())

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""强制关闭抖音桌面版及所有相关后台进程"""
+
 import subprocess
 
 PROCESSES = [
@@ -13,7 +13,7 @@ PROCESSES = [
 
 STARTUPINFO = subprocess.STARTUPINFO()
 STARTUPINFO.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-STARTUPINFO.wShowWindow = 0  # SW_HIDE
+STARTUPINFO.wShowWindow = 0  
 
 for proc in PROCESSES:
     subprocess.run(

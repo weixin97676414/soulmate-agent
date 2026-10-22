@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Data Analysis Workflow - 标准化数据分析工作流
-"""
+
+
+
 
 import os
 import sys
@@ -10,7 +10,7 @@ import io
 import pandas as pd
 from datetime import datetime
 
-# Fix Windows console encoding
+
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 WORKFLOW_STAGES = [
@@ -41,11 +41,11 @@ ANALYSIS_TYPES = {
 }
 
 def print_stage(stage_num, stage_info):
-    """打印阶段信息"""
+
     print(f"\n阶段 {stage_num}: {stage_info['name']} ({stage_info['duration']})")
 
 def load_data(file_path):
-    """加载数据"""
+
     if file_path.endswith('.csv'):
         df = pd.read_csv(file_path)
     elif file_path.endswith('.xlsx'):
@@ -58,7 +58,7 @@ def load_data(file_path):
     return df
 
 def check_data(df):
-    """数据检查"""
+
     print("\n" + "="*60)
     print("数据检查报告")
     print("="*60)
@@ -80,30 +80,30 @@ def check_data(df):
     print("="*60)
 
 def data_analysis_workflow(file_path, analysis_type='experimental', stage=None):
-    """数据分析工作流"""
+
     print(f"📊 开始数据分析：{file_path}")
     print(f"分析类型：{analysis_type}")
     print(f"分析类型描述：{ANALYSIS_TYPES.get(analysis_type, {}).get('description', 'Unknown')}")
     
-    # 显示 6 个阶段
+    
     print("\n" + "="*60)
     print("数据分析工作流 - 6 个阶段")
     print("="*60)
     for i, stage in enumerate(WORKFLOW_STAGES, 1):
         print_stage(i, stage)
     
-    # 总时间估算
+    
     total_time = "2-4 小时"
     print(f"\n预计总时间：{total_time}")
     print("="*60)
     
-    # 加载数据
+    
     print("\n阶段 1: 加载数据...")
     try:
         df = load_data(file_path)
         print(f"✅ 数据加载成功：{df.shape[0]} 行 × {df.shape[1]} 列")
         
-        # 数据检查
+        
         check_data(df)
         
     except Exception as e:

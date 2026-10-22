@@ -1,9 +1,9 @@
-"""系统类内置 Skill。
 
-这些工具本身很小，但承担两个作用：
-1. 解决模型「没有实时时间」「算数易错」这两个真实短板；
-2. 作为 P0 阶段验证「工具调用卡片」全链路的载体。
-"""
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -19,9 +19,9 @@ from pydantic import BaseModel, Field
 from ..base import BaseSkill, SkillContext
 from ..decorator import skill
 
-# --------------------------------------------------------------------------- #
-# 当前时间
-# --------------------------------------------------------------------------- #
+
+
+
 
 
 class CurrentTimeParams(BaseModel):
@@ -47,7 +47,7 @@ class CurrentTimeParams(BaseModel):
     tags=["时间"],
 )
 class CurrentTimeSkill(BaseSkill):
-    """返回指定时区的当前时间。"""
+
 
     async def run(self, ctx: SkillContext, **params: Any) -> dict[str, Any]:
         args = CurrentTimeParams(**params)
@@ -64,9 +64,9 @@ class CurrentTimeSkill(BaseSkill):
         }
 
 
-# --------------------------------------------------------------------------- #
-# 计算器
-# --------------------------------------------------------------------------- #
+
+
+
 
 _BIN_OPS = {
     ast.Add: operator.add,
@@ -103,23 +103,23 @@ _SAFE_FUNCS = {
 }
 
 
-# ``**`` 的指数上限。
-#
-# 允许 ``**`` 本身是合理的（复利、平方、立方都是常见需求），但 ``9**9**9``
-# 这类表达式会让 CPython 在事件循环线程里**同步**算上几十秒并把内存吃光。
-# 关键在于 ``asyncio.wait_for`` 的超时**无法中断同步代码** —— 整个服务就此卡死，
-# 所有会话的 SSE 一起停摆。
-#
-# 而这条路径**不需要用户做错任何事**：calc 是 safe 级、不弹确认，
-# 模型只要生成一个这样的表达式就够了。
-#
-# 1024 足够覆盖任何正常用途（``2**1024`` 已经是 10^308 量级），
-# 而 ``9**9**9`` 的指数是 3.8 亿，离得很远。
+
+
+
+
+
+
+
+
+
+
+
+
 _MAX_EXPONENT = 1024
 
 
 def _guard_exponent(exponent: Any) -> None:
-    """挡住会把进程卡死的那个指数。"""
+
     if not isinstance(exponent, (int, float)):
         raise ValueError("指数必须是数值")
     if not math.isfinite(exponent):
@@ -132,7 +132,7 @@ def _guard_exponent(exponent: Any) -> None:
 
 
 def _eval_node(node: ast.AST) -> Any:
-    """基于 AST 白名单求值，不用 eval，杜绝任意代码执行。"""
+
     if isinstance(node, ast.Expression):
         return _eval_node(node.body)
     if isinstance(node, ast.Constant):
@@ -146,7 +146,7 @@ def _eval_node(node: ast.AST) -> Any:
         left = _eval_node(node.left)
         right = _eval_node(node.right)
         if isinstance(node.op, ast.Pow):
-            # 必须在真正做幂运算**之前**检查，之后就没机会了
+            
             _guard_exponent(right)
         return op(left, right)
     if isinstance(node, ast.UnaryOp):
@@ -194,16 +194,16 @@ class CalculatorParams(BaseModel):
     tags=["计算"],
 )
 class CalculatorSkill(BaseSkill):
-    """安全的数学表达式求值。"""
+
 
     async def run(self, ctx: SkillContext, **params: Any) -> dict[str, Any]:
         args = CalculatorParams(**params)
         expression = args.expression.strip()
         try:
-            # 放线程里算：白名单 + 指数上限已经挡住了绝大多数问题，
-            # 但**同步求值无法被超时中断**。挪到线程之后，即使真的碰上
-            # 一个慢表达式，``wait_for`` 也能按时返回，事件循环和别人的
-            # SSE 不会被一起拖住（那个线程会被丢弃，进程不至于假死）。
+            
+            
+            
+            
             value = await asyncio.to_thread(_evaluate, expression)
         except (SyntaxError, ValueError, ZeroDivisionError, TypeError, OverflowError) as exc:
             raise ValueError(f"表达式无法计算：{exc}") from exc

@@ -1,17 +1,17 @@
-"""图表内文本字典与语言检测（zh/en 双语）。
 
-文本语言默认跟随数据语言自动检测，用户可通过 lang 参数强制指定。
-chart_generator / renderers / template 三层共用本模块，不得各自维护文案副本。
-"""
+
+
+
+
 
 import re
 import pandas as pd
 from typing import Dict, Optional, Tuple
 
-# 中文字符范围（CJK 统一表意文字）
+
 _CJK_RE = re.compile(r'[\u4e00-\u9fff]')
 
-# 图表内文本字典：series name / tooltip / HTML 按钮 / footer 等。
+
 TEXTS: Dict[str, Dict[str, str]] = {
     'zh': {
         'default_title': '数据图表',
@@ -95,10 +95,10 @@ TEXTS: Dict[str, Dict[str, str]] = {
 
 
 def detect_language(df: pd.DataFrame) -> str:
-    """检测 DataFrame 的语言：检查列名和前若干行字符串值中的中文字符占比。
 
-    中文字符占字母类字符的比例 > 5% 即判定为中文，否则为英文。
-    """
+
+
+
     chars = ''.join(str(c) for c in df.columns)
     for col in df.columns:
         if df[col].dtype == 'object' or pd.api.types.is_string_dtype(df[col]):
@@ -111,11 +111,11 @@ def detect_language(df: pd.DataFrame) -> str:
 
 
 def get_texts(lang: Optional[str], df: pd.DataFrame) -> Tuple[Dict[str, str], str]:
-    """根据 lang 参数或数据自动检测结果返回 (文本字典, 实际生效的语言)。
 
-    lang 为 None 或非法值时按数据自动检测；返回实际语言供 template 层
-    显式决定 <html lang>，不再做字典身份比较。
-    """
+
+
+
+
     if lang not in TEXTS:
         lang = detect_language(df)
     return TEXTS[lang], lang

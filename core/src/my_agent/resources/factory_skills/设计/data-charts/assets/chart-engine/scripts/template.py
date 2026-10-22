@@ -1,13 +1,13 @@
-"""HTML 模板生成器。将 ECharts option 转为独立的交互式 HTML 文件。
 
-架构契约（P1 重构后）：
-- 占位符常量与布局阈值（DATAZOOM_THRESHOLD / MIN_PX_PER_POINT /
-  NO_SERIES_CHART_TYPES）集中定义在本模块，renderers 与 chart_generator 引用。
-- _save_html 从 RenderContext 显式取 texts/theme/lang，并统一消费 ctx.js 中
-  收集的 JS 函数片段（占位符 → JS），不再读写生成器实例属性。
-- _save_table_html 的文件名哈希覆盖全表内容（列 + 值），同 schema 同行数的
-  不同数据不再互相覆盖。
-"""
+
+
+
+
+
+
+
+
+
 
 import json
 import re
@@ -20,26 +20,26 @@ from datetime import datetime
 
 ECHARTS_VERSION = '5.4.4'
 ECHARTS_WORDCLOUD_VERSION = '2.1.0'
-# ECharts JS 内联到 HTML（避免 file:// 跨域加载失败，确保离线自包含）
+
 _STATIC_DIR = Path(__file__).resolve().parent.parent / 'assets'
 ECHARTS_LOCAL = _STATIC_DIR / 'echarts.min.js'
 ECHARTS_WORDCLOUD_LOCAL = _STATIC_DIR / 'echarts-wordcloud.min.js'
 ECHARTS_LIQUIDFILL_LOCAL = _STATIC_DIR / 'echarts-liquidfill.min.js'
 
-# 数据点超过此阈值时自动启用 dataZoom（slider + inside），允许用户在图内拖动/缩放查看
+
 DATAZOOM_THRESHOLD = 15
-# 单个数据点占用的最小宽度（px），用于计算 .chart 容器的 min-width 兜底
+
 MIN_PX_PER_POINT = 18
 
-# 无"系列"概念的图表类型：这些图的 series name 仅为写死的图表类型名（如「热力图」「桑基图」），
-# 重命名面板不渲染"系列"分组（仍渲染有意义的"轴"分组，若有）。
-# 判定标准：series name 是否 = 数据列名（可经 --series-name 改、且在图/tooltip 中对用户可见）。
-#   是 → 必须可编辑，移出本集合；否（写死类型名）→ 留在本集合。
-# 注：liquid / gauge / pie 均不在此列——它们的 series name = 数值列名（可经 --series-name 改）：
-#   liquid label 第二行跟随系列名；gauge/pie 的 data[0].name 或 tooltip {a} 显示系列名。
-#   三者都需渲染"系列"分组，供用户把英文列名（如 achievement / value）改成业务名。
-#   histogram 虽以列名作 series name，但该名字不在图中显示（tooltip 只用 {b}{c}），
-#   列名已由"轴"分组（y 轴 graphic）承担编辑，故仍留在本集合。
+
+
+
+
+
+
+
+
+
 NO_SERIES_CHART_TYPES = {
     'heatmap', 'treemap', 'graph', 'sankey',
     'funnel', 'sunburst', 'wordcloud', 'histogram', 'boxplot', 'bubble',
@@ -47,46 +47,46 @@ NO_SERIES_CHART_TYPES = {
     'map', 'lines', 'calendar', 'theme_river',
 }
 
-# tooltip formatter 占位符：json.dumps 会将其序列化为字符串，
-# _save_html 中再将带引号的占位符替换为真正的 JS 函数，避免 ECharts 把函数当纯文本渲染。
+
+
 TOOLTIP_FORMATTER_AXIS = '__TOOLTIP_FORMATTER_AXIS__'
 
-# bubble symbolSize 占位符：同上，json.dumps 会把 JS 函数序列化为字符串，
-# 需在 _save_html 中替换为真正的 JS 函数，否则 ECharts 无法执行导致气泡不渲染。
+
+
 BUBBLE_SYMBOLSIZE_PLACEHOLDER = '__BUBBLE_SYMBOLSIZE__'
 
-# liquid（水波图）label formatter 占位符：label 第二行需跟随系列名（--series-name /
-# 前端重命名面板实时可改），故用函数 formatter 在运行时读 chartOption.series[0].name，
-# 而非写死列名。占位符由 _liquid 收集进 ctx.js，_save_html 统一替换为 JS 函数。
+
+
+
 LIQUID_LABEL_PLACEHOLDER = '__LIQUID_LABEL__'
 
-# bubble tooltip formatter 占位符：ECharts 字符串模板不支持 {c[0]} 数组索引，
-# 必须使用函数 formatter 才能正确显示数组数据的各字段值。
+
+
 BUBBLE_TOOLTIP_PLACEHOLDER = '__BUBBLE_TOOLTIP__'
 
-# 通用 item tooltip 占位符（scatter/boxplot 离群点/heatmap 共用）：
-# 渲染器把 JS 函数收集进 ctx.js，_save_html 统一替换为真正的 JS 函数。
+
+
 ITEM_TOOLTIP_PLACEHOLDER = '__ITEM_TOOLTIP__'
 
-# 所有内嵌 tooltip JS 共用的 HTML 转义函数（esc）：单点定义，
-# 本模块与 renderers 的各 formatter 一律引用，不得内联复制。
+
+
 ESC_JS_FN = (
     "var esc = function(s) { return String(s).replace(/&/g, '&amp;')"
     ".replace(/</g, '&lt;').replace(/>/g, '&gt;')"
     ".replace(/\"/g, '&quot;').replace(/'/g, '&#39;'); };\n"
 )
 
-# waterfall tooltip 占位符：柱高是绝对值，tooltip 需显示带符号的原始增量。
+
 WATERFALL_TOOLTIP_PLACEHOLDER = '__WATERFALL_TOOLTIP__'
 
-# 缓存 ECharts JS 内容（避免每次生成图表都读文件）
+
 _ECHARTS_JS_CACHE = None
 _WORDCLOUD_JS_CACHE = None
 _LIQUIDFILL_JS_CACHE = None
 
 
 def _load_echarts_js() -> str:
-    """读取并缓存 ECharts JS 内容，用于内联到 HTML。"""
+
     global _ECHARTS_JS_CACHE
     if _ECHARTS_JS_CACHE is None:
         _ECHARTS_JS_CACHE = ECHARTS_LOCAL.read_text(encoding='utf-8')
@@ -94,7 +94,7 @@ def _load_echarts_js() -> str:
 
 
 def _load_wordcloud_js() -> str:
-    """读取并缓存 wordcloud 插件 JS 内容，用于内联到 HTML。"""
+
     global _WORDCLOUD_JS_CACHE
     if _WORDCLOUD_JS_CACHE is None:
         _WORDCLOUD_JS_CACHE = ECHARTS_WORDCLOUD_LOCAL.read_text(encoding='utf-8')
@@ -102,19 +102,19 @@ def _load_wordcloud_js() -> str:
 
 
 def _load_liquidfill_js() -> str:
-    """读取并缓存 liquidfill 插件 JS 内容，用于内联到 HTML。"""
+
     global _LIQUIDFILL_JS_CACHE
     if _LIQUIDFILL_JS_CACHE is None:
         _LIQUIDFILL_JS_CACHE = ECHARTS_LIQUIDFILL_LOCAL.read_text(encoding='utf-8')
     return _LIQUIDFILL_JS_CACHE
 
 
-# 缓存中国省级 GeoJSON（map/lines 内联 registerMap 用，离线自包含）
+
 _GEO_JSON_CACHE = None
 
 
 def _load_china_geojson() -> Dict:
-    """读取并缓存 assets/china.json，供 map/lines 图表内联 registerMap。"""
+
     global _GEO_JSON_CACHE
     if _GEO_JSON_CACHE is None:
         _GEO_JSON_CACHE = json.loads((_STATIC_DIR / 'china.json').read_text(encoding='utf-8'))
@@ -122,7 +122,7 @@ def _load_china_geojson() -> Dict:
 
 
 def tooltip_formatter_axis_js(texts: Dict[str, str]) -> str:
-    """axis tooltip 的 JS formatter（千分位 + HTML 转义 + 无数据占位）。"""
+
     no_data = texts['tooltip_no_data']
     return (
         "function(params) {\n"
@@ -138,22 +138,22 @@ def tooltip_formatter_axis_js(texts: Dict[str, str]) -> str:
 
 
 def _content_suffix(df: pd.DataFrame) -> str:
-    """表格文件名后缀：对全表内容（列 + 单元格值）取哈希。
 
-    只用「列名 + 行数」时，同 schema 同行数的两份不同数据会得到同一文件名，
-    后生成的静默覆盖先生成的；改为全内容哈希后互不覆盖。
-    """
+
+
+
+
     import hashlib
     try:
         payload = pd.util.hash_pandas_object(df, index=False).values.tobytes()
-    except TypeError:  # 含不可哈希对象时退化为字符串序列化
+    except TypeError:  
         payload = df.to_csv(index=False).encode('utf-8')
     cols = json.dumps([str(c) for c in df.columns], ensure_ascii=False).encode('utf-8')
     return hashlib.md5(payload + cols).hexdigest()[:6]
 
 
 class HTMLTemplateMixin:
-    """HTML 模板生成方法，由 ChartGenerator 继承。"""
+
 
     def _save_html(self, ctx, option: Dict, width: int, height: int,
                    chart_type: str = '', data_points: int = 0, annotation: str = '') -> Path:
@@ -165,26 +165,26 @@ class HTMLTemplateMixin:
         suffix = hashlib.md5(content_str.encode()).hexdigest()[:6]
         raw_safe = re.sub(r'[\\/:*?"<>|]', '_', ctx.title)
         safe_title = raw_safe[:30]
-        # 文件名截断可观测性：截断发生时登记，供生成器挂 advisory（完整标题见 title 字段）
+        
         self._title_truncated = len(raw_safe) > 30
         filename = f"{safe_title}_{suffix}.html"
         path = self.output_dir / filename
 
-        # XSS 防护：转义所有用户输入插入 HTML 的部分
+        
         esc_title = html_module.escape(ctx.title)
-        # 副标题：用户提供时置于生成时间之前（保留品牌与时间戳信息）
+        
         subtitle_prefix = (html_module.escape(ctx.subtitle) + ' &middot; ') if ctx.subtitle else ''
 
-        # 主题注入：画布背景 + 深色主题的全局文字颜色（浅色主题 echarts_text=None 走默认）
+        
         option.setdefault('backgroundColor', th['chart_bg'])
         if th['echarts_text']:
             option.setdefault('textStyle', {'color': th['echarts_text']})
             if isinstance(option.get('title'), dict):
                 option['title'].setdefault('textStyle', {})['color'] = th['echarts_text']
-            # legend 有自己的默认色（#333），不继承根级 textStyle
+            
             if isinstance(option.get('legend'), dict):
                 option['legend'].setdefault('textStyle', {})['color'] = th['echarts_text']
-            # gauge 系列文字（刻度/数值/名称，默认 #464646），不继承根级 textStyle
+            
             for s in option.get('series', []):
                 if not isinstance(s, dict):
                     continue
@@ -192,19 +192,19 @@ class HTMLTemplateMixin:
                     s.setdefault('axisLabel', {})['color'] = th['echarts_text']
                     s.setdefault('detail', {})['color'] = th['echarts_text']
                     s.setdefault('title', {})['color'] = th['echarts_text']
-                # graph 节点标签（默认 #333），节点圆小于标签宽度，文字大部分落在深色画布上
+                
                 elif s.get('type') == 'graph':
                     s.setdefault('label', {})['color'] = th['echarts_text']
 
         option_json = json.dumps(option, ensure_ascii=False, indent=2, allow_nan=False)
-        # XSS 防护：转义 </ 防止数据值中的 </script> 提前闭合脚本上下文。
-        # JSON/JS 字符串中 \/ 合法且求值后还原为 /，ECharts 拿到的值不变。
-        # 必须在占位符替换为 JS 函数之前执行：注入的受信 JS 含正则 /</g，事后替换会破坏其语法。
+        
+        
+        
         option_json = option_json.replace('</', '<\\/')
 
-        # 将占位符字符串替换为真正的 JS 函数（去掉 json.dumps 添加的引号）。
-        # axis tooltip 恒有；其余片段由渲染器收集进 ctx.js（RenderContext 显式传参，
-        # 不再依赖生成器实例属性），替换完成即清空。
+        
+        
+        
         option_json = option_json.replace(
             f'"{TOOLTIP_FORMATTER_AXIS}"',
             tooltip_formatter_axis_js(texts),
@@ -213,10 +213,10 @@ class HTMLTemplateMixin:
             option_json = option_json.replace(f'"{placeholder}"', js)
         ctx.js.clear()
 
-        # ECharts JS 内联到 HTML（避免 file:// 跨域加载失败，确保离线自包含）
+        
         echarts_js = _load_echarts_js()
 
-        # wordcloud / liquidfill 插件（仅对应图表类型需要，同样内联）
+        
         wordcloud_script = ''
         if chart_type == 'wordcloud':
             wordcloud_js = _load_wordcloud_js()
@@ -226,9 +226,9 @@ class HTMLTemplateMixin:
             liquidfill_js = _load_liquidfill_js()
             liquidfill_script = f'<script>{liquidfill_js}</script>'
 
-        # map/lines 图表：内联 GeoJSON 并 registerMap，再 setOption 才能渲染。
-        # GeoJSON 与 map 名取自 ctx（chart_generator 已解析 --geo/--geo-path）；
-        # ctx.geo_json 为空时回退到内置中国省级地图（兜底，正常不会触发）。
+        
+        
+        
         map_register_js = ''
         if chart_type in ('map', 'lines'):
             geo_json = ctx.geo_json if ctx.geo_json is not None else _load_china_geojson()
@@ -236,10 +236,10 @@ class HTMLTemplateMixin:
             geo_json_str = json.dumps(geo_json, ensure_ascii=False).replace('</', '<\\/')
             map_register_js = f'echarts.registerMap("{geo_map_name}", {geo_json_str});'
 
-        # 宽高比，用于响应式高度计算
+        
         aspect_ratio = width / height if height > 0 else 16 / 9
 
-        # 数据点过多时：容器加横向滚动兜底 + 显示提示
+        
         scroll_hint_html = ''
         if data_points and data_points > DATAZOOM_THRESHOLD:
             min_chart_width = data_points * MIN_PX_PER_POINT
@@ -262,10 +262,10 @@ class HTMLTemplateMixin:
         rename_group_series = html_module.escape(texts['rename_group_series'])
         rename_group_axis = html_module.escape(texts['rename_group_axis'])
         title_updated_msg = html_module.escape(texts['title_updated'])
-        # lang 显式来自 ctx（texts.get_texts 返回实际生效语言），不再做字典身份比较
+        
         html_lang = 'zh-CN' if ctx.lang == 'zh' else 'en'
-        # 无系列概念的图表不渲染"系列"重命名分组（series name 仅为写死的图表类型名，如 heatmap/sankey）；
-        # series name = 数值列名的图（gauge/pie/liquid 等）不在 NO_SERIES_CHART_TYPES 内，仍渲染"系列"分组供改名
+        
+        
         show_series_js = 'false' if chart_type in NO_SERIES_CHART_TYPES else 'true'
 
         html = f"""<!DOCTYPE html>
@@ -488,7 +488,7 @@ titleEl.addEventListener('blur', function() {{
 
     def _save_table_html(self, ctx, df: pd.DataFrame, title: str, width: int, height: int,
                          annotation: str = '') -> Path:
-        """spreadsheet 表格视图：主题化 HTML 表格（数值列右对齐、表头吸顶、容器滚动）。"""
+
         self._ensure_output_dir()
         th = ctx.theme
         texts = ctx.texts
@@ -500,7 +500,7 @@ titleEl.addEventListener('blur', function() {{
         path = self.output_dir / filename
 
         esc_title = html_module.escape(title)
-        # 副标题：用户提供时置于生成时间之前（保留品牌与时间戳信息）
+        
         subtitle_prefix = (html_module.escape(ctx.subtitle) + ' &middot; ') if ctx.subtitle else ''
         numeric_cols = {str(c) for c in df.columns if pd.api.types.is_numeric_dtype(df[c])}
 

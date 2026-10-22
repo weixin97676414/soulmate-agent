@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-中华护理学会团体标准列表爬取脚本
-功能：
-  1. 爬取 hltb.kxj.org.cn 全部标准列表
-  2. 根据诊断关键词匹配最相关标准
-  3. 下载匹配标准的PDF文件
-用法：
-  python fetch_standards.py --diagnosis "气管切开" --output_dir "/tmp/nursing_std"
-"""
+
+
+
+
+
+
+
+
+
 
 import requests
 import re
@@ -30,7 +30,7 @@ HEADERS = {
     "Referer": BASE_URL,
 }
 
-# 诊断关键词 → 标准匹配规则
+
 DIAGNOSIS_KEYWORD_MAP = {
     "气管切开": ["气管切开", "气道护理"],
     "气管": ["气管切开", "气道护理", "机械通气"],
@@ -53,14 +53,14 @@ DIAGNOSIS_KEYWORD_MAP = {
 
 
 def fetch_all_standards():
-    """爬取全部标准列表，返回 [{id, code, name, domain, url}] """
+
     try:
         resp = requests.get(STANDARD_LIST_URL, headers=HEADERS, timeout=20)
         resp.encoding = "utf-8"
         soup = BeautifulSoup(resp.text, "html.parser")
         
         standards = []
-        # 查找表格行
+        
         rows = soup.find_all("tr")
         for row in rows:
             cols = row.find_all("td")
@@ -68,25 +68,25 @@ def fetch_all_standards():
                 links = row.find_all("a", href=True)
                 if links:
                     href = links[0].get("href", "")
-                    # 提取 team_standard_id
+                    
                     sid_match = re.search(r"team_standard_id=(\d+)", href)
                     if sid_match:
                         sid = int(sid_match.group(1))
-                        # 表格结构：序号 | 标准编号（带链接） | 标准名称（带链接） | 专业领域 | 状态 | 发布日期 | 实施日期
-                        # 通过链接文本获取标准编号和名称
+                        
+                        
                         all_links = row.find_all("a", href=True)
-                        # 标准编号：第一个链接（T/CNAS XX格式）
+                        
                         code = all_links[0].get_text(strip=True) if len(all_links) > 0 else ""
-                        # 标准名称：第二个链接（中文名称）
+                        
                         name = all_links[1].get_text(strip=True) if len(all_links) > 1 else code
                         if not name or name == code:
-                            # 尝试从所有td中找中文名称
+                            
                             for col in cols:
                                 text = col.get_text(strip=True)
                                 if any('\u4e00' <= c <= '\u9fff' for c in text) and len(text) > 4:
                                     name = text
                                     break
-                        # 专业领域：找包含科/医的列
+                        
                         domain = ""
                         for col in cols:
                             text = col.get_text(strip=True)
@@ -103,7 +103,7 @@ def fetch_all_standards():
                         })
         
         if not standards:
-            # 尝试备用解析方式
+            
             for link in soup.find_all("a", href=True):
                 href = link.get("href", "")
                 sid_match = re.search(r"team_standard_id=(\d+)", href)
@@ -122,12 +122,12 @@ def fetch_all_standards():
         return standards
     except Exception as e:
         print(f"[WARN] 获取标准列表失败: {e}")
-        # 返回已知的前10项作为降级数据
+        
         return get_fallback_standards()
 
 
 def get_fallback_standards():
-    """降级数据：已知的中华护理学会团体标准"""
+
     return [
         {"id": 1, "code": "T/CNAS 01-2019", "name": "成人癌性疼痛护理", "domain": "肿瘤外科",
          "url": STANDARD_DETAIL_TPL.format(sid=1)},
@@ -153,7 +153,7 @@ def get_fallback_standards():
 
 
 def match_standards(diagnosis, symptoms, all_standards):
-    """根据诊断和症状匹配最相关标准，返回前3个"""
+
     diagnosis_lower = diagnosis.lower()
     symptoms_lower = (symptoms or "").lower()
     combined_text = diagnosis_lower + " " + symptoms_lower
@@ -163,19 +163,19 @@ def match_standards(diagnosis, symptoms, all_standards):
         score = 0
         std_name = std["name"]
         
-        # 直接名称匹配
+        
         for keyword, targets in DIAGNOSIS_KEYWORD_MAP.items():
             if keyword in combined_text:
                 for target in targets:
                     if target in std_name:
                         score += 10
         
-        # 通用相关度计算（字符级别）
+        
         for char in combined_text:
             if char in std_name:
                 score += 0.5
         
-        # 专科领域匹配
+        
         domain_keywords = {
             "呼吸": ["呼吸", "气道", "肺", "氧气"],
             "肿瘤": ["肿瘤", "癌", "化疗"],
@@ -190,11 +190,11 @@ def match_standards(diagnosis, symptoms, all_standards):
         
         scored.append((score, std))
     
-    # 按分数排序，取前3
+    
     scored.sort(key=lambda x: x[0], reverse=True)
     top3 = [s[1] for s in scored[:3] if s[0] > 0]
     
-    # 如果没有匹配，默认用成人氧气吸入（最通用）
+    
     if not top3:
         top3 = [s for s in all_standards if s["id"] == 8][:1]
     
@@ -202,15 +202,15 @@ def match_standards(diagnosis, symptoms, all_standards):
 
 
 def search_standards_by_operation_name(operation_name, all_standards):
-    """根据护理操作名称搜索相关标准（支持模糊匹配）
-    
-    Args:
-        operation_name: 护理操作名称，如"气管切开气道护理"
-        all_standards: 所有标准列表
-    
-    Returns:
-        匹配的标准列表（按相关度排序）
-    """
+
+
+
+
+
+
+
+
+
     if not operation_name:
         return []
     
@@ -222,23 +222,23 @@ def search_standards_by_operation_name(operation_name, all_standards):
         std_name = std["name"]
         std_code = std.get("code", "")
         
-        # 精确匹配操作名称
+        
         if operation_lower in std_name.lower():
             score += 20
         
-        # 分词匹配（中文按字符）
+        
         op_words = set(operation_lower.replace(" ", ""))
         std_words = set(std_name.replace(" ", ""))
         common_words = op_words & std_words
         score += len(common_words) * 3
         
-        # 关键词匹配
+        
         keywords = operation_lower.split()
         for keyword in keywords:
             if len(keyword) >= 2 and keyword in std_name:
                 score += 10
         
-        # 领域匹配
+        
         operation_domain_map = {
             "气道": "呼吸", "气管": "呼吸", "氧气": "呼吸", "呼吸": "呼吸",
             "造口": "消化", "肠": "消化", "胃": "消化",
@@ -254,19 +254,19 @@ def search_standards_by_operation_name(operation_name, all_standards):
         if score > 0:
             scored.append((score, std))
     
-    # 按分数排序
+    
     scored.sort(key=lambda x: x[0], reverse=True)
-    return [s[1] for s in scored[:5]]  # 返回前5个最相关的标准
+    return [s[1] for s in scored[:5]]  
 
 
 def fetch_pdf_url(standard_url):
-    """从标准详情页提取PDF下载链接"""
+
     try:
         resp = requests.get(standard_url, headers=HEADERS, timeout=20)
         resp.encoding = "utf-8"
         soup = BeautifulSoup(resp.text, "html.parser")
         
-        # 查找PDF下载链接
+        
         pdf_urls = []
         for a in soup.find_all("a", href=True):
             href = a.get("href", "")
@@ -275,7 +275,7 @@ def fetch_pdf_url(standard_url):
                 full_url = urljoin(BASE_URL, href)
                 pdf_urls.append(full_url)
         
-        # 也查找包含"标准下载"区域的链接
+        
         for section in soup.find_all(["div", "section", "li"]):
             section_text = section.get_text()
             if "标准下载" in section_text or "下载" in section_text:
@@ -286,7 +286,7 @@ def fetch_pdf_url(standard_url):
                         if full_url not in pdf_urls:
                             pdf_urls.append(full_url)
         
-        # 返回也包含页面文本内容作为备用
+        
         page_text = soup.get_text(separator="\n")
         return pdf_urls, page_text
     
@@ -296,7 +296,7 @@ def fetch_pdf_url(standard_url):
 
 
 def download_pdf(pdf_url, output_path):
-    """下载PDF文件"""
+
     try:
         resp = requests.get(pdf_url, headers=HEADERS, timeout=60, stream=True)
         if resp.status_code == 200 and len(resp.content) > 1000:
@@ -328,17 +328,17 @@ def main():
     all_standards = fetch_all_standards()
     print(f"[INFO] 共获取 {len(all_standards)} 项标准")
     
-    # 确定匹配的标准
+    
     if args.search_all:
-        matched = all_standards[:10]  # 返回前10个
+        matched = all_standards[:10]  
         print(f"[INFO] 返回前 {len(matched)} 项标准")
     elif args.operation_name:
-        # 按护理操作名称搜索
+        
         print(f"[INFO] 根据护理操作名称「{args.operation_name}」搜索相关标准...")
         matched = search_standards_by_operation_name(args.operation_name, all_standards)
         print(f"[INFO] 匹配到 {len(matched)} 项相关标准：")
     elif args.diagnosis:
-        # 按诊断匹配
+        
         print(f"[INFO] 根据诊断「{args.diagnosis}」匹配最相关标准...")
         matched = match_standards(args.diagnosis, args.symptoms, all_standards)
         print(f"[INFO] 匹配到 {len(matched)} 项相关标准：")
@@ -354,7 +354,7 @@ def main():
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return
     
-    # 下载PDF
+    
     results = []
     for std in matched:
         print(f"\n[INFO] 处理标准: {std['name']}")
@@ -374,11 +374,11 @@ def main():
             "standard": std,
             "pdf_downloaded": pdf_downloaded,
             "pdf_path": pdf_path if pdf_downloaded else None,
-            "page_text": page_text if not pdf_downloaded else "",  # 降级用网页文本
+            "page_text": page_text if not pdf_downloaded else "",  
         })
         time.sleep(0.5)
     
-    # 保存结果JSON
+    
     result_json_path = os.path.join(args.output_dir, "fetch_result.json")
     with open(result_json_path, "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)

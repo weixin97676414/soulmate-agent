@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""
-专业报表生成器
-将分析结果生成 Markdown / HTML 格式报表
-"""
+
+
+
+
 
 import json
 import sys
@@ -18,12 +18,12 @@ def generate_report(
     fmt: str = "markdown",
     metadata: dict = None,
 ):
-    """
-    生成报表。
-    sections 格式:
-    [{"title": "概览", "content": "文本或 dict"}, ...]
-    content 为 dict 时自动转表格。
-    """
+
+
+
+
+
+
     if fmt == "markdown":
         _gen_markdown(title, sections, output_path, metadata)
     elif fmt == "html":
@@ -50,7 +50,7 @@ def _gen_markdown(title: str, sections: list[dict], output_path: str, metadata: 
             lines.append(_dict_to_table(content))
         elif isinstance(content, list):
             if content and isinstance(content[0], dict):
-                # list of dicts → 表格
+                
                 cols = list(content[0].keys())
                 lines.append("| " + " | ".join(cols) + " |")
                 lines.append("| " + " | ".join(["---"] * len(cols)) + " |")
@@ -72,10 +72,10 @@ def _gen_markdown(title: str, sections: list[dict], output_path: str, metadata: 
 
 
 def _dict_to_table(d: dict) -> str:
-    """dict 转简单表格"""
+
     lines = []
     if all(isinstance(v, dict) for v in d.values()):
-        # 嵌套 dict → 列名表
+        
         keys = list(d.keys())
         sub_keys = []
         for v in d.values():
@@ -119,7 +119,7 @@ def _gen_html(title: str, sections: list[dict], output_path: str, metadata: dict
         body += f"<h2>{section['title']}</h2>\n"
         content = section.get("content", "")
         if isinstance(content, dict):
-            # KPI 卡片
+            
             if all(isinstance(v, dict) and "value" in v for v in content.values()):
                 for k, v in content.items():
                     body += f"<div class='kpi'><div class='value'>{v.get('value', 'N/A')}</div><div class='label'>{k}</div></div>\n"

@@ -1,4 +1,4 @@
-"""事件总线与提醒调度测试。"""
+
 
 from __future__ import annotations
 
@@ -26,9 +26,9 @@ async def reminders(db) -> ReminderRepository:
     return ReminderRepository(db)
 
 
-# --------------------------------------------------------------------------- #
-# 事件总线
-# --------------------------------------------------------------------------- #
+
+
+
 async def test_publish_reaches_subscribers():
     bus = EventBus()
     first = bus.subscribe()
@@ -59,7 +59,7 @@ async def test_unsubscribe_stops_delivery():
 
 
 async def test_slow_subscriber_drops_oldest_not_newest():
-    """队列满时丢最旧的，保证慢客户端拿到的是最新状态而不是一堆陈旧事件。"""
+
     bus = EventBus()
     queue = bus.subscribe()
 
@@ -68,33 +68,33 @@ async def test_slow_subscriber_drops_oldest_not_newest():
 
     assert queue.qsize() == QUEUE_SIZE
     first = queue.get_nowait()
-    # 最早的 10 条应该已经被挤掉
+    
     assert first.data["seq"] == 10
 
 
 async def test_publish_isolates_broken_subscriber():
-    """一个订阅者故障不能影响其他订阅者，也不能让 publish 整体失败。"""
+
     bus = EventBus()
     good = bus.subscribe()
 
     class ExplodingQueue(asyncio.Queue):
-        def put_nowait(self, item):  # type: ignore[override]
+        def put_nowait(self, item):  
             raise RuntimeError("模拟订阅者故障")
 
-    # 注册两个故障订阅者，确保无论 set 的迭代顺序如何都会先撞上故障
-    bus._subscribers.add(ExplodingQueue())  # noqa: SLF001 - 故意注入故障订阅者
-    bus._subscribers.add(ExplodingQueue())  # noqa: SLF001
+    
+    bus._subscribers.add(ExplodingQueue())  
+    bus._subscribers.add(ExplodingQueue())  
 
-    # 不应抛错，且正常订阅者仍然收得到
+    
     delivered = bus.publish("notice", seq=1)
     assert delivered == 1
     assert not good.empty()
     assert good.get_nowait().data["seq"] == 1
 
 
-# --------------------------------------------------------------------------- #
-# 提醒调度
-# --------------------------------------------------------------------------- #
+
+
+
 async def test_scheduler_fires_due_reminder(reminders):
     bus = EventBus()
     queue = bus.subscribe()
@@ -111,21 +111,21 @@ async def test_scheduler_fires_due_reminder(reminders):
     assert event.type == "reminder"
     assert event.data["content"] == "交周报"
 
-    # 未到点的不应触发
+    
     listed = await reminders.list(status="pending")
     assert [item.id for item in listed] == [future.id]
 
 
 async def test_reminder_content_is_not_written_to_the_log(reminders, caplog):
-    """提醒的**正文不许进日志**（第 88 批，M-23）。
 
-    用户设的提醒常含"吃药""见客户"这类私事，而 `core.log` 有 14 天轮转、
-    还可能被用户整包带出去排查问题 —— 那等于把个人事务泄露出去。
-    正文已经通过上面那条 `reminder` 事件推给界面了，日志只需要能对上号。
 
-    ⚠️ 这条是**隐私回归钉**：日志里出现正文不算"功能坏了"，没有任何报错，
-    所以只能靠用例守住。
-    """
+
+
+
+
+
+
+
     bus = EventBus()
     scheduler = ReminderScheduler(reminders, bus)
     secret = "晚上八点吃降压药，顺便去接孩子"
@@ -137,8 +137,8 @@ async def test_reminder_content_is_not_written_to_the_log(reminders, caplog):
         assert await scheduler.check_once() == 1
 
     assert secret not in caplog.text, "提醒正文被写进了日志"
-    # 但 id 必须留着：真出问题时得能对上"是哪一条提醒"
-    # （`record.id` 是数据库自增主键，int —— 比字符串得先转）
+    
+    
     assert str(record.id) in caplog.text
 
 
@@ -154,7 +154,7 @@ async def test_fired_reminder_is_not_repeated(reminders):
 async def test_scheduler_without_repository_is_noop():
     scheduler = ReminderScheduler(None, EventBus())
     assert await scheduler.check_once() == 0
-    # 没有仓储时 start/stop 也不应抛错
+    
     await scheduler.start()
     await scheduler.stop()
 
@@ -162,13 +162,13 @@ async def test_scheduler_without_repository_is_noop():
 async def test_scheduler_start_and_stop(reminders):
     scheduler = ReminderScheduler(reminders, EventBus(), interval=0.05)
     await scheduler.start()
-    await scheduler.start()  # 重复 start 不应起两个任务
+    await scheduler.start()  
     await scheduler.stop()
-    await scheduler.stop()  # 重复 stop 也不应抛错
+    await scheduler.stop()  
 
 
 async def test_scheduler_survives_repository_error(reminders, monkeypatch):
-    """后台轮询绝不能因为单次查询异常就整体退出。"""
+
     bus = EventBus()
     scheduler = ReminderScheduler(reminders, bus, interval=0.02)
 

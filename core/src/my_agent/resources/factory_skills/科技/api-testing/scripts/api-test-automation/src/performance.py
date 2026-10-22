@@ -1,7 +1,7 @@
-"""Performance Testing Module
 
-Provides load testing and performance measurement tools.
-"""
+
+
+
 
 import asyncio
 import time
@@ -14,7 +14,7 @@ import httpx
 
 @dataclass
 class PerformanceResults:
-    """Performance test results."""
+
     total_requests: int = 0
     successful_requests: int = 0
     failed_requests: int = 0
@@ -27,21 +27,21 @@ class PerformanceResults:
     
     @property
     def throughput(self) -> float:
-        """Calculate requests per second."""
+
         if self.total_time > 0:
             return self.total_requests / self.total_time
         return 0.0
     
     @property
     def error_rate(self) -> float:
-        """Calculate error rate percentage."""
+
         if self.total_requests > 0:
             return (self.failed_requests / self.total_requests) * 100
         return 0.0
     
     @property
     def percentiles(self) -> Dict[str, float]:
-        """Calculate response time percentiles."""
+
         if not self.response_times:
             return {}
         sorted_times = sorted(self.response_times)
@@ -54,7 +54,7 @@ class PerformanceResults:
         }
     
     def summary(self) -> str:
-        """Generate summary report."""
+
         percentiles = self.percentiles
         return f"""
 Performance Test Results
@@ -82,7 +82,7 @@ P99:                 {percentiles.get('p99', 0):.3f}s
 
 
 class PerformanceTester:
-    """Performance testing utility."""
+
     
     def __init__(self, base_url: str, concurrency: int = 10, duration: int = 60):
         self.base_url = base_url
@@ -91,7 +91,7 @@ class PerformanceTester:
         self.results = PerformanceResults()
         
     async def run_load_test(self, scenario: Callable, total_requests: int = 1000) -> PerformanceResults:
-        """Run load test with specified concurrency."""
+
         self.results = PerformanceResults()
         semaphore = asyncio.Semaphore(self.concurrency)
         
@@ -123,7 +123,7 @@ class PerformanceTester:
     
     async def run_stress_test(self, scenario: Callable, max_concurrency: int = 100,
                               step: int = 10, step_duration: int = 30) -> Dict[int, PerformanceResults]:
-        """Run stress test with increasing concurrency."""
+
         results = {}
         for concurrency in range(step, max_concurrency + 1, step):
             self.concurrency = concurrency
@@ -134,16 +134,16 @@ class PerformanceTester:
     
     async def run_spike_test(self, scenario: Callable, normal_load: int = 10,
                             spike_load: int = 100, spike_duration: int = 10) -> Dict[str, PerformanceResults]:
-        """Run spike test."""
-        # Normal load
+
+        
         self.concurrency = normal_load
         normal_result = await self.run_load_test(scenario, total_requests=normal_load * 30)
         
-        # Spike
+        
         self.concurrency = spike_load
         spike_result = await self.run_load_test(scenario, total_requests=spike_load * spike_duration)
         
-        # Recovery
+        
         self.concurrency = normal_load
         recovery_result = await self.run_load_test(scenario, total_requests=normal_load * 30)
         
@@ -154,7 +154,7 @@ class PerformanceTester:
         }
     
     def measure_latency(self, scenario: Callable, iterations: int = 100) -> PerformanceResults:
-        """Measure latency with single-threaded requests."""
+
         self.results = PerformanceResults()
         
         for _ in range(iterations):

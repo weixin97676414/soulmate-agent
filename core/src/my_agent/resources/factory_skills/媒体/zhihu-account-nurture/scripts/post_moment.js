@@ -1,23 +1,23 @@
-// post_moment.js — 知乎发想法 / 动态
-// 用法（Bash 必须 dangerouslyDisableSandbox:true，且关闭沙箱开关）：
-//   先把参数写到 /tmp/zhihu_moment_params.json（见底部 schema），再：
-//   ego-browser nodejs < scripts/post_moment.js
-//   兼容 env：CONTENT / CONTENT_FILE / DRY_RUN
-//
-// 行为：打开知乎首页 → 点「发想法」→ 填正文 → （dryRun 则停）→ 等风控 → 点「发布」→ 校验弹窗关闭
-//
-// 选择器（2026-08-31 实测）：
-//   入口按钮   button 文本含「发想法」（首页顶部，class 动态如 css-usknaz）
-//   编辑器     .public-DraftEditor-content   ← 与回答编辑器同一个类
-//   发布按钮   从编辑器向上找祖先，取 innerText.trim() === '发布' 的 button
-//
-// ⚠️ 风控：想法属创作内容，两条之间间隔 ≥5 分钟；单次任务只发 1 条。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 (async () => {
   const fs = require('fs')
   const path = require('path')
 
-  // ---------- 0. 参数加载（env 优先，回退参数文件） ----------
+  
   function loadParams() {
     const p = {}
     if (process.env.CONTENT) p.content = process.env.CONTENT
@@ -37,7 +37,7 @@
   }
   const P = loadParams()
 
-  // ---------- 1. 加载配置（取 moments 字数区间做提示） ----------
+  
   function loadConfig() {
     const candidates = []
     if (P.configPath) candidates.push(P.configPath)
@@ -55,7 +55,7 @@
   const maxW = mCfg.max_words || 150
   if (cfg) cliLog('CONFIG_LOADED: ' + cfg.path)
 
-  // ---------- 2. 正文 ----------
+  
   let content = P.content || ''
   if (!content && P.contentFile) {
     try { content = fs.readFileSync(P.contentFile, 'utf8') } catch (e) {
@@ -69,12 +69,12 @@
   cliLog('CONTENT_LEN: ' + w + ' (config range ' + minW + '-' + maxW + ')')
   if (w < minW || w > maxW) cliLog('WARN: length outside configured moments range — publishing anyway')
 
-  // Fail-safe（GLIC C2）：想法是不可逆的公开发布动作，未显式 dryRun=false 时一律只填不发布
+  
   const dryRun = P.dryRun !== false
   if (P.dryRun == null) cliLog('DRY_RUN_DEFAULT: 未显式设置 dryRun，默认只填不发布（实发请在参数文件写 "dryRun": false）')
   cliLog('DRY_RUN: ' + dryRun + (dryRun ? ' (fill only, will NOT publish)' : ''))
 
-  // ---------- 3. 打开发想法 ----------
+  
   const space = 'zhihu-moment'
   const task = await useOrCreateTaskSpace(space)
   await openOrReuseTab('https://www.zhihu.com', { wait: true, timeout: 25 })
@@ -96,7 +96,7 @@
   }
   await wait(6)
 
-  // ---------- 4. 填正文 ----------
+  
   try {
     const ok = await js('((text) => {'
       + ' const editor = document.querySelector(".public-DraftEditor-content");'
@@ -128,7 +128,7 @@
     return
   }
 
-  // ---------- 5. 风控等待后发布 ----------
+  
   cliLog('risk-control wait 30s before publish...')
   await wait(30)
 
@@ -152,11 +152,11 @@
   }
   await wait(12)
 
-  // ---------- 6. 校验 ----------
-  // ⚠️ 浏览器侧校验不可靠（2026-08-31 实测）：发布成功后弹窗会重置为空白编辑器，
-  //    editorRemaining 仍为 1，属假阴性，不能据此判定失败。
-  //    权威校验请用官方 CLI：zhihu-cli me contents --type pin --limit 3
-  //    （想法在 API 里的内容类型是 pin，不是 moment）
+  
+  
+  
+  
+  
   const verify = await js('(() => {'
     + ' const still = document.querySelectorAll(".public-DraftEditor-content").length;'
     + ' return JSON.stringify({ editorRemaining: still, url: location.href });'
@@ -168,10 +168,10 @@
   await completeTaskSpace(space, { keep: false })
 })()
 
-// 参数文件 schema（/tmp/zhihu_moment_params.json）：
-// {
-//   "content": "想法正文（50-150 字）",
-//   "contentFile": "/abs/moment.txt",   // 与 content 二选一，优先 content
-//   "configPath": "/abs/config.json",   // 可选，用于读取 moments 字数区间
-//   "dryRun": false                     // 默认 true（fail-safe 只填不发布）；实发必须显式写 false
-// }
+
+
+
+
+
+
+

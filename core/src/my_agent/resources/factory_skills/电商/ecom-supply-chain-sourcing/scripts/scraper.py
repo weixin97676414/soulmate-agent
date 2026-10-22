@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""
-1688 通用抓取器 — scraper.py
-直接抓取 1688 页面 HTML，从页面 DOM / script 内嵌 JSON 中提取商品和工厂数据。
-"""
+
+
+
+
 
 import os
 import sys
@@ -12,7 +12,7 @@ import time
 import requests
 from typing import Optional
 
-# Cookie 可选配置（从环境变量读取）
+
 _OPTIONAL_COOKIE = os.environ.get("ALI_COOKIE", "")
 
 HEADERS = {
@@ -36,10 +36,10 @@ SESSION.headers.update(HEADERS)
 
 
 def fetch(url: str, encoding: str = "utf-8", timeout: int = 20) -> Optional[str]:
-    """抓取页面，返回 HTML 文本"""
+
     try:
         resp = SESSION.get(url, timeout=timeout)
-        # 1688 用 GBK 编码
+        
         if resp.apparent_encoding in ("gbk", "gb2312", "gb18030", "windows-1252"):
             encoding = "gbk"
         resp.encoding = encoding
@@ -49,7 +49,7 @@ def fetch(url: str, encoding: str = "utf-8", timeout: int = 20) -> Optional[str]
 
 
 def extract_json_field(html: str, patterns: list) -> Optional[dict]:
-    """从 HTML 中用多个正则匹配内嵌 JSON"""
+
     for pat in patterns:
         m = re.search(pat, html, re.DOTALL)
         if m:
@@ -62,27 +62,27 @@ def extract_json_field(html: str, patterns: list) -> Optional[dict]:
 
 
 def search_products(keyword: str, page: int = 1) -> dict:
-    """抓取 1688 商品搜索结果"""
+
     kw_encoded = requests.utils.quote(keyword)
-    # 搜索结果页
+    
     url = f"https://s.1688.com/youzhan/search/searchOffer.json?keywords={kw_encoded}&beginPage={page}&pageSize=20"
     html = fetch(url, encoding="gbk")
     if not html:
-        # 兜底：用旧版搜索
+        
         url2 = f"https://search.1688.com/service/json.htm?keywords={kw_encoded}&beginPage={page}&pageSize=20&qrquick=search"
         html = fetch(url2, encoding="gbk")
 
     if not html:
         return {"success": False, "error": "网络请求失败"}
 
-    # 尝试直接 JSON
+    
     try:
         data = json.loads(html)
         return _parse_product_list(data, keyword)
     except Exception:
         pass
 
-    # 从 HTML 提取内嵌 JSON
+    
     patterns = [
         r'window\.__INIT_STATE__\s*=\s*(\{.{5000,})\s*;</script>',
         r'"moduleList"\s*:\s*(\[.*?\])\s*,',
@@ -98,7 +98,7 @@ def search_products(keyword: str, page: int = 1) -> dict:
             except Exception:
                 pass
 
-    # 兜底：正则提取商品列表
+    
     items = _regex_extract_products(html)
     if items:
         return _format_product_result(items, keyword)
@@ -107,7 +107,7 @@ def search_products(keyword: str, page: int = 1) -> dict:
 
 
 def _parse_product_list(data, keyword: str) -> dict:
-    """通用 JSON 数据解析"""
+
     items = []
 
     def find_items(obj):
@@ -115,7 +115,7 @@ def _parse_product_list(data, keyword: str) -> dict:
             for x in obj:
                 find_items(x)
         elif isinstance(obj, dict):
-            # 命中含商品字段的列表
+            
             if "title" in obj or "subject" in obj:
                 if any(k in obj for k in ["price", "unitPrice", "最小起订量"]):
                     items.append(obj)
@@ -154,10 +154,10 @@ def _parse_product_list(data, keyword: str) -> dict:
 
 
 def _regex_extract_products(html: str) -> list:
-    """正则直接提取商品卡片数据"""
+
     items = []
 
-    # 匹配价格
+    
     price_pat = re.compile(r'"price"\s*:\s*"([^"]+)"')
     title_pat = re.compile(r'"title"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"')
     id_pat = re.compile(r'"offerId"\s*:\s*"?(\d+)"?')
@@ -166,7 +166,7 @@ def _regex_extract_products(html: str) -> list:
     addr_pat = re.compile(r'"location"\s*:\s*"\s*([^"]{2,20})"')
     co_pat = re.compile(r'"companyName"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"')
 
-    # 逐行扫描（以 offerId 为锚点分段）
+    
     segments = re.split(r'(?={"offerId")', html)
     for seg in segments[1:]:
         item = {}
@@ -232,11 +232,11 @@ def _format_product_result(items: list, keyword: str) -> dict:
 
 
 def search_factories(keyword: str, province: str = "", page: int = 1) -> dict:
-    """抓取 1688 工厂搜索结果"""
+
     kw_encoded = requests.utils.quote(keyword)
     province_encoded = requests.utils.quote(province) if province else ""
 
-    # 工厂频道搜索
+    
     url = f"https://s.1688.com/youzhan/search/searchFactory.json?keywords={kw_encoded}&beginPage={page}&pageSize=20"
     if province_encoded:
         url += f"&province={province_encoded}"
@@ -249,14 +249,14 @@ def search_factories(keyword: str, province: str = "", page: int = 1) -> dict:
     if not html:
         return {"success": False, "error": "网络请求失败"}
 
-    # 直接 JSON
+    
     try:
         data = json.loads(html)
         return _parse_factory_list(data, keyword)
     except Exception:
         pass
 
-    # HTML 内嵌 JSON
+    
     patterns = [
         r'window\.__INIT_STATE__\s*=\s*(\{.{5000,})\s*;</script>',
         r'"factoryList"\s*:\s*(\[.*?\])\s*[,}]',
@@ -271,7 +271,7 @@ def search_factories(keyword: str, province: str = "", page: int = 1) -> dict:
             except Exception:
                 pass
 
-    # 正则提取工厂
+    
     items = _regex_extract_factories(html)
     if items:
         return _format_factory_result(items, keyword)
@@ -377,7 +377,7 @@ def _format_factory_result(items: list, keyword: str) -> dict:
     }
 
 
-# --- 工具函数 ---
+
 def _strip(t) -> str:
     return re.sub(r"<[^>]+>", "", str(t)).strip()
 

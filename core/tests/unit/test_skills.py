@@ -1,4 +1,4 @@
-"""Skill 系统与内置工具测试。"""
+
 
 from __future__ import annotations
 
@@ -34,20 +34,20 @@ async def test_calc_functions(manager, ctx):
 
 
 async def test_calc_rejects_code_execution(manager, ctx):
-    """计算器必须走 AST 白名单，任何代码执行尝试都要被拒绝。"""
+
     for evil in [
         "__import__('os').system('echo hi')",
         "open('x.txt','w')",
         "(1).__class__.__bases__",
         "exec('1+1')",
     ]:
-        with pytest.raises(Exception) as exc:  # noqa: PT011
+        with pytest.raises(Exception) as exc:  
             await manager.execute("calc", {"expression": evil}, ctx)
         assert "无法计算" in str(exc.value) or "不支持" in str(exc.value)
 
 
 async def test_calc_division_by_zero_is_friendly(manager, ctx):
-    with pytest.raises(Exception) as exc:  # noqa: PT011
+    with pytest.raises(Exception) as exc:  
         await manager.execute("calc", {"expression": "1/0"}, ctx)
     assert "无法计算" in str(exc.value)
 
@@ -75,12 +75,12 @@ async def test_unknown_skill_lists_available(manager, ctx):
 
 
 async def test_disabled_skill_is_not_exposed(manager):
-    """禁用一个技能后它不再出现在工具清单里。
 
-    ⚠️ 用**临时注册的技能**而不是 `calc`：四分类里 `calc` / `system_time` 都属
-    「内置技能」—— 连开关都不给（`set_enabled(x, False)` 会抛），
-    拿它们测不到"禁用后不再暴露"这条链路。
-    """
+
+
+
+
+
     from my_agent.skill.base import BaseSkill, SkillMeta
 
     assert len(manager.to_tool_specs()) == 2
@@ -88,7 +88,7 @@ async def test_disabled_skill_is_not_exposed(manager):
     class _Extra(BaseSkill):
         meta = SkillMeta(name="probe_skill", description="测试用：临时技能")
 
-        async def run(self, ctx, **params):  # pragma: no cover - 不执行
+        async def run(self, ctx, **params):  
             return None
 
     manager.register(_Extra())
@@ -105,5 +105,5 @@ def test_tool_spec_schema_shape(manager):
     assert spec.parameters["type"] == "object"
     assert "expression" in spec.parameters["properties"]
     assert "title" not in spec.parameters
-    # 描述必须足够长，模型才能判断何时调用
+    
     assert len(spec.description) > 40

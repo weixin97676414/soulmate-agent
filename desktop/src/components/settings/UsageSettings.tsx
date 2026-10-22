@@ -9,15 +9,15 @@ import type { UsageSummary, UsageTotals } from '@/types'
 
 const WINDOWS = [7, 30, 90] as const
 
-/**
- * Token 数、金额、比率的显示格式统一在 `lib/format`（第 92 批，M-36 改用 `Intl`）。
- *
- * ⚠️ 它们原来**手写在这里**：`1.00M` / `10.0K` 这种英文紧凑写法、手工拼 `¥` / `$`、
- * 手工 `toFixed`。手写的问题不是难看，而是这些**约定**（千位分隔、货币符号位置、
- * 小数位数）得自己记着 —— 而"小额保留 4 位"那条规则，正是当初为了不让
- * `0.0123` 显示成"看起来免费"才加上的，换个页面就很容易漏掉。
- * 现在金额那两条口径（4 位小数、`$` 而不是 `US$`）连同理由一起写在 `lib/format` 里。
- */
+
+
+
+
+
+
+
+
+
 
 function Metric({
   label,
@@ -49,10 +49,10 @@ function Metric({
   )
 }
 
-/** 纯 CSS 的每日柱状图。数据量小（≤90 条），不值得引入图表库。 */
+
 function DailyBars({ days, currency }: { days: UsageSummary['by_day']; currency: string }) {
   if (days.length === 0) return null
-  // 后端按天倒序返回，画图要从左到右是时间正序
+  
   const ordered = [...days].reverse()
   const costs = ordered.map((item) => item.cost ?? 0)
   const max = Math.max(...costs, 1)
@@ -134,8 +134,8 @@ export function UsageSettings() {
   const [confirming, setConfirming] = useState(false)
   const [clearing, setClearing] = useState(false)
 
-  // 设置页被重新挂载时刷新一次即可；不做轮询——
-  // 用量只在对话结束后变化，轮询没有意义还会干扰用户看数字
+  
+  
   useEffect(() => {
     void load(days)
   }, [days, load])
@@ -181,13 +181,13 @@ export function UsageSettings() {
   const hasAnyCall = (summary?.total?.calls ?? 0) > 0
 
   return (
-    /*
-      ⚠️ `max-w-[880px]`：这一页原先连宽度上限都没有，内容铺满整宽。
-      加它是为了和同一排的其它设置页一样"宽度固定、靠左"。
+    
 
-      ⚠️ **不要再加 `mx-auto`**：做过一版居中的，用户看过之后说"居中并不好看" ——
-      他要的是内容**贴着左边**（距侧栏 40px），不是飘在窗口中间。
-    */
+
+
+
+
+
     <div className="max-w-[880px] space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1 rounded-[8px] border border-line p-0.5">
@@ -236,7 +236,7 @@ export function UsageSettings() {
         </div>
       ) : null}
 
-      {/* ---- 今日 ---- */}
+      {}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Metric
           label="今日费用"
@@ -291,7 +291,7 @@ export function UsageSettings() {
         </div>
       ) : null}
 
-      {/* ---- 窗口汇总 ---- */}
+      {}
       <div className="rounded-[10px] border border-line">
         <div className="flex items-center gap-2 border-b border-line px-3.5 py-2">
           <Zap size={13} className="text-ink-faint" />
@@ -316,7 +316,7 @@ export function UsageSettings() {
         </div>
       </div>
 
-      {/* ---- 按模型 ---- */}
+      {}
       {(summary?.by_model.length ?? 0) > 0 ? (
         <div className="overflow-hidden rounded-[10px] border border-line">
           <table className="w-full text-[12px]">

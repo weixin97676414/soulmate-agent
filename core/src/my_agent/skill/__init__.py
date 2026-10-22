@@ -1,4 +1,4 @@
-"""Skill 系统：核心抽象层。"""
+
 
 from .base import BaseSkill, ConfirmRequest, SkillContext, SkillMeta
 from .decorator import skill

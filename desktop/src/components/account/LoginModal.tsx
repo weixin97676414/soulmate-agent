@@ -3,12 +3,12 @@ import { useState } from 'react'
 import { Button, Field, Input, Modal, Spinner } from '@/components/ui'
 import { useAccountStore } from '@/stores/accountStore'
 
-/**
- * 「登录其他账号」弹窗。
- *
- * 规则来自文档 §5.5：这是**账号 + 密码**的登录（不支持空密码）——空密码只对
- * "本机自动创建的那个账号"有效，而那个账号走的是切换器，不经过这里。
- */
+
+
+
+
+
+
 export function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const login = useAccountStore((state) => state.login)
   const [account, setAccount] = useState('')

@@ -1,29 +1,29 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-detect_sensitive.py - 敏感字段自查脚本（办公技能配套）
 
-用途：
-  在把内部材料交给 AI 处理、或准备对外分享之前，先扫一遍里面有没有
-  身份证号 / 手机号 / 银行卡号 / 统一社会信用代码（税号）/ 邮箱 / IP 等敏感字段。
 
-设计原则：
-  * 只报告，不改写 —— 绝不修改或重写你的原文。
-  * 零依赖 —— 只用 Python 标准库，不联网，数据不出本机。
-  * 询问式脱敏 —— 扫出来之后由你决定：保留原文（对内）/ 部分掩码（半公开）/ 完全脱敏（对外）。
-                  本脚本不替你做这个决定，也不默认遮盖。
 
-用法：
-  python detect_sensitive.py 文件.txt
-  python detect_sensitive.py ./导出目录
-  python detect_sensitive.py 文件.txt --json
-  cat 文件.txt | python detect_sensitive.py -
 
-退出码：
-  0 = 未发现敏感字段
-  1 = 发现敏感字段
-  2 = 输入错误
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import argparse
 import json
@@ -34,10 +34,10 @@ import sys
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-# ---------------------------------------------------------------- 校验算法
+
 
 def _id_card_valid(s: str) -> bool:
-    """18 位身份证校验位（ISO 7064 MOD 11-2）。"""
+
     s = s.upper()
     if len(s) != 18 or not re.fullmatch(r"\d{17}[\dX]", s):
         return False
@@ -48,7 +48,7 @@ def _id_card_valid(s: str) -> bool:
 
 
 def _luhn_valid(s: str) -> bool:
-    """银行卡号 Luhn 校验。"""
+
     if not s.isdigit():
         return False
     total, alt = 0, False
@@ -63,7 +63,7 @@ def _luhn_valid(s: str) -> bool:
     return total % 10 == 0
 
 
-# ---------------------------------------------------------------- 规则表
+
 
 RULES = [
     {
@@ -114,7 +114,7 @@ TEXT_EXT = {".txt", ".md", ".csv", ".json", ".yml", ".yaml", ".xml", ".log", ".h
 
 
 def mask(value: str) -> str:
-    """生成掩码预览，仅用于展示，不写入任何文件。"""
+
     n = len(value)
     if n <= 4:
         return "*" * n
@@ -124,9 +124,9 @@ def mask(value: str) -> str:
 
 
 def scan_text(text: str, source: str = "<stdin>"):
-    """扫描一段文本，返回命中列表。"""
+
     hits = []
-    claimed = []  # 已归属更具体规则的区间，避免重复计数
+    claimed = []  
 
     for rule in RULES:
         for m in rule["regex"].finditer(text):

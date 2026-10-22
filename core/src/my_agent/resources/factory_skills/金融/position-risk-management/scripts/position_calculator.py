@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-股票仓位管理与风控专家 - 主计算脚本 (v1.0)
-计算盈亏比例、仓位占比、生成操作建议
-"""
+
+
+
+
 
 import sys
 import argparse
@@ -11,7 +11,7 @@ import time
 from dataclasses import dataclass
 from typing import List, Optional
 
-# 尝试导入 AKShare
+
 try:
     import akshare as ak
     HAS_AKSHARE = True
@@ -22,49 +22,49 @@ except ImportError:
 
 @dataclass
 class PositionInfo:
-    """持仓信息"""
+
     stock_name: str
     stock_code: str
     cost_price: float
     current_price: float
     shares: int
-    position_ratio: float  # 占总仓位比例 (%)
+    position_ratio: float  
     total_assets: Optional[float] = None
 
 
 @dataclass
 class RiskAssessment:
-    """风险评估结果"""
-    profit_loss_ratio: float  # 盈亏比例 (%)
-    profit_loss_amount: float  # 盈亏金额
-    position_health: str  # 仓位健康度
-    risk_level: str  # 风险等级
-    status_category: str  # 状态分类（大幅浮盈/深度套牢等）
+
+    profit_loss_ratio: float  
+    profit_loss_amount: float  
+    position_health: str  
+    risk_level: str  
+    status_category: str  
 
 
 @dataclass
 class ActionPlan:
-    """操作计划"""
-    model_name: str  # 推荐模型
-    actions: List[dict]  # 具体操作列表
-    trailing_stop_price: Optional[float]  # 移动止盈位
-    target_price: Optional[float]  # 目标价
-    psychology_tip: str  # 心理疏导
+
+    model_name: str  
+    actions: List[dict]  
+    trailing_stop_price: Optional[float]  
+    target_price: Optional[float]  
+    psychology_tip: str  
 
 
 def calculate_profit_loss(cost: float, current: float) -> float:
-    """计算盈亏比例"""
+
     if cost == 0:
         return 0.0
     return (current - cost) / cost * 100
 
 
 def assess_risk(info: PositionInfo) -> RiskAssessment:
-    """风险评估"""
+
     profit_loss_ratio = calculate_profit_loss(info.cost_price, info.current_price)
     profit_loss_amount = (info.current_price - info.cost_price) * info.shares
     
-    # 仓位健康度评估
+    
     if info.position_ratio > 60:
         position_health = "⚠️ 极度危险，需强制降仓"
         risk_level = "HIGH"
@@ -78,7 +78,7 @@ def assess_risk(info: PositionInfo) -> RiskAssessment:
         position_health = "✅ 轻仓，可适度加仓"
         risk_level = "LOW"
     
-    # 状态分类
+    
     if profit_loss_ratio > 30:
         status_category = "大幅浮盈 (>30%)"
     elif profit_loss_ratio > 20:
@@ -104,7 +104,7 @@ def assess_risk(info: PositionInfo) -> RiskAssessment:
 
 
 def generate_action_plan(info: PositionInfo, assessment: RiskAssessment) -> ActionPlan:
-    """生成操作计划"""
+
     actions = []
     model_name = ""
     trailing_stop_price = None
@@ -115,9 +115,9 @@ def generate_action_plan(info: PositionInfo, assessment: RiskAssessment) -> Acti
     cost = info.cost_price
     ratio = assessment.profit_loss_ratio
     
-    # 根据盈亏状态匹配策略
+    
     if ratio > 30:
-        # 大幅浮盈 >30%：倒金字塔止盈 + 移动跟踪
+        
         model_name = "倒金字塔止盈 + 移动跟踪止盈"
         
         actions = [
@@ -149,11 +149,11 @@ def generate_action_plan(info: PositionInfo, assessment: RiskAssessment) -> Acti
         psychology_tip = "卖飞是赚，套牢是亏。不要追求卖在最高点，把鱼尾留给别人。你已经赢了，现在要守住胜利果实。"
     
     elif ratio > 20:
-        # 大幅浮盈 20-30%：移动跟踪止盈
+        
         model_name = "移动跟踪止盈 (Trailing Stop)"
         
-        # 计算防守位（20 日均线或阶段性低点）
-        support_price = current * 0.92  # 简化计算，实际应基于均线
+        
+        support_price = current * 0.92  
         
         actions = [
             {
@@ -176,10 +176,10 @@ def generate_action_plan(info: PositionInfo, assessment: RiskAssessment) -> Acti
         psychology_tip = "趋势是你的朋友。只要不跌破防守位，就耐心持有。不要因为害怕回调而过早下车。"
     
     elif ratio > 10:
-        # 中等浮盈 10-20%：设定止损，继续持有
+        
         model_name = "持有 + 硬性止损"
         
-        stop_loss = cost * 1.02  # 保本止损
+        stop_loss = cost * 1.02  
         
         actions = [
             {
@@ -201,10 +201,10 @@ def generate_action_plan(info: PositionInfo, assessment: RiskAssessment) -> Acti
         psychology_tip = "你已经在赚钱了，这是好事。保持耐心，让市场证明你的判断是对的。"
     
     elif ratio > 0:
-        # 微利 0-10%：设定止损，观察
+        
         model_name = "观察 + 硬性止损"
         
-        stop_loss = cost * 0.97  # -3% 止损
+        stop_loss = cost * 0.97  
         
         actions = [
             {
@@ -226,11 +226,11 @@ def generate_action_plan(info: PositionInfo, assessment: RiskAssessment) -> Acti
         psychology_tip = "交易是概率游戏。这笔交易目前正确，但要保持警惕，随时准备认错。"
     
     elif ratio > -5:
-        # 微亏 -5%-0%：设定止损，考虑加仓或止损
+        
         model_name = "止损/加仓二选一"
         
-        stop_loss = cost * 0.95  # -5% 止损
-        add_position = cost * 0.9  # -10% 加仓
+        stop_loss = cost * 0.95  
+        add_position = cost * 0.9  
         
         actions = [
             {
@@ -259,11 +259,11 @@ def generate_action_plan(info: PositionInfo, assessment: RiskAssessment) -> Acti
         psychology_tip = "承认错误是交易的一部分。如果逻辑变了，就止损；如果逻辑没变，就坚持。"
     
     elif ratio > -15:
-        # 中度套牢 -15%~-5%：评估是否割肉或网格自救
+        
         model_name = "网格自救 + 评估换股"
         
-        grid_low = current * 0.9  # 网格下限
-        grid_high = current * 1.1  # 网格上限
+        grid_low = current * 0.9  
+        grid_high = current * 1.1  
         
         actions = [
             {
@@ -292,7 +292,7 @@ def generate_action_plan(info: PositionInfo, assessment: RiskAssessment) -> Acti
         psychology_tip = "套牢不可怕，可怕的是被动等待。要么主动自救，要么果断换股，不要装死。"
     
     else:
-        # 深度套牢 <-15%：割肉换股或长期抗战
+        
         model_name = "割肉换股 vs 长期抗战"
         
         actions = [
@@ -331,7 +331,7 @@ def generate_action_plan(info: PositionInfo, assessment: RiskAssessment) -> Acti
 
 
 def format_output(info: PositionInfo, assessment: RiskAssessment, plan: ActionPlan) -> str:
-    """格式化输出"""
+
     output = f"""
 ### 💼 持仓诊断报告：[{info.stock_name}]
 
@@ -351,7 +351,7 @@ def format_output(info: PositionInfo, assessment: RiskAssessment, plan: ActionPl
 
 """
     
-    # 添加具体操作
+    
     for action in plan.actions:
         output += f"* **{action['emoji']} {action['title']}**\n"
         output += f"  - {action['description']}\n"
@@ -375,11 +375,11 @@ def format_output(info: PositionInfo, assessment: RiskAssessment, plan: ActionPl
 
 
 def get_current_price_from_akshare(symbol: str, max_retries: int = 3) -> Optional[float]:
-    """
-    从 AKShare 获取股票当前价格
-    
-    ⚠️ 强制使用 AKShare，不 fallback
-    """
+
+
+
+
+
     if not HAS_AKSHARE:
         print("❌ AKShare 未安装，无法获取股价")
         return None
@@ -393,10 +393,10 @@ def get_current_price_from_akshare(symbol: str, max_retries: int = 3) -> Optiona
             else:
                 print(f"[AKShare] 获取股价中... (第 {attempt}/{max_retries} 次尝试)")
             
-            # 获取实时行情
+            
             df = ak.stock_zh_a_spot_em()
             if df is not None and len(df) > 0:
-                # 查找对应股票
+                
                 if symbol:
                     mask = df['代码'] == symbol
                     if mask.any():
@@ -429,7 +429,7 @@ def main():
     
     args = parser.parse_args()
     
-    # 获取当前价格：优先使用 AKShare
+    
     current_price = args.current
     if current_price is None and args.code:
         print(f"\n🔍 从 AKShare 获取 {args.code} 当前价格...")
@@ -447,7 +447,7 @@ def main():
     else:
         print(f"✅ 使用命令行提供的当前价格：{current_price:.2f}元")
     
-    # 创建持仓信息
+    
     info = PositionInfo(
         stock_name=args.name,
         stock_code=args.code,
@@ -458,13 +458,13 @@ def main():
         total_assets=args.assets
     )
     
-    # 风险评估
+    
     assessment = assess_risk(info)
     
-    # 生成操作计划
+    
     plan = generate_action_plan(info, assessment)
     
-    # 输出结果
+    
     print(format_output(info, assessment, plan))
 
 

@@ -1,7 +1,7 @@
-/**
- * 频率限制器 - Rate Limiter
- * 默认2秒/次，避免触发知乎反爬机制
- */
+
+
+
+
 class RateLimiter {
   constructor(minIntervalMs = 2000) {
     this.minIntervalMs = minIntervalMs;

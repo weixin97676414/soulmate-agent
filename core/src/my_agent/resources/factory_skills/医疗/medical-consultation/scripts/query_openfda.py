@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""
-OpenFDA Drug API Query Tool (with retry and better error handling)
-Search for drug information from FDA's open database.
 
-Usage:
-    python3 query_openfda.py "drug_name" [--type label|events]
 
-Examples:
-    python3 query_openfda.py "ibuprofen"
-    python3 query_openfda.py "acetaminophen" --type events
-"""
+
+
+
+
+
+
+
+
+
 
 import json
 import urllib.request
@@ -18,13 +18,13 @@ import urllib.error
 import sys
 import time
 
-# OpenFDA API base URL
+
 BASE_URL = "https://api.fda.gov"
 
 def query_drug_label(drug_name, limit=5, max_retries=3):
-    """
-    Query drug label information with retry logic.
-    """
+
+
+
     params = {
         'search': f'openfda.brand_name:"{drug_name}" OR openfda.generic_name:"{drug_name}"',
         'limit': limit,
@@ -85,9 +85,9 @@ def query_drug_label(drug_name, limit=5, max_retries=3):
     return {'error': '未知错误'}
 
 def query_drug_events(drug_name, limit=10, max_retries=3):
-    """
-    Query adverse event reports for a drug with retry logic.
-    """
+
+
+
     params = {
         'search': f'patientdrug.drugname:"{drug_name}"',
         'limit': limit,
@@ -138,9 +138,9 @@ def query_drug_events(drug_name, limit=10, max_retries=3):
     return {'error': '未知错误'}
 
 def extract_text_from_fda_format(data):
-    """
-    Extract readable text from FDA's nested format
-    """
+
+
+
     if not data:
         return ''
     
@@ -164,7 +164,7 @@ def extract_text_from_fda_format(data):
     return str(data)[:500]
 
 def format_drug_output(results):
-    """Format drug results for display."""
+
     if isinstance(results, dict) and 'error' in results:
         return f"❌ {results['error']}\n{results.get('note', '')}"
     
@@ -197,7 +197,7 @@ def format_drug_output(results):
     return '\n'.join(output)
 
 def format_events_output(result):
-    """Format adverse events summary."""
+
     if isinstance(result, dict) and 'error' in result:
         return result['error']
     

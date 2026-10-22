@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""
-LegalDoc AI - Document Summarizer
-Generates executive summaries for legal documents.
-"""
+
+
+
+
 
 import os
 import sys
@@ -16,7 +16,7 @@ from typing import Optional
 import hashlib
 
 
-# Document type detection patterns
+
 DOCUMENT_TYPES = {
     "contract": {
         "patterns": [
@@ -90,31 +90,31 @@ DOCUMENT_TYPES = {
 
 @dataclass
 class DocumentSummary:
-    """Structured document summary."""
+
     document_name: str
     document_type: str
     summary_type: str
     generated_at: str
     
-    # Core summary
+    
     executive_summary: str
     
-    # Parties
+    
     parties: list[dict]
     
-    # Key terms
+    
     key_terms: list[dict]
     
-    # Dates and deadlines
+    
     key_dates: list[dict]
     
-    # Risk assessment
+    
     risk_summary: dict
     
-    # Obligations
+    
     obligations: list[dict]
     
-    # Metadata
+    
     page_count: Optional[int]
     word_count: int
     
@@ -123,7 +123,7 @@ class DocumentSummary:
 
 
 def load_document(file_path: str) -> tuple[str, Optional[int]]:
-    """Load document and return text with page count."""
+
     path = Path(file_path)
     
     if not path.exists():
@@ -170,8 +170,8 @@ def load_document(file_path: str) -> tuple[str, Optional[int]]:
 
 
 def detect_document_type(text: str) -> str:
-    """Detect the type of legal document."""
-    text_lower = text.lower()[:5000]  # Check first 5000 chars
+
+    text_lower = text.lower()[:5000]  
     
     for doc_type, config in DOCUMENT_TYPES.items():
         matches = sum(1 for p in config["patterns"] if re.search(p, text_lower))
@@ -182,10 +182,10 @@ def detect_document_type(text: str) -> str:
 
 
 def extract_parties(text: str) -> list[dict]:
-    """Extract parties from the document."""
+
     parties = []
     
-    # Common party patterns
+    
     patterns = [
         r'(?:between|by\s+and\s+between)\s+([A-Z][A-Za-z\s,\.]+?)(?:\s*\(|,\s*a)',
         r'"([A-Za-z\s]+)"\s+(?:means|refers\s+to)',
@@ -199,28 +199,28 @@ def extract_parties(text: str) -> list[dict]:
         matches = re.finditer(pattern, text[:3000])
         for match in matches:
             name = match.group(1).strip()
-            # Clean up
+            
             name = re.sub(r'\s+', ' ', name)
             if len(name) > 5 and len(name) < 100 and name not in found_names:
                 found_names.add(name)
                 parties.append({
                     "name": name,
-                    "role": "party"  # Could be enhanced with role detection
+                    "role": "party"  
                 })
     
-    return parties[:6]  # Limit to 6 parties
+    return parties[:6]  
 
 
 def extract_key_terms(text: str, doc_type: str) -> list[dict]:
-    """Extract key terms and values from the document."""
+
     terms = []
     
-    # Money patterns
+    
     money_pattern = r'\$[\d,]+(?:\.\d{2})?(?:\s*(?:million|billion|M|B|USD))?'
     money_matches = re.finditer(money_pattern, text)
     for match in money_matches:
         value = match.group()
-        # Find context
+        
         start = max(0, match.start() - 50)
         context = text[start:match.start()].strip()
         terms.append({
@@ -231,7 +231,7 @@ def extract_key_terms(text: str, doc_type: str) -> list[dict]:
         if len(terms) >= 10:
             break
     
-    # Duration patterns
+    
     duration_pattern = r'(\d+)\s*(year|month|day|week)s?'
     duration_matches = re.finditer(duration_pattern, text, re.IGNORECASE)
     for match in duration_matches:
@@ -246,7 +246,7 @@ def extract_key_terms(text: str, doc_type: str) -> list[dict]:
         if len(terms) >= 15:
             break
     
-    # Percentage patterns
+    
     pct_pattern = r'(\d+(?:\.\d+)?)\s*%'
     pct_matches = re.finditer(pct_pattern, text)
     for match in pct_matches:
@@ -265,10 +265,10 @@ def extract_key_terms(text: str, doc_type: str) -> list[dict]:
 
 
 def extract_dates(text: str) -> list[dict]:
-    """Extract important dates from the document."""
+
     dates = []
     
-    # Date patterns
+    
     patterns = [
         (r'(?:effective\s+(?:as\s+of\s+)?)?(\w+\s+\d{1,2},?\s+\d{4})', "effective_date"),
         (r'(?:dated|as\s+of)\s+(\w+\s+\d{1,2},?\s+\d{4})', "document_date"),
@@ -286,7 +286,7 @@ def extract_dates(text: str) -> list[dict]:
             date_str = match.group(1).strip()
             if date_str not in found:
                 found.add(date_str)
-                # Get context
+                
                 start = max(0, match.start() - 100)
                 end = min(len(text), match.end() + 100)
                 context = text[start:end]
@@ -301,10 +301,10 @@ def extract_dates(text: str) -> list[dict]:
 
 
 def extract_obligations(text: str) -> list[dict]:
-    """Extract key obligations from the document."""
+
     obligations = []
     
-    # Obligation patterns
+    
     obligation_patterns = [
         (r'shall\s+([^\.]{20,150})', "mandatory"),
         (r'must\s+([^\.]{20,150})', "mandatory"),
@@ -320,10 +320,10 @@ def extract_obligations(text: str) -> list[dict]:
         for match in matches:
             obligation = match.group(1).strip()
             
-            # Clean up
+            
             obligation = re.sub(r'\s+', ' ', obligation)
             
-            # Create hash for deduplication
+            
             ob_hash = hashlib.md5(obligation.lower().encode()).hexdigest()[:8]
             
             if ob_hash not in seen and len(obligation) > 20:
@@ -341,7 +341,7 @@ def extract_obligations(text: str) -> list[dict]:
 
 
 def assess_document_risk(text: str, doc_type: str) -> dict:
-    """Assess overall document risk profile."""
+
     
     risk_factors = {
         "high_risk": [],
@@ -351,7 +351,7 @@ def assess_document_risk(text: str, doc_type: str) -> dict:
         "score": 50
     }
     
-    # High risk indicators
+    
     high_risk_patterns = [
         (r'unlimited\s+liability', "Unlimited liability exposure"),
         (r'perpetual', "Perpetual obligations"),
@@ -362,7 +362,7 @@ def assess_document_risk(text: str, doc_type: str) -> dict:
         (r'non-refundable', "Non-refundable payments"),
     ]
     
-    # Medium risk indicators
+    
     medium_risk_patterns = [
         (r'binding\s+arbitration', "Binding arbitration required"),
         (r'automatic\s+renewal', "Auto-renewal clause"),
@@ -370,7 +370,7 @@ def assess_document_risk(text: str, doc_type: str) -> dict:
         (r'worldwide', "Worldwide scope"),
     ]
     
-    # Positive indicators
+    
     positive_patterns = [
         (r'mutual', "Mutual/balanced terms"),
         (r'reasonable', "Reasonableness standards"),
@@ -392,7 +392,7 @@ def assess_document_risk(text: str, doc_type: str) -> dict:
         if re.search(pattern, text_lower):
             risk_factors["low_risk"].append(description)
     
-    # Calculate overall score
+    
     score = 50
     score += len(risk_factors["high_risk"]) * 15
     score += len(risk_factors["medium_risk"]) * 5
@@ -419,12 +419,12 @@ def generate_executive_summary(
     key_dates: list,
     risk_summary: dict
 ) -> str:
-    """Generate a natural language executive summary."""
+
     
-    # Build summary components
+    
     summary_parts = []
     
-    # Document type intro
+    
     type_intros = {
         "contract": "This is a commercial agreement",
         "nda": "This Non-Disclosure Agreement",
@@ -437,7 +437,7 @@ def generate_executive_summary(
     
     intro = type_intros.get(doc_type, "This document")
     
-    # Parties
+    
     if parties:
         party_names = [p["name"] for p in parties[:2]]
         if len(party_names) == 2:
@@ -447,24 +447,24 @@ def generate_executive_summary(
     
     summary_parts.append(intro + ".")
     
-    # Key monetary terms
+    
     money_terms = [t for t in key_terms if t["type"] == "monetary_value"]
     if money_terms:
         values = [t["value"] for t in money_terms[:3]]
         summary_parts.append(f"Key financial terms include: {', '.join(values)}.")
     
-    # Duration
+    
     duration_terms = [t for t in key_terms if t["type"] == "duration"]
     if duration_terms:
         primary_duration = duration_terms[0]["value"]
         summary_parts.append(f"The term spans {primary_duration}.")
     
-    # Key dates
+    
     if key_dates:
         date_info = key_dates[0]
         summary_parts.append(f"Important date: {date_info['date']} ({date_info['type'].replace('_', ' ')}).")
     
-    # Risk assessment
+    
     risk_level = risk_summary["overall_risk"]
     if risk_level == "high":
         summary_parts.append(
@@ -488,23 +488,23 @@ def summarize_document(
     focus: Optional[str] = None,
     max_length: str = "medium"
 ) -> DocumentSummary:
-    """Generate a comprehensive document summary."""
+
     
-    # Load document
+    
     text, page_count = load_document(file_path)
     word_count = len(text.split())
     
-    # Detect document type
+    
     doc_type = detect_document_type(text)
     
-    # Extract components
+    
     parties = extract_parties(text)
     key_terms = extract_key_terms(text, doc_type)
     key_dates = extract_dates(text)
     obligations = extract_obligations(text)
     risk_summary = assess_document_risk(text, doc_type)
     
-    # Generate executive summary
+    
     exec_summary = generate_executive_summary(
         text, doc_type, parties, key_terms, key_dates, risk_summary
     )
@@ -526,12 +526,12 @@ def summarize_document(
 
 
 def format_summary(summary: DocumentSummary, output_format: str = "markdown") -> str:
-    """Format the summary for output."""
+
     
     if output_format == "json":
         return json.dumps(summary.to_dict(), indent=2)
     
-    # Markdown format
+    
     risk_emoji = {"high": "🔴", "medium": "🟡", "low": "🟢"}
     
     lines = [
@@ -550,7 +550,7 @@ def format_summary(summary: DocumentSummary, output_format: str = "markdown") ->
         "",
     ]
     
-    # Parties
+    
     if summary.parties:
         lines.extend([
             "## 👥 Parties",
@@ -560,7 +560,7 @@ def format_summary(summary: DocumentSummary, output_format: str = "markdown") ->
             lines.append(f"- **{party['name']}** ({party['role']})")
         lines.append("")
     
-    # Key Terms
+    
     if summary.key_terms:
         lines.extend([
             "## 💰 Key Terms",
@@ -570,7 +570,7 @@ def format_summary(summary: DocumentSummary, output_format: str = "markdown") ->
             lines.append(f"- **{term['type'].replace('_', ' ').title()}:** {term['value']} — _{term['context']}_")
         lines.append("")
     
-    # Important Dates
+    
     if summary.key_dates:
         lines.extend([
             "## 📅 Key Dates",
@@ -580,7 +580,7 @@ def format_summary(summary: DocumentSummary, output_format: str = "markdown") ->
             lines.append(f"- **{date['date']}** — {date['type'].replace('_', ' ').title()}")
         lines.append("")
     
-    # Risk Assessment
+    
     risk = summary.risk_summary
     risk_em = risk_emoji.get(risk['overall_risk'], "⚪")
     lines.extend([
@@ -607,7 +607,7 @@ def format_summary(summary: DocumentSummary, output_format: str = "markdown") ->
     
     lines.append("")
     
-    # Key Obligations
+    
     if summary.obligations:
         lines.extend([
             "## 📝 Key Obligations",

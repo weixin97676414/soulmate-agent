@@ -1,9 +1,9 @@
-"""产物预览解析的单元测试。
 
-重点覆盖两类容易出事的地方：
-1. **畸形输入**——损坏的表格、伪造的扩展名、超大文件，绝不能让接口 500；
-2. **截断**——用户可能上传几万行的表，预览必须限行而不是把内存吃满。
-"""
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -27,9 +27,9 @@ def preview(path, name: str | None = None):
     return build_preview(path, original_name=name or path.name, download_url="/v1/files/x")
 
 
-# --------------------------------------------------------------------------- #
-# 各格式
-# --------------------------------------------------------------------------- #
+
+
+
 def test_svg_preview(tmp_path):
     path = make(tmp_path, "chart.svg", '<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>')
     result = preview(path)
@@ -74,7 +74,7 @@ def test_xlsx_preview(tmp_path):
     assert result["sheets"][0]["name"] == "销售"
     assert result["sheets"][0]["columns"] == ["月份", "金额"]
     assert result["sheets"][0]["rows"] == [["1月", 100], ["2月", 200]]
-    # 空 sheet 不该塞进来污染界面
+    
     assert [s["name"] for s in result["sheets"]] == ["销售"]
 
 
@@ -94,13 +94,13 @@ def test_docx_preview_keeps_heading_structure(tmp_path):
 
     result = preview(path)
     assert result["kind"] == "markdown"
-    # 标题层级要还原，否则预览是一坨平文本
+    
     assert "# 季度总结" in result["content"]
     assert "| 项目 | 金额 |" in result["content"]
 
 
 def test_image_preview_uses_url_not_base64(tmp_path):
-    # 1x1 的透明 PNG
+    
     png = bytes.fromhex(
         "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489"
         "0000000a49444154789c63000100000500010d0a2db40000000049454e44ae426082"
@@ -108,7 +108,7 @@ def test_image_preview_uses_url_not_base64(tmp_path):
     path = make(tmp_path, "shot.png", png)
     result = preview(path)
     assert result["kind"] == "image"
-    # 大图 base64 会让响应膨胀 33%，必须走 URL
+    
     assert result["url"] == "/v1/files/x"
 
 
@@ -119,11 +119,11 @@ def test_json_preview_is_pretty_printed(tmp_path):
     assert json.loads(result["content"]) == {"a": 1, "b": [2, 3]}
 
 
-# --------------------------------------------------------------------------- #
-# 畸形输入
-# --------------------------------------------------------------------------- #
+
+
+
 def test_broken_json_falls_back_to_text(tmp_path):
-    """JSON 解析失败不该丢内容——退化成纯文本比什么都不给有用。"""
+
     path = make(tmp_path, "broken.json", "{这不是合法 JSON")
     result = preview(path)
     assert result["kind"] == "text"
@@ -132,7 +132,7 @@ def test_broken_json_falls_back_to_text(tmp_path):
 
 
 def test_broken_xlsx_returns_unsupported(tmp_path):
-    """伪造的 xlsx：必须返回可读原因，而不是抛异常把接口打成 500。"""
+
     path = make(tmp_path, "fake.xlsx", b"this is definitely not a workbook")
     result = preview(path)
     assert result["kind"] == "unsupported"
@@ -160,11 +160,11 @@ def test_missing_file_is_graceful(tmp_path):
     assert "丢失" in result["reason"]
 
 
-# --------------------------------------------------------------------------- #
-# 截断与资源保护
-# --------------------------------------------------------------------------- #
+
+
+
 def test_large_csv_is_truncated(tmp_path):
-    """几万行的表不能整个读进内存——必须限行并如实标注已截断。"""
+
     rows = ["序号,值"] + [f"{i},{i * 2}" for i in range(1, MAX_TABLE_ROWS + 500)]
     path = make(tmp_path, "big.csv", "\n".join(rows))
 
@@ -172,7 +172,7 @@ def test_large_csv_is_truncated(tmp_path):
     sheet = result["sheets"][0]
     assert len(sheet["rows"]) == MAX_TABLE_ROWS
     assert sheet["truncated"] is True
-    # 总行数要如实汇报，否则用户以为文件就这么点内容
+    
     assert sheet["total_rows"] == MAX_TABLE_ROWS + 499
 
 
@@ -185,7 +185,7 @@ def test_huge_text_is_truncated(tmp_path):
 
 
 def test_long_cell_is_clipped(tmp_path):
-    """有些单元格里塞了整篇文章，必须裁剪，否则几行就能撑爆响应。"""
+
     path = make(tmp_path, "wide.csv", "标题,内容\nA," + "x" * 5000)
     result = preview(path)
     cell = result["sheets"][0]["rows"][0][1]

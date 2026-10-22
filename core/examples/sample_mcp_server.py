@@ -1,17 +1,17 @@
-"""一个极简的 MCP Server 示例（官方 Python SDK，stdio 传输）。
 
-它有**两个用途**，都很重要：
 
-1. **开箱即用的验证对象**。MCP 生态里主流 Server 都要靠 `npx` / `uvx` 现下载，
-   用户第一次点开「MCP 服务」时很可能因为网络问题连不上，从而误以为功能是坏的。
-   这个脚本随应用一起分发，免安装、免联网，双击添加就能看到工具列表；
-2. **自研 Server 的模板**。把一个内部系统（知识库、审批流、工单系统）暴露成
-   MCP 工具，通常只需要下面这几十行——这也是 MCP 集成最有价值的用法。
 
-直接运行即可作为 stdio Server：
 
-    python sample_mcp_server.py --notes-dir ./notes
-"""
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -31,8 +31,8 @@ INSTRUCTIONS = (
 
 server = MCPServer(name="sample-tools", version="1.0.0", instructions=INSTRUCTIONS)
 
-# 显式声明注解而不是让客户端去猜：MCP 的 readOnlyHint / destructiveHint
-# 是权限推断最可靠的依据，自研 Server 应当顺手标上。
+
+
 READ_ONLY = ToolAnnotations(read_only_hint=True, idempotent_hint=True)
 DESTRUCTIVE = ToolAnnotations(read_only_hint=False, destructive_hint=True)
 
@@ -42,7 +42,7 @@ def _notes_dir() -> Path:
 
 
 def _resolve(name: str) -> Path:
-    """把便签名解析成文件路径，并挡掉目录穿越。"""
+
     cleaned = (name or "").strip()
     if not cleaned:
         raise ToolError("便签名不能为空")
@@ -74,9 +74,9 @@ def read_note(name: str) -> str:
     path = _resolve(name)
     if not path.is_file():
         available = ", ".join(sorted(p.stem for p in _notes_dir().glob("*.md"))) or "（无）"
-        # 抛 ToolError 而不是 FileNotFoundError：前者是「预期内的业务错误」，
-        # SDK 会把它的原文透传给客户端；后者会被包成 "Error executing tool xxx"，
-        # 把真正有用的信息（有哪些便签可用）丢掉。
+        
+        
+        
         raise ToolError(f"便签「{name}」不存在。现有便签：{available}")
     return path.read_text(encoding="utf-8")
 
@@ -116,9 +116,9 @@ def main(argv: list[str] | None = None) -> int:
     notes_dir = Path(args.notes_dir).expanduser().resolve()
     notes_dir.mkdir(parents=True, exist_ok=True)
 
-    # 通过闭包注入配置：MCP Server 是常驻进程，配置在启动时确定即可
+    
     global _notes_dir
-    _notes_dir = lambda: notes_dir  # noqa: E731
+    _notes_dir = lambda: notes_dir  
 
     print(f"[sample-mcp] 便签目录: {notes_dir}", file=sys.stderr)
     server.run("stdio")

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""
-LegalDoc AI - Legal Research Assistant
-AI-powered legal research across case law, statutes, and regulations.
-"""
+
+
+
+
 
 import os
 import sys
@@ -18,11 +18,11 @@ import urllib.parse
 import urllib.error
 
 
-# API Configuration
+
 COURTLISTENER_API = "https://www.courtlistener.com/api/rest/v3"
 COURTLISTENER_KEY = os.environ.get("COURTLISTENER_API_KEY", "")
 
-# Jurisdiction mappings
+
 JURISDICTIONS = {
     "federal": ["scotus", "ca1", "ca2", "ca3", "ca4", "ca5", "ca6", "ca7", "ca8", "ca9", "ca10", "ca11", "cadc", "cafc"],
     "scotus": ["scotus"],
@@ -51,7 +51,7 @@ JURISDICTIONS = {
     "al": ["ala", "alacivapp", "alacrimapp"],
 }
 
-# Research topic templates
+
 RESEARCH_TEMPLATES = {
     "breach_of_contract": {
         "queries": [
@@ -118,7 +118,7 @@ RESEARCH_TEMPLATES = {
 
 @dataclass
 class CaseResult:
-    """Represents a case law search result."""
+
     case_name: str
     citation: str
     court: str
@@ -131,7 +131,7 @@ class CaseResult:
 
 @dataclass
 class StatuteResult:
-    """Represents a statute or regulation result."""
+
     title: str
     section: str
     text: str
@@ -142,7 +142,7 @@ class StatuteResult:
 
 @dataclass
 class ResearchResult:
-    """Complete research result package."""
+
     query: str
     jurisdiction: str
     research_type: str
@@ -158,7 +158,7 @@ class ResearchResult:
 
 
 def api_request(url: str, headers: dict = None) -> dict:
-    """Make an API request and return JSON response."""
+
     if headers is None:
         headers = {}
     
@@ -181,14 +181,14 @@ def api_request(url: str, headers: dict = None) -> dict:
 
 
 def search_courtlistener(query: str, jurisdiction: str = "federal") -> list[CaseResult]:
-    """Search CourtListener for case law."""
+
     results = []
     
-    # Build court filter
+    
     courts = JURISDICTIONS.get(jurisdiction.lower(), JURISDICTIONS["federal"])
     court_filter = ",".join(courts)
     
-    # URL encode query
+    
     encoded_query = urllib.parse.quote(query)
     
     url = f"{COURTLISTENER_API}/search/?q={encoded_query}&type=o&court={court_filter}&order_by=score%20desc"
@@ -210,7 +210,7 @@ def search_courtlistener(query: str, jurisdiction: str = "federal") -> list[Case
             results.append(case)
     
     except Exception as e:
-        # Return mock results for demo if API fails
+        
         print(f"Note: Using sample data (API: {e})", file=sys.stderr)
         results = generate_sample_cases(query, jurisdiction)
     
@@ -218,9 +218,9 @@ def search_courtlistener(query: str, jurisdiction: str = "federal") -> list[Case
 
 
 def generate_sample_cases(query: str, jurisdiction: str) -> list[CaseResult]:
-    """Generate sample case results for demonstration."""
+
     
-    # Detect topic from query
+    
     query_lower = query.lower()
     
     sample_cases = []
@@ -295,12 +295,12 @@ def generate_sample_cases(query: str, jurisdiction: str) -> list[CaseResult]:
 
 
 def search_statutes(query: str, jurisdiction: str = "federal") -> list[StatuteResult]:
-    """Search for relevant statutes and regulations."""
+
     
     statutes = []
     query_lower = query.lower()
     
-    # Match against known statutory frameworks
+    
     statutory_references = {
         "contract": [
             StatuteResult(
@@ -374,12 +374,12 @@ def search_statutes(query: str, jurisdiction: str = "federal") -> list[StatuteRe
         ],
     }
     
-    # Find matching statutes
+    
     for keyword, statute_list in statutory_references.items():
         if keyword in query_lower:
             statutes.extend(statute_list)
     
-    # If jurisdiction-specific, filter
+    
     if jurisdiction.lower() not in ["federal", "all"]:
         jurisdiction_name = jurisdiction.upper()
         statutes = [s for s in statutes if jurisdiction_name in s.jurisdiction.upper() or s.jurisdiction == "Federal"]
@@ -388,12 +388,12 @@ def search_statutes(query: str, jurisdiction: str = "federal") -> list[StatuteRe
 
 
 def generate_practice_notes(query: str, cases: list, statutes: list) -> list[str]:
-    """Generate practice notes based on research results."""
+
     
     notes = []
     query_lower = query.lower()
     
-    # General practice notes based on topic
+    
     if "damages" in query_lower:
         notes.append("💡 Document all damages with specificity. Courts require proof of actual harm with reasonable certainty.")
     
@@ -412,7 +412,7 @@ def generate_practice_notes(query: str, cases: list, statutes: list) -> list[str
     if "liability" in query_lower:
         notes.append("💡 California courts increasingly pierce liability caps for willful/gross negligence breaches.")
     
-    # Default notes
+    
     if not notes:
         notes = [
             "💡 Verify all citations before relying on them in filings.",
@@ -424,12 +424,12 @@ def generate_practice_notes(query: str, cases: list, statutes: list) -> list[str
 
 
 def suggest_related_queries(query: str, results: list) -> list[str]:
-    """Suggest related research queries."""
+
     
     suggestions = []
     query_lower = query.lower()
     
-    # Topic-based suggestions
+    
     if "breach" in query_lower and "contract" in query_lower:
         suggestions = [
             "specific performance breach of contract",
@@ -467,7 +467,7 @@ def conduct_research(
     jurisdiction: str = "federal",
     research_type: str = "all"
 ) -> ResearchResult:
-    """Conduct comprehensive legal research."""
+
     
     cases = []
     statutes = []
@@ -494,12 +494,12 @@ def conduct_research(
 
 
 def format_research(result: ResearchResult, output_format: str = "markdown") -> str:
-    """Format research results for output."""
+
     
     if output_format == "json":
         return json.dumps(result.to_dict(), indent=2, default=str)
     
-    # Markdown format
+    
     lines = [
         "# 🔍 Legal Research Results",
         "",
@@ -512,7 +512,7 @@ def format_research(result: ResearchResult, output_format: str = "markdown") -> 
         "",
     ]
     
-    # Cases
+    
     if result.cases:
         lines.extend([
             "## 📚 Relevant Case Law",
@@ -542,7 +542,7 @@ def format_research(result: ResearchResult, output_format: str = "markdown") -> 
         
         lines.append("")
     
-    # Statutes
+    
     if result.statutes:
         lines.extend([
             "## 📖 Statutory Framework",
@@ -562,7 +562,7 @@ def format_research(result: ResearchResult, output_format: str = "markdown") -> 
         
         lines.append("")
     
-    # Practice Notes
+    
     if result.practice_notes:
         lines.extend([
             "## 💡 Practice Notes",
@@ -572,7 +572,7 @@ def format_research(result: ResearchResult, output_format: str = "markdown") -> 
             lines.append(note)
         lines.append("")
     
-    # Suggested Queries
+    
     if result.suggested_queries:
         lines.extend([
             "## 🔎 Related Research",

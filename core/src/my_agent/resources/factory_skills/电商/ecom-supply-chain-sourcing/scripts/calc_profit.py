@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
-"""
-利润计算器 — calc_profit.py
-用法: python3 calc_profit.py <进货价> <售价> [--currency USD|EUR|GBP|USD]
-       [--platform amazon|tiktok|shopify|temu]
-       [--weight-gkg X]  (克重，g)
-       [--freight-kg Y]   (头程每kg单价，美元)
-       [--units N]        (首批数量)
 
-依赖：python3（纯标准库，无外部依赖）
-网络：无
-凭证：无
-"""
+
+
+
+
+
+
+
+
+
+
+
 
 import sys
 import json
 import argparse
 
-# 各平台费率参考
+
 PLATFORM_PARAMS = {
     "amazon": {
         "commission_rate": 0.15,
-        "fba_per_unit": 3.50,    # FBA 配送费参考
-        "ac_acos": 0.25,         # 广告 ACOS
+        "fba_per_unit": 3.50,    
+        "ac_acos": 0.25,         
         "return_rate": 0.03,
         "currency_symbol": "$",
     },
@@ -34,9 +34,9 @@ PLATFORM_PARAMS = {
         "currency_symbol": "$",
     },
     "shopify": {
-        "commission_rate": 0.029,   # Stripe
+        "commission_rate": 0.029,   
         "paypal": 0.044,
-        "物流小包": 20.00,          # 美元/单
+        "物流小包": 20.00,          
         "ac_acos": 0.30,
         "return_rate": 0.02,
         "currency_symbol": "$",
@@ -74,58 +74,58 @@ def calc_profit(args) -> dict:
     platform = args.platform
     p = PLATFORM_PARAMS.get(platform, {})
 
-    # 货币 & 汇率
+    
     currency_sym = p.get("currency_symbol", "$")
     rate = get_exchange_rate(args.currency, args)
 
-    # 售价（转为人民币）
+    
     sell_price_cny = args.sell_price * rate
 
-    # 成本项
-    cost = args.cost_price  # 进货价（元）
-    weight_kg = args.weight_g / 1000  # 转为kg
-    freight_unit = weight_kg * args.freight_kg  # 每件头程（美元→转元）
+    
+    cost = args.cost_price  
+    weight_kg = args.weight_g / 1000  
+    freight_unit = weight_kg * args.freight_kg  
     freight_unit_cny = freight_unit * rate
 
-    # 平台佣金
+    
     comm = sell_price_cny * p.get("commission_rate", 0)
 
-    # 广告推广
+    
     ad_cost = sell_price_cny * p.get("ac_acos", 0)
 
-    # 尾程（FBA / 海外仓）
+    
     tail_cost = p.get("fba_per_unit", 0) * rate
     if platform == "tiktok":
         tail_cost = p.get("海外仓尾程", 5.0) * rate
     elif platform == "shopify":
         tail_cost = p.get("物流小包", 20.0) * rate
 
-    # 退货损耗
+    
     return_rate = p.get("return_rate", 0.03)
     return_loss = sell_price_cny * return_rate
 
-    # 汇损（1%）
+    
     ex_loss = sell_price_cny * 0.01
 
-    # Temu 特殊处理
+    
     if platform == "temu":
         prom_fee = sell_price_cny * p.get("推广费", 0)
         total_cost = cost + freight_unit_cny + comm + prom_fee + return_loss * sell_price_cny + ex_loss
     else:
         total_cost = cost + freight_unit_cny + comm + ad_cost + tail_cost + return_loss + ex_loss
 
-    # TikTok 达人佣金
+    
     if platform == "tiktok":
         comm += sell_price_cny * p.get("达人佣金", 0.20)
         total_cost = cost + freight_unit_cny + comm + ad_cost + tail_cost + return_loss + ex_loss
 
-    # 利润
+    
     gross_profit = sell_price_cny - total_cost
     gross_margin = gross_profit / sell_price_cny * 100 if sell_price_cny else 0
     unit_profit = gross_profit
     total_profit = gross_profit * args.units
 
-    # Shopify + PayPal 额外
+    
     if platform == "shopify":
         pp_fee = sell_price_cny * p.get("paypal", 0)
         total_cost += pp_fee

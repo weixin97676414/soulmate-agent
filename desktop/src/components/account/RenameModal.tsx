@@ -3,11 +3,11 @@ import { useState } from 'react'
 import { Button, Field, Input, Modal, Spinner } from '@/components/ui'
 import { useAccountStore } from '@/stores/accountStore'
 
-/**
- * 修改账号名（文档 §5.10）。
- *
- * 3–32 位字母 / 数字 / 下划线；已设密码时后端要密码。同样是**设备签名**鉴权。
- */
+
+
+
+
+
 export function RenameModal({
   open,
   onClose,

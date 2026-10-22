@@ -6,26 +6,26 @@ import { useAppStore } from '@/stores/appStore'
 import { useChatStore } from '@/stores/chatStore'
 import type { SessionContext } from '@/types'
 
-/**
- * ⚠️ token 数的格式统一走 `lib/format`（第 93 批收拢）。
- *
- * 这里原先自带**第二份**实现（`1.5M` / `15k`），而用量页在上次已改成中文口径
- * （`150万` / `1.5万`）—— 同一个数在两处显示成两种写法，用户会以为是两个不同的量。
- */
 
-/**
- * 输入区底部的上下文占用胶囊。
- *
- * ## 什么时候刷新
- *
- * **只在"模型回答完"与"切换会话"时拉一次**。上下文用量只在这两个时刻变化，
- * 跟着每个 token 刷新既没有意义（用户在打字时并不关心），又会把本地服务打满。
- *
- * ## 为什么数值来自后端
- *
- * "实际会发给模型的量"要算上系统提示词、已生成的摘要、以及图片占的 token。
- * 前端拿消息的 usage 相加会偏小，而用户据此以为"还很空"，正好错过即将到来的压缩。
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export function ContextUsagePill() {
   const api = useAppStore((state) => state.api)
   const activeSessionId = useChatStore((state) => state.activeSessionId)
@@ -44,7 +44,7 @@ export function ContextUsagePill() {
         const next = await api.getSessionContext(activeSessionId)
         if (!cancelled) setUsage(next)
       } catch {
-        // 拿不到就不显示：这只是个提示，不该因为它冒出错误提示
+        
       }
     })()
     return () => {
@@ -52,7 +52,7 @@ export function ContextUsagePill() {
     }
   }, [api, activeSessionId, streaming, messageCount])
 
-  // 点别处 / Esc 收起面板 —— 与 ConfirmModeButton 同一套写法
+  
   useEffect(() => {
     if (!open) return
     const onDown = (event: MouseEvent) => {
@@ -69,7 +69,7 @@ export function ContextUsagePill() {
     }
   }, [open])
 
-  // 换了会话就把旧数据丢掉，免得短暂显示上一个会话的占用
+  
   useEffect(() => {
     setUsage(null)
     setOpen(false)

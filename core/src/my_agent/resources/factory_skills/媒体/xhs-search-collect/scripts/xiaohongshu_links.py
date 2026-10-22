@@ -31,7 +31,7 @@ INPUT_STRING_FIELDS = (
 
 
 class XiaohongshuLinkError(RuntimeError):
-    """Raised when an input cannot safely become a Xiaohongshu link."""
+    pass
 
 
 def clean_text(value: str, limit: int) -> str:

@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""小红书风格 HTML 渲染内核：总地图 / 每日路线图 / 路线总览卡片 共用 CSS 组件库。
 
-被 make_overview_map.py / make_day_map.py / make_cards.py import。
-CSS 与组件结构在此固化——模型只需提供数据（点、线、文案），不要改样式。
 
-设计基准（参考小红书攻略图）:
-  - 奶油底 #FFF6EE
-  - 分区虚线圈 + 大号 Day 字标
-  - 定位图钉（CSS 旋转水滴，含 emoji）
-  - 椭圆标签（米白底 #FFFBEF，橙边 #E8912D）
-  - 编号圆圈（白底彩边，38px）
-  - SVG 贝塞尔弧线箭头（marker-end 三角）
-  - 交通胶囊标注（白底半透明）
-  - Tips 蓝框（#EAF4FD，左蓝边）
-  - 底部主题色路线横幅
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 DAY_COLORS = {
-    1: '#E74C3C',   # 红
-    2: '#8E44AD',   # 紫
-    3: '#E67E22',   # 橙
-    4: '#27AE60',   # 绿
-    5: '#2980B9',   # 蓝
+    1: '#E74C3C',   
+    2: '#8E44AD',   
+    3: '#E67E22',   
+    4: '#27AE60',   
+    5: '#2980B9',   
 }
 SOFT = {
     1: '#FDEDEC', 2: '#F4ECF7', 3: '#FDF2E9', 4: '#E9F7EF', 5: '#EAF2F8',
@@ -99,7 +99,7 @@ body { background:#FFF6EE; }
                padding:5px 14px; font-size:15px; font-weight:700; color:#B4690E; }
 """
 
-# 标签按方位摆放 JS（b下 t上 l左 r右 + dx/dy 微调），所有图共用
+
 LABEL_JS = """
 document.querySelectorAll('.spot,.lbl').forEach(el => {
   const x = +el.dataset.x, y = +el.dataset.y, pos = el.dataset.pos || 'b',
@@ -123,7 +123,7 @@ def arrow_path(x1, y1, x2, y2, bend=0.18):
 
 
 def arrows_svg(chains, color, w=5):
-    """chains: [ [ (x,y),... ] or ( [(x,y)...], 'dash' ) , ... ]"""
+
     paths = []
     for ch in chains:
         if isinstance(ch, tuple):

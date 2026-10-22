@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# © 三咨澳金（北京）科技有限公司 @2026 AI智造局. 保留所有权利。
-"""
-详情页文案工厂 · 引擎 v2.0.0（纯标准库）
-子命令: generate / score / check / profile / selftest
-- generate: 输入商品资料 → 模块化详情页文案（痛点/卖点/证明/场景/信任/逼单/FAQ）
-- score:    文案质量评分（模块完整度/卖点数/违禁-free/长度）
-- check:    违禁词扫描
-- profile:  深度感知 — 商品档案演化
-引擎读取 references/ 下知识库；无网络、零第三方依赖。
-"""
+
+
+
+
+
+
+
+
+
+
 import os, sys, json, argparse
 
 SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -44,7 +44,7 @@ def _load_product(product):
 
 
 def extract_selling_points(product):
-    """从商品属性/关键词/标题匹配卖点库，返回 [(label, text), ...]"""
+
     blob = " ".join([
         product.get("title", ""),
         product.get("category", ""),
@@ -196,7 +196,7 @@ def cmd_profile(args):
     print(json.dumps(pf, ensure_ascii=False, indent=2))
 
 
-# ---------- 自检 ----------
+
 def selftest():
     ok, total = 0, 0
     def chk(name, cond):
@@ -213,26 +213,26 @@ def selftest():
     full = "\n".join(modules.values())
     hard, _ = check_banned(full)
     chk("用例3 默认文案无硬违禁词", not hard)
-    # 平台语气差异
+    
     d_dy = build_modules({**demo, "platform": "douyin"})[0]
     d_tb = build_modules({**demo, "platform": "taobao"})[0]
     chk("用例4 抖音语气含emoji/淘宝无", ("🔥" in d_dy["逼单话术"]) and ("🔥" not in d_tb["逼单话术"]))
-    # 违禁检测
+    
     h, _ = check_banned("本产品是行业第一，100%有效")
     chk("用例5 违禁词识别(第一/100%)", "第一" in h and "100%" in h)
-    # 深度感知演化
+    
     p0 = load_profile()["used_count"]
     evolve_profile(demo, "taobao")
     p1 = load_profile()["used_count"]
     chk("用例6 档案二次演化(used_count+1)", p1 == p0 + 1)
-    # A2A 结构
+    
     evt = a2a_event(demo, modules, "taobao")
     chk("用例7 A2A事件含version2.0与banned_free", evt["version"] == "2.0.0" and "banned_free" in evt["payload"])
-    # 评分边界
+    
     s_low, _ = score_copy({"核心卖点": "短"})
     s_full, _ = score_copy(modules)
     chk("用例8 完整文案评分>残缺文案", s_full > s_low)
-    # 清理档案保持交付干净
+    
     try:
         os.remove(profile_path())
     except Exception:

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""智能图表 开发者回归自测脚本。
 
-端到端验证技能全链路（真实 CLI 子进程，非 mock）：
-- 校验层：黑名单/AST 单元测试、transform 错误码契约、超时机制
-- 解析层：CSV/TSV/TXT/JSON/GBK/Excel、脏表头 flags、多文件合并
-- 渲染层：32 种图表（契约键 + HTML 落盘）、命名覆盖、新增图表专项
-- 画像层：--profile 列画像/粒度/洞察信号/图型建议、粒度口径自检
-- 多图模式、flags/主题/语言/dry-run/annotation、错误路径、transform 黄金模式
 
-用法：python scripts/regression_check.py [技能根目录]（默认为脚本上级目录）
-测试数据与输出写入 tempfile 临时目录，不污染技能目录；退出码 0=全过，1=有失败。
-"""
+
+
+
+
+
+
+
+
+
+
 import contextlib, io, json, os, re, subprocess, sys, tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -37,7 +37,7 @@ from scripts.profile import build_profile
 
 PASS, FAIL = 0, 0
 FAILURES = []
-# CLI 用例彼此独立（各起一个 Python 子进程），并发能把端到端耗时压到 1/3 左右
+
 WORKERS = min(8, os.cpu_count() or 4)
 
 
@@ -54,10 +54,10 @@ def rec(name, ok, detail=''):
 
 def run_cli(args, timeout=90):
     args = [str(a) for a in args]
-    # 统一补 --output-dir：CLI 默认 ./charts_output 是相对 CWD 的，
-    # 漏传的用例会把 HTML 写进当前目录（跑一次就在技能包里堆出上百个文件）。
-    # 但 --profile / --doctor 不写 HTML，且 --profile 对白名单外的出图参数会报错，
-    # 因此这两种模式不注入 --output-dir。
+    
+    
+    
+    
     if ('--output-dir' not in args and '--profile' not in args
             and '--doctor' not in args):
         args += ['--output-dir', str(OUT)]
@@ -71,7 +71,7 @@ def run_cli(args, timeout=90):
 
 
 def run_many(arg_lists, workers=WORKERS):
-    """并行跑多条互相独立的 CLI，返回与入参同序的 (rc, out, stderr) 列表。"""
+
     if len(arg_lists) <= 1:
         return [run_cli(a) for a in arg_lists]
     with ThreadPoolExecutor(max_workers=workers) as ex:
@@ -85,24 +85,24 @@ def run_dp(args, timeout=60):
 
 
 def html_of(res):
-    """从 run_cli/run_many 的单条结果里取 HTML 全文（未落盘返回空串）。"""
+
     path = (res[1] or {}).get('chart', {}).get('html_path')
     return Path(path).read_text(encoding='utf-8') if path and Path(path).exists() else ''
 
 
 def seg_of(res):
-    """取 HTML 中 `var chartOption = ` 之后的片段（渲染失败返回 None）。"""
+
     html = html_of(res)
     return html.split('var chartOption = ', 1)[1] if 'var chartOption = ' in html else None
 
 
 def extra_of(res):
-    """取 plot_stats.extra（各图表类型专属统计，如 region_count / edge_count / days）。"""
+
     return (res[1] or {}).get('chart', {}).get('plot_stats', {}).get('extra', {})
 
 
 def profile(path, via='cli'):
-    """取数据画像：cli --profile（不经 chart_type 校验）或 data_parser --profile。"""
+
     if via == 'cli':
         return run_cli([path, '--profile'])
     rc, so, se = run_dp([path, '--profile'])
@@ -111,7 +111,7 @@ def profile(path, via='cli'):
     except json.JSONDecodeError:
         return rc, None, se
 
-# ══════════════════ 数据准备 ══════════════════
+
 (DATA / 'cities.csv').write_text(
     "城市,销售额,利润,人口万\n北京,1200,300,2189\n上海,1500,400,2487\n广州,900,180,1874\n深圳,1100,260,1768\n", encoding='utf-8')
 (DATA / 'trend.csv').write_text(
@@ -163,12 +163,12 @@ def profile(path, via='cli'):
 (DATA / 'sales_long.csv').write_text("month,region,revenue\n1月,east,200\n1月,north,150\n2月,east,220\n2月,north,160\n3月,east,250\n3月,north,170\n", encoding='utf-8')
 (DATA / 'm2.csv').write_text("城市,销售额\n广州,150\n深圳,180\n", encoding='utf-8')
 (DATA / 'm3.csv').write_text("A,B\n1,2\n3,4\n", encoding='utf-8')
-# P0/P1 新增图表测试数据
+
 (DATA / 'region.csv').write_text(
     "地区,销售额\n北京,1200\n上海,1500\n广东,900\n浙江,1100\n四川,800\n新疆,700\n", encoding='utf-8')
 (DATA / 'routes.csv').write_text(
     "来源,去向,金额\n北京,上海,500\n上海,广东,300\n广东,四川,200\n北京,广东,400\n", encoding='utf-8')
-# N8/N9: 自备 GeoJSON（--geo-path）测试数据——三区域自定义地图
+
 (DATA / 'countries.csv').write_text(
     "国家,销售额\n美国,100\n日本,200\n德国,150\n", encoding='utf-8')
 _custom_feats = []
@@ -180,7 +180,7 @@ for _i, _n in enumerate(['美国', '日本', '德国']):
     })
 (DATA / 'world_custom.json').write_text(
     json.dumps({'type': 'FeatureCollection', 'features': _custom_feats}, ensure_ascii=False), encoding='utf-8')
-# N10: 内置世界地图（英文国名）测试数据
+
 (DATA / 'world_gdp.csv').write_text(
     "国家,GDP\nChina,17.7\nUnited States,25.5\nJapan,4.2\nGermany,4.1\n", encoding='utf-8')
 (DATA / 'calendar.csv').write_text(
@@ -191,15 +191,15 @@ for _i, _n in enumerate(['美国', '日本', '德国']):
     "完成率\n72\n85\n93\n88\n96\n104\n", encoding='utf-8')
 (DATA / 'ffill.csv').write_text(
     "部门,经理,工资\n技术部,张三,12000\n,,11500\n市场部,李四,10000\n,,9800\n", encoding='utf-8')
-# 合计行（末行「合计」）样本：极值统计不得被合计行污染
+
 (DATA / 'total.csv').write_text(
     "月份,销量\n1月,10\n2月,20\n3月,30\n4月,40\n5月,50\n6月,60\n合计,210\n", encoding='utf-8')
-# 一次调用同时命中多类 advisory：合计行 + 数值列部分降级 + 默认 annotation
+
 (DATA / 'multi_adv.csv').write_text(
     "月份,销量\n1月,10\n2月,20\n3月,-\n合计,30\n", encoding='utf-8')
-# GBK 编码
+
 (DATA / 'gbk.csv').write_bytes("城市,销售额\n北京,1200\n上海,1500\n".encode('gbk'))
-# Excel（openpyxl 可用时）
+
 HAS_XLSX = False
 try:
     from openpyxl import Workbook
@@ -216,7 +216,7 @@ try:
 except ImportError:
     print("!! openpyxl 不可用，Excel 用例跳过")
 
-# ══════════════════ U: 校验层单元测试 ══════════════════
+
 print("\n─── U1: 逃逸 PoC（黑名单层）───")
 POCS = {
     'pd.__builtins__ 直达': "result = pd.__builtins__",
@@ -295,7 +295,7 @@ except SmartChartsError as e:
     rec("U6-超时拦截", e.code == ErrorCode.TRANSFORM_EXEC_ERROR and '超时' in e.message,
         f"{e.code.name}: {e.message}")
 
-# ══════════════════ D: 数据解析层 ══════════════════
+
 print("\n─── D1: 各格式解析 ───")
 PARSE_CASES = {
     'CSV': 'cities.csv', 'TSV': 'students.tsv', 'TXT(分号)': 'scores.txt',
@@ -348,7 +348,7 @@ rec("D2-多文件纵向合并", rc == 0 and 'source_file' in so, f"rc={rc}, out=
 rc, so, se = run_dp([DATA / 'm1.csv', DATA / 'm3.csv', '--merge', '--summary'])
 rec("D2-无重叠合并报错", rc != 0 and 'DATA_MERGE_ERROR' in (so + se), f"rc={rc}")
 
-# ══════════════════ C: 32 种图表端到端 ══════════════════
+
 print("\n─── C: 32 种图表（成功 + 契约键 + HTML 落盘）───")
 CHARTS = [
     ('line', 'trend.csv', ['--x-axis', '月份', '--y-axis', '销售额', '利润']),
@@ -379,17 +379,17 @@ CHARTS = [
     ('orgchart', 'org.csv', ['--x-axis', 'parent', '--y-axis', 'child']),
     ('liquid', 'gauge.csv', ['--y-axis', '完成率']),
     ('spreadsheet', 'students.csv', []),
-    # ── P0 新增 ──
+    
     ('map', 'region.csv', ['--x-axis', '地区', '--y-axis', '销售额']),
     ('lines', 'routes.csv', ['--x-axis', '来源', '--y-axis', '去向', '金额']),
     ('effect_scatter', 'students.csv', ['--x-axis', '数学', '--y-axis', '语文', '--label-col', '姓名']),
-    # ── P1 新增 ──
+    
     ('calendar', 'calendar.csv', ['--x-axis', '日期', '--y-axis', '活跃']),
     ('pictorial_bar', 'cities.csv', ['--x-axis', '城市', '--y-axis', '销售额']),
     ('theme_river', 'river.csv', ['--x-axis', '日期', '--y-axis', '产品a', '产品b']),
 ]
 CONTRACT_KEYS = {'success', 'html_path', 'chart_type', 'title', 'data_rows', 'data_preview', 'plot_stats'}
-# 32 个图表类型互不依赖，一次性并发跑完再逐条断言（顺序与 CHARTS 一致）
+
 for (ctype, fname, _extra), (rc, out, se) in zip(
         CHARTS,
         run_many([[DATA / f, t, '--title', f'{t}回归测试', *e] for t, f, e in CHARTS])):
@@ -403,9 +403,9 @@ for (ctype, fname, _extra), (rc, out, se) in zip(
     rec(name, not missing and html_ok,
         f"缺契约键: {missing or '无'}, html: {c['html_path']}")
 
-# ══════════════════ T: transform 黄金模式端到端 ══════════════════
+
 print("\n─── T: transform 黄金模式（CLI 端到端）───")
-# 黄金模式：每条都是「transform 预处理 → 出图成功」，标题取自用例名前缀
+
 T_CASES = {
     'T1-groupby聚合→bar': [DATA / 'm1.csv', 'bar',
         '--transform-code', "result = df.groupby('城市')['销售额'].sum().rename_axis('name').reset_index(name='value')",
@@ -435,7 +435,7 @@ for nm, (rc, out, se) in zip(T_CASES, run_many(
     rec(nm, rc == 0 and bool(out) and out.get('chart', {}).get('success') is True,
         f"rc={rc}, {json.dumps(out, ensure_ascii=False)[:200] if out else se[:200]}")
 
-# CLI 层逃逸拦截（结构化错误 + suggestion）
+
 rc, out, se = run_cli([DATA / 'm1.csv', 'bar', '--title', 'T9',
     '--transform-code', "result = pd.__builtins__ and df", '--x-axis', '城市', '--y-axis', '销售额'])
 ok = rc == 1 and out and not out['chart']['success'] \
@@ -444,9 +444,9 @@ ok = rc == 1 and out and not out['chart']['success'] \
      and 'suggestion' in out['chart']['error']['details']
 rec("T9-CLI逃逸拦截(__builtins__)", ok, f"rc={rc}, {json.dumps(out, ensure_ascii=False)[:300] if out else se[:300]}")
 
-# ══════════════════ M: 多图模式 ══════════════════
+
 print("\n─── M: 多图模式 ───")
-# 三张图共用 cities.csv：bar/combo 按城市、scatter 用两列数值
+
 charts_cfg = [
     {"type": "bar", "title": "M柱状", "x_axis": "城市", "y_axis": ["销售额"]},
     {"type": "combo", "title": "M组合", "x_axis": "城市", "y_axis": ["销售额", "利润"]},
@@ -454,7 +454,7 @@ charts_cfg = [
 ]
 cfg_path = ROOT / 'charts.json'
 cfg_path.write_text(json.dumps(charts_cfg, ensure_ascii=False), encoding='utf-8')
-# M1 / M6 共用这份配置，并发跑
+
 (rc, out, se), (rcDR, outDR, seDR) = run_many([
     [DATA / 'cities.csv', '--charts-file', cfg_path],
     [DATA / 'cities.csv', '--charts-file', cfg_path, '--dry-run'],
@@ -464,13 +464,13 @@ ok = rc == 0 and out and out.get('summary', {}).get('total') == 3 and out['summa
 rec("M1-charts-file多图(3张全成功)", ok,
     f"rc={rc}, {json.dumps(out, ensure_ascii=False)[:300] if out else se[:300]}")
 
-# 全局 transform + 单图级 transform
+
 rc, out, se = run_cli([DATA / 'cities.csv', '--charts-file', cfg_path,
     '--transform-code', "result = df.assign(销售额=df['销售额'].map(lambda v: v / 10))"])
 ok = rc == 0 and out and out['summary']['succeeded'] == 3
 rec("M2-全局transform多图", ok, f"rc={rc}, {json.dumps(out, ensure_ascii=False)[:200] if out else se[:200]}")
 
-# 部分失败（exit 0 + summary 正确）
+
 cfg_part = [
     {"type": "bar", "title": "好图", "x_axis": "城市", "y_axis": ["销售额"]},
     {"type": "bar", "title": "坏图", "x_axis": "不存在的列", "y_axis": ["销售额"]},
@@ -482,7 +482,7 @@ ok = rc == 0 and out and out['summary'] == {'total': 2, 'succeeded': 1, 'failed'
      and 'suggestion' in out['charts'][1]['error']['details']
 rec("M3-部分失败(exit 0 + per-chart错误)", ok, f"rc={rc}, {json.dumps(out, ensure_ascii=False)[:300] if out else se[:300]}")
 
-# 内联 --charts（合法/非法各一）
+
 rc, out, se = run_cli([DATA / 'cities.csv', '--charts', '[{"type":"bar","x_axis":"城市","y_axis":["销售额"]}]'])
 rec("M4-内联--charts", rc == 0 and out and out['summary']['succeeded'] == 1,
     f"rc={rc}, {json.dumps(out, ensure_ascii=False)[:200] if out else se[:200]}")
@@ -490,14 +490,14 @@ rec("M4-内联--charts", rc == 0 and out and out['summary']['succeeded'] == 1,
 rc, out, se = run_cli([DATA / 'cities.csv', '--charts', '[{"x_axis":"城市"}]'])
 rec("M5-非法charts(缺type)结构化报错", rc == 1 and 'CHART_CONFIG_ERROR' in se, f"rc={rc}, se={se[:150]}")
 
-# 多图 dry-run（不落盘）
+
 ok = rcDR == 0 and outDR and all(c['success'] and c.get('dry_run') and c['html_path'] is None
                                  for c in outDR['charts'])
 rec("M6-多图dry-run(不落盘)", ok, f"rc={rcDR}, {json.dumps(outDR, ensure_ascii=False)[:250] if outDR else seDR[:250]}")
 
-# ══════════════════ F: flags / 主题 / 语言 ══════════════════
+
 print("\n─── F: flags / 主题 / 语言 / dry-run / annotation ───")
-# 只要求「出图成功」的 flag 组合，一次性并发跑完
+
 F_OK = {
     'F1-主题 default': [DATA / 'cities.csv', 'bar', '--title', '主题default',
                         '--x-axis', '城市', '--y-axis', '销售额', '--theme', 'default'],
@@ -522,7 +522,7 @@ F_OK = {
                                    '--x-axis', '销售额', '--y-axis', '利润', '--color-by', '城市'],
     'F11-width/height': [DATA / 'cities.csv', 'bar', '--title', 'F11', '--x-axis', '城市',
                          '--y-axis', '销售额', '--width', '1200', '--height', '800'],
-    # stdout 必须是单行可解析 JSON（run_cli 解析失败会返回 out=None → 断言自然失败）
+    
     'F13-stdout纯JSON契约': [DATA / 'cities.csv', 'bar', '--title', 'F13',
                              '--x-axis', '城市', '--y-axis', '销售额'],
 }
@@ -530,7 +530,7 @@ for nm, (rc, out, se) in zip(F_OK, run_many(list(F_OK.values()))):
     rec(nm, rc == 0 and bool(out) and out.get('chart', {}).get('success') is True and not se,
         f"rc={rc}, {json.dumps(out, ensure_ascii=False)[:200] if out else se[:200]}")
 
-# 下面几项要读回 HTML 内容比对，参数各不相同，一并并发后再断言
+
 ANNOT = '回归测试注解：上海以 1500 领先四城。'
 SUB = '2026年Q1 · 数据来源：测试套件'
 (rc4, out4, se4), (rc5, out5, se5), (rcs, outs, ses), (rcn, outn, sen), (rc12, out12, se12) = run_many([
@@ -553,8 +553,8 @@ if ok:
     ok = ANNOT in html and SUB in html
 rec("F5-annotation+subtitle注入HTML", ok, f"rc={rc5}")
 
-# sort 在渲染层生效（data_preview 是渲染前数据，原序属预期）：
-# 断言 xAxis data 数组首元素——value 降序为「上海」，none 原序为「北京」，且两份 HTML 不同
+
+
 ok = rcs == 0 and outs and rcn == 0 and outn
 if ok:
     html_v = Path(outs['chart']['html_path']).read_text(encoding='utf-8')
@@ -566,16 +566,16 @@ if ok:
           and html_v != html_n)
 rec("F6-sort=value渲染层降序", ok, f"rc={rcs}/{rcn}")
 
-# 离线性：ECharts 内联、HTML 不引用任何外部 CDN
+
 ok = rc12 == 0 and out12 and out12['chart']['success']
 if ok:
     html = Path(out12['chart']['html_path']).read_text(encoding='utf-8')
     ok = 'echarts' in html.lower() and 'src="http' not in html and 'href="http' not in html
 rec("F12-离线HTML(echarts内联无CDN)", ok, f"rc={rc12}, size={len(html) if ok else 'N/A'}")
 
-# ══════════════════ E: 错误路径 ══════════════════
+
 print("\n─── E: 错误路径（结构化 JSON + suggestion）───")
-# 返回 chart.error.code_name 的两类
+
 E_CHART_ERR = {
     'E1-不支持的图表类型(4002)': ([DATA / 'cities.csv', 'bar3d', '--title', 'E1',
                                   '--x-axis', '城市', '--y-axis', '销售额'], 'CHART_TYPE_UNSUPPORTED'),
@@ -588,7 +588,7 @@ for nm, (args, code) in E_CHART_ERR.items():
           and out['chart']['error']['code_name'] == code)
     rec(nm, ok, f"rc={rc}, {json.dumps(out, ensure_ascii=False)[:200] if out else se[:200]}")
 
-# 错误码只落在 stderr 上的（解析期失败，尚未进入图表上下文）
+
 (DATA / 'scores.xyz').write_text('姓名,数学\n张三,85\n', encoding='utf-8')
 E_STDERR = {
     'E3-文件不存在(1001,stderr)': ([ROOT / '不存在.csv', 'bar'], ['FILE_NOT_FOUND']),
@@ -602,7 +602,7 @@ E_STDERR = {
 for (nm, (_, marks)), (rc, out, se) in zip(E_STDERR.items(), run_many([a for a, _ in E_STDERR.values()])):
     rec(nm, rc == 1 and all(m in se for m in marks), f"rc={rc}, se={se[:150]}")
 
-# E8: 5 个逃逸 PoC 经 CLI（覆盖 dunder 新增项）
+
 E8_POCS = [('__builtins__', "result = pd.__builtins__"),
            ('__getattribute__', "x = pd.__getattribute__; result = df"),
            ('__loader__', "x = np.__loader__; result = df"),
@@ -616,8 +616,8 @@ for (kw, _), (rc, out, se) in zip(E8_POCS, run_many(
           and kw in out['chart']['error']['details'].get('violations', []))
     rec(f"E8-CLI逃逸拦截: {kw}", ok, f"rc={rc}")
 
-# E9: P1-1 嵌套模块路径逃逸（此前 133 项全绿但真实可落盘/可出网）
-# 探针路径放在临时目录：硬编码 /tmp 在非 POSIX 系统上不存在，会让用例假失败
+
+
 PROBE_NPY = str(ROOT / 'sc_probe_e9.npy')
 PROBE_TXT = str(ROOT / 'sc_probe_e9.txt')
 for kw, code in [('open_memmap', f"x = np.lib.format.open_memmap('{PROBE_NPY}', mode='w+', dtype='float64', shape=(2,)); result = df"),
@@ -630,15 +630,15 @@ for kw, code in [('open_memmap', f"x = np.lib.format.open_memmap('{PROBE_NPY}', 
         rec(f"E9-transform拒绝: {kw}", False, "代码被执行")
     except SmartChartsError as e:
         rec(f"E9-transform拒绝: {kw}", e.code == ErrorCode.TRANSFORM_EXEC_ERROR, f"{e.code.name}")
-# 落盘取证：确认探针文件确实没有被创建
+
 rec("E9-探针文件未落盘",
     not os.path.exists(PROBE_NPY) and not os.path.exists(PROBE_TXT),
     "逃逸代码真实创建了文件")
 
-# ══════════════════ X: P0/P1/P2 修复项回归 ══════════════════
+
 print("\n─── X: 问题清单修复项（P0/P1/P2）───")
 
-# 本段要跑的 CLI 用例集中在段首并发，下面各修复项按需取结果（避免串行空等）
+
 X_ARGS = {
     'P0-3': [DATA / 'total.csv', 'bar', '--title', 'X-P0-3', '--x-axis', '月份', '--y-axis', '销量'],
     'P1-2': [DATA / 'freq.csv', 'bar', '--title', 'X-P1-2', '--x-axis', 'name', '--y-axis', 'value',
@@ -653,7 +653,7 @@ X_ARGS = {
 }
 X = dict(zip(X_ARGS, run_many(list(X_ARGS.values()))))
 
-# ── P0-1: frontmatter 必须只含平台允许键 ──
+
 _fm = re.match(r'^---\n(.*?)\n---', (BASE / 'SKILL.md').read_text(encoding='utf-8'), re.DOTALL)
 try:
     import yaml as _yaml
@@ -666,8 +666,8 @@ rec("P0-1-描述含TRIGGER边界段",
     'TRIGGER' in (BASE / 'SKILL.md').read_text(encoding='utf-8'),
     "description 缺 TRIGGER/DO-NOT-TRIGGER")
 
-# ── P0-2: exec 单一命名空间（中间变量 + lambda/生成器/嵌套 def）──
-# df_u 的列为 类别 / 数值，引用必须用真实列名
+
+
 for _n, _code in [('lambda引用中间变量', "k = 2; result = df.assign(v2=lambda d: d['数值']*k)"),
                   ('生成器引用中间变量', "thr = 2; result = df.assign(f=list(v > thr for v in df['数值']))"),
                   ('apply引用标量', "s = 10; result = df[['数值']].apply(lambda c: c*s)"),
@@ -678,8 +678,8 @@ for _n, _code in [('lambda引用中间变量', "k = 2; result = df.assign(v2=lam
     except Exception as _e:
         rec(f"P0-2-单一命名空间: {_n}", False, f"{type(_e).__name__}: {_e}")
 
-# ── P0-3（已改语义）: 合计行不再自动排除 + summary 补 tail ──
-# 「哪一行是合计行」是语义判断，交 agent 从 tail 识别后用 --drop-rows/transform 处理。
+
+
 _p = DataParser()
 _df_t = _p.parse_file(DATA / 'total.csv')
 rec("P0-3-合计行不再自动排除", len(_df_t) == 7 and int(_df_t['销量'].sum()) == 420,
@@ -689,7 +689,7 @@ rec("P0-3-summary补tail供agent识别合计行", 'tail' in _sum_t
     and any('合计' in str(r) for r in _sum_t['tail']),
     f"tail={_sum_t.get('tail')}")
 
-# ── P0-4: 趋势按自然序 + 零基线不可计算 ──
+
 _b = pd.DataFrame({'月份': ['1月', '2月', '3月', '4月'], '销量': [100, 120, 140, 160]})
 _t_up = compute_plot_stats(_b, 'line', '月份', ['销量'])['series'][0]['trend']
 _t_rev = compute_plot_stats(_b.iloc[::-1].reset_index(drop=True), 'line', '月份', ['销量'])['series'][0]['trend']
@@ -703,7 +703,7 @@ _m = compute_plot_stats(pd.DataFrame({'m': ['1月', '2月', '10月', '12月'], '
           'line', 'm', ['v'])['series'][0]['trend']
 rec("P0-4-月份按时间序非字典序", _m['first'] == 10.0 and _m['last'] == 40.0, f"{_m}")
 
-# ── P0-5: 列名撞名消歧 + UNKNOWN_ERROR 带 suggestion ──
+
 for _cols in (['Sales Amount', 'sales-amount'], ['营收($)', '营收'], ['Score', 'score'], ['A/B', 'A B']):
     _dd = pd.DataFrame({c: [1, 2] for c in _cols})
     try:
@@ -712,11 +712,11 @@ for _cols in (['Sales Amount', 'sales-amount'], ['营收($)', '营收'], ['Score
             and all(hasattr(_o[c], 'dtype') for c in _o.columns), f"列: {list(_o.columns)}")
     except Exception as _e:
         rec(f"P0-5-撞名消歧: {_cols}", False, f"{type(_e).__name__}: {_e}")
-# 真正跑一遍 UNKNOWN_ERROR 兜底分支：注入一个非 SmartChartsError 异常，
-# 捕获 stderr 上的结构化 JSON，断言 details 里有 suggestion
+
+
 
 def _run_injected_failure(entry, argv):
-    """把 parse_file 换成必炸的实现，跑真实入口，返回解析后的错误 JSON。"""
+
     _orig = DataParser.parse_file
     def _boom(*a, **k):
         raise RuntimeError("injected-for-regression")
@@ -750,7 +750,7 @@ rec("P0-5-data_parser兜底UNKNOWN_ERROR带suggestion",
     _err2.get('code_name') == 'UNKNOWN_ERROR' and 'suggestion' in _err2.get('details', {}),
     f"{_err2}")
 
-# ── P0-6: f-string 放行 ──
+
 _f = "result = df.rename(columns={c: f'{c}_score' for c in df.columns})"
 rec("P0-6-f-string通过校验", not (validate_code_blacklist(_f) + validate_code_ast(_f)),
     f"{validate_code_blacklist(_f) + validate_code_ast(_f)}")
@@ -760,14 +760,14 @@ try:
 except Exception as _e:
     rec("P0-6-f-string可执行", False, str(_e))
 
-# ── P1-2: 粒度对账三元组 ──
+
 rc, out, se = X['P1-2']
 _c = out['chart'] if out else {}
 rec("P1-2-输出source_rows/plotted_rows/unique_entities",
     rc == 0 and {'source_rows', 'plotted_rows', 'unique_entities'} <= set(_c),
     f"keys={sorted(_c)}")
-# freq.csv 共 12 个数据行，其中 1 行为空 —— 解析层 _clean 先丢空行，
-# 故 source_rows=11；transform 聚合成 4 个类别，plotted_rows=unique_entities=4
+
+
 rec("P1-2-对账三元组数值正确",
     _c.get('source_rows') == 11 and _c.get('plotted_rows') == 4 and _c.get('unique_entities') == 4,
     f"source={_c.get('source_rows')}, plotted={_c.get('plotted_rows')}, uniq={_c.get('unique_entities')}")
@@ -777,7 +777,7 @@ rec("P1-2-三元组可判定漏去重",
     and _c.get('unique_entities') == _c.get('plotted_rows'),
     f"三元组无法支撑去重校验: {_c.get('source_rows')}/{_c.get('plotted_rows')}/{_c.get('unique_entities')}")
 
-# ── P1-5: annotation_source ──
+
 rc, out, se = X['P1-5a']
 rec("P1-5-默认annotation标记default",
     rc == 0 and out['chart'].get('annotation_source') == 'default'
@@ -789,7 +789,7 @@ rec("P1-5-用户annotation标记user",
     and 'annotation_source' not in ' '.join(out['chart'].get('advisories', [])),
     f"{out['chart'].get('annotation_source') if out else se[:150]}")
 
-# ── P1-7: gauge --target ──
+
 rc, out, se = X['P1-7a']
 _g = out['chart']['plot_stats']['extra'] if out else {}
 rec("P1-7-无target时achievement为null",
@@ -803,7 +803,7 @@ rec("P1-7-有target时achievement=mean/target",
     rc == 0 and _g2.get('target') == 100.0
     and abs(_g2.get('achievement', 0) - round(_g2['mean'] / 100, 4)) < 1e-9, f"{_g2}")
 
-# ── P1-8: 依赖区间 + --doctor ──
+
 _req = (BASE / 'requirements.txt').read_text(encoding='utf-8')
 rec("P1-8-requirements改用兼容区间",
     'pandas>=' in _req and 'pandas==' not in _req and 'numpy>=' in _req,
@@ -818,37 +818,37 @@ try:
 except Exception as _e:
     rec("P1-8-doctor输出版本矩阵", False, f"{_e}: {_proc.stdout[:150]}{_proc.stderr[:150]}")
 
-# ── P1-13: 文档硬约束要求显式 --output-dir ──
+
 _skm = (BASE / 'SKILL.md').read_text(encoding='utf-8')
 rec("P1-13-文档要求显式指定--output-dir",
     'MUST 显式传 `--output-dir`' in _skm, "SKILL.md 缺该硬约束")
 
-# ── P2-2: 文档声明 skiprows 与 header-row 等价 ──
-# 判据必须落在「同一句里同时提到两个 flag」——只查「同一」二字等于恒真，抓不到回归
+
+
 _refm = (BASE / 'references' / 'REFERENCE.md').read_text(encoding='utf-8')
 rec("P2-2-文档声明两个flag等价",
     any('skiprows' in ln and 'header-row' in ln for ln in _refm.splitlines()),
     "REFERENCE.md 未在同一处说明二者等价")
 
-# ── P2-9（已改语义）: 身份列不再自动探测 ──
-# label_col 不传则不猜——散点图身份列由 agent 显式 --label-col 指定。
-# 验证 generate_chart 不传 --label-col 时不会自动把某列塞进身份列（assumptions 无 label 探测）。
+
+
+
 rc_lbl, out_lbl, _ = run_cli([DATA / 'students.csv', 'scatter', '--title', 'P2-9',
                               '--x-axis', '数学', '--y-axis', '语文'])
 _ass_lbl = (out_lbl or {}).get('chart', {}).get('assumptions', [])
 rec("P2-9-身份列不自动探测", rc_lbl == 0 and not any('label' in a for a in _ass_lbl),
     f"assumptions={_ass_lbl}")
 
-# ── P2-12: data_points 语义改为 x 去重数 ──
+
 _long = pd.DataFrame({'month': [f'{i}月' for i in range(1, 13)] * 5,
                       'series': [s for _ in range(12) for s in 'abcde'], 'v': range(60)})
 _dp = ChartGenerator(output_dir=str(OUT))._estimate_data_points(_long, 'bar', 'month', ['v'])
 rec("P2-12-data_points取nunique", _dp == 12, f"实得 {_dp}（期望 12，旧实现为 60）")
 
-# ── P2-13: advisories 多触发点 ──
-# 一次调用可同时命中多类：数值列部分降级 / annotation 用默认模板
-# （外加 gauge-liquid 缺 target、粒度未聚合）。这里只做端到端取证。
-# 注意：合计行已不再自动排除（语义判断交 agent），故不再产生「合计」advisory。
+
+
+
+
 rc, out, se = X['P2-13']
 _advs = out['chart'].get('advisories', []) if out else []
 rec("P2-13-单次调用命中多类advisory",
@@ -856,9 +856,9 @@ rec("P2-13-单次调用命中多类advisory",
     + sum(1 for a in _advs if 'annotation' in a) >= 2,
     f"advisories={_advs}")
 
-# ══════════════════ 命名：--x-name/--y-name/--series-name(s) ══════════════════
+
 print("\n─── 命名: 轴名/系列名覆盖（HTML 片段取证）───")
-# (用例名, CLI 参数, HTML 必须包含的片段, 必须已消失的硬编码/列名)
+
 NAMING = [
     ('命名-1-line三者独立覆盖',
      [DATA / 'cities.csv', 'line', '--x-axis', '城市', '--y-axis', '销售额',
@@ -890,18 +890,18 @@ NAMING = [
      [DATA / 'cities.csv', 'bar', '--x-axis', '城市', '--y-axis', '销售额',
       '--series-name', '总销售额'],
      ['"name": "总销售额"'], []),
-    # 无轴名的 graphic 类图传 --x-name 不应崩（只要求出图成功，故 must 为空）
+    
     ('命名-9-无轴名图传x-name不崩',
      [DATA / 'heat.csv', 'heatmap', '--x-axis', '星期', '--y-axis', '早高峰', '--x-name', '周期'],
      [], []),
     ('命名-11-liquid系列名可覆盖',
      [DATA / 'gauge.csv', 'liquid', '--y-axis', '完成率', '--series-name', '季度达成'],
      ['"name": "季度达成"', 'chartOption.series[0].name'], ['"name": "水波图"']),
-    # max>100 时渲染百分比 = mean/target（与 achievement 同源，不再用 gauge_scale(max) 当分母）
+    
     ('命名-12-liquid超100按target',
      [DATA / 'liquid_over100.csv', 'liquid', '--y-axis', '完成率', '--target', '100'],
      ['0.8967'], ['0.8211']),
-    # 无 target 时回落到 gauge_scale（max≤100 → 100，均值/100 不变）
+    
     ('命名-13-liquid无target回落',
      [DATA / 'gauge.csv', 'liquid', '--y-axis', '完成率'],
      ['0.789'], []),
@@ -917,7 +917,7 @@ NAMING = [
       '--x-name', '自变量', '--y-name', '因变量'],
      ['["自变量", "因变量"]'], ['["x_val", "y_val"]']),
 ]
-# 标题带序号：并发跑时避免同名 HTML 互相覆盖（文件名 = 标题 + 内容哈希）
+
 _NM_ARGS = [[*a, '--title', f'NM{i}'] for i, (_, a, _, _) in enumerate(NAMING)]
 for (nm, _, must, must_not), res in zip(NAMING, run_many(_NM_ARGS)):
     seg = seg_of(res)
@@ -926,7 +926,7 @@ for (nm, _, must, must_not), res in zip(NAMING, run_many(_NM_ARGS)):
                               f"残留: {[m for m in must_not if seg and m in seg]} "
                               f"{(res[1] or {}).get('chart', {}).get('error', '')}")
 
-# 多图 --charts-file 透传 series_name（走 charts[] 而非 chart{}，单独判）
+
 _cfg = ROOT / 'names_charts.json'
 _cfg.write_text(json.dumps([{"type": "gauge", "title": "A", "y_axis": ["完成率"],
                              "series_name": "达成率"}], ensure_ascii=False), encoding='utf-8')
@@ -934,9 +934,9 @@ rc, out, se = run_cli([DATA / 'gauge.csv', '--charts-file', _cfg])
 _html = Path(out['charts'][0]['html_path']).read_text(encoding='utf-8') if (rc == 0 and out and out.get('charts')) else ''
 rec("命名-10-多图透传series_name", rc == 0 and '"name": "达成率"' in _html and '"name": "仪表盘"' not in _html)
 
-# ══════════════════ N: 新增图表针对性验证（map/lines/calendar/effect_scatter…）══════════════════
+
 print("\n─── N: 新增图表针对性验证 ───")
-# 并发跑完再按需读回 HTML——瓶颈是子进程启动，读文件开销可忽略
+
 N_ARGS = {
     'N1-map': [DATA / 'region.csv', 'map', '--x-axis', '地区', '--y-axis', '销售额'],
     'N2-lines': [DATA / 'routes.csv', 'lines', '--x-axis', '来源', '--y-axis', '去向', '金额'],
@@ -949,13 +949,13 @@ N_ARGS = {
     'N7-map面板': [DATA / 'region.csv', 'map', '--x-axis', '地区', '--y-axis', '销售额'],
     'N8-geo-path': [DATA / 'countries.csv', 'map', '--x-axis', '国家', '--y-axis', '销售额',
                     '--geo-path', str(DATA / 'world_custom.json')],
-    # 注：列名 GDP 经规范化转小写为 gdp，--y-axis 需引用规范化后的列名
+    
     'N10-geo-world': [DATA / 'world_gdp.csv', 'map', '--x-axis', '国家', '--y-axis', 'gdp',
                       '--geo', 'world'],
 }
 N_RES = dict(zip(N_ARGS, run_many([[*a, '--title', k] for k, a in N_ARGS.items()])))
 
-# N1: map 离线 registerMap + 系列类型 + plot_stats 地域聚合（6 地区全匹配）
+
 _h = html_of(N_RES['N1-map'])
 rec("N1-map-registerMap内联+type",
     'echarts.registerMap("china"' in _h and '"type": "map"' in _h, "缺 registerMap 或 type=map")
@@ -963,19 +963,19 @@ rec("N1-map-plot_stats地域聚合",
     extra_of(N_RES['N1-map']).get('region_count') == 6 and not extra_of(N_RES['N1-map']).get('unmatched'),
     f"{extra_of(N_RES['N1-map'])}")
 
-# N2: lines 离线 registerMap + 系列类型 + 边统计（4 条边全对齐到省级）
+
 _h = html_of(N_RES['N2-lines'])
 rec("N2-lines-registerMap内联+type",
     'echarts.registerMap("china"' in _h and '"type": "lines"' in _h, "缺 registerMap 或 type=lines")
 rec("N2-lines-边统计", extra_of(N_RES['N2-lines']).get('edge_count') == 4, f"{extra_of(N_RES['N2-lines'])}")
 
-# N3: effect_scatter 复用 scatter 契约（轴名可拖拽 + 系列可改名）
+
 _seg = seg_of(N_RES['N3-effect_scatter'])
 rec("N3-effect_scatter类型+轴名可拖拽", _seg is not None and 'effectScatter' in _seg
     and '"axisName-x"' in _seg and '"draggable": true' in _seg)
 rec("N3-effect_scatter系列可改名", _seg is not None and '"name": "成绩分布"' in _seg)
 
-# N4: calendar 坐标系 + 统计天数/峰值
+
 _h = html_of(N_RES['N4-calendar'])
 rec("N4-calendar坐标系", '"calendar": {' in _h and '"type": "heatmap"' in _h
     and '"coordinateSystem": "calendar"' in _h)
@@ -983,21 +983,21 @@ rec("N4-calendar-统计天数峰值", extra_of(N_RES['N4-calendar']).get('days')
     and extra_of(N_RES['N4-calendar']).get('peak_day', {}).get('value') == 200,
     f"{extra_of(N_RES['N4-calendar'])}")
 
-# N5: pictorial_bar 复用 bar 契约（轴名可拖拽 + 系列可改名）
+
 _seg = seg_of(N_RES['N5-pictorial_bar'])
 rec("N5-pictorial_bar类型+轴名可拖拽", _seg is not None and 'pictorialBar' in _seg
     and '"axisName-x"' in _seg and '"draggable": true' in _seg)
 rec("N5-pictorial_bar系列可改名", _seg is not None and '"name": "销量"' in _seg)
 
-# N6: theme_river 单时间轴 + 多系列数据落盘
+
 _h = html_of(N_RES['N6-theme_river'])
 rec("N6-theme_river类型+singleAxis", '"type": "themeRiver"' in _h and '"singleAxis": {' in _h
     and '产品a' in _h and '产品b' in _h)
 
-# N7: 无系列概念的图（map/calendar）不渲染系列重命名面板（NO_SERIES_CHART_TYPES 生效）
+
 rec("N7-map无系列重命名面板", 'if (false) {' in html_of(N_RES['N7-map面板']))
 
-# N8: --geo-path 自备 GeoJSON——registerMap 用文件名 stem、地名精确匹配、无未匹配
+
 _h = html_of(N_RES['N8-geo-path'])
 rec("N8-geopath-registerMap用文件名",
     'echarts.registerMap("world_custom"' in _h and '"map": "world_custom"' in _h,
@@ -1006,7 +1006,7 @@ rec("N8-geopath-地名精确匹配无别名",
     extra_of(N_RES['N8-geo-path']).get('region_count') == 3
     and not extra_of(N_RES['N8-geo-path']).get('unmatched'), f"{extra_of(N_RES['N8-geo-path'])}")
 
-# N9: --geo 指向不存在内置图名 → 结构化错误 + 提示 --geo-path
+
 rc, out, se = run_cli([DATA / 'region.csv', 'map', '--title', 'N9', '--x-axis', '地区',
                        '--y-axis', '销售额', '--geo', 'no_such_map'])
 rec("N9-geo不存在报错带提示", rc == 1 and out is not None
@@ -1014,7 +1014,7 @@ rec("N9-geo不存在报错带提示", rc == 1 and out is not None
     and '--geo-path' in out.get('chart', {}).get('error', {}).get('details', {}).get('suggestion', ''),
     f"{out}")
 
-# N10: 内置世界地图（--geo world）——英文国名精确匹配、registerMap 用 world
+
 _h = html_of(N_RES['N10-geo-world'])
 rec("N10-geo-world内置地图", 'echarts.registerMap("world"' in _h and '"map": "world"' in _h,
     "内置 world 地图 registerMap/map 名应为 world")
@@ -1022,10 +1022,10 @@ rec("N10-geo-world国名匹配",
     extra_of(N_RES['N10-geo-world']).get('region_count') == 4
     and not extra_of(N_RES['N10-geo-world']).get('unmatched'), f"{extra_of(N_RES['N10-geo-world'])}")
 
-# ══════════════════ PF: 数据画像（--profile）与粒度口径自检 ══════════════════
+
 print("\n─── PF: 数据画像与粒度自检 ───")
 
-# 面板数据：月份 × 地区，其中「华南」自 4 月起腰斩（整体均值会掩盖该分化）
+
 _rows = []
 for _m in range(1, 7):
     for _r, _b in (('华东', 120), ('华南', 90), ('华北', 75), ('西南', 40)):
@@ -1036,13 +1036,13 @@ for _m in range(1, 7):
                       '订单数': int(_amt / 12)})
 pd.DataFrame(_rows).to_csv(DATA / 'panel.csv', index=False, encoding='utf-8')
 
-# 数据质量样本：状态列全同值（常量列）、备注列缺失 4/6
+
 (DATA / 'quality.csv').write_text(
     "姓名,部门,状态,得分,备注\n张三,A,正常,80,\n李四,A,正常,85,x\n王五,B,正常,90,\n"
     "赵六,B,正常,,\n孙七,A,正常,88,\n周八,B,正常,,\n", encoding='utf-8')
 
 
-# PF1: --profile 不需要图表类型即可运行（否则「先画像后选型」的工作流走不通）
+
 rc, out, _ = profile(DATA / 'panel.csv')
 rec("PF1-profile无需chart_type", rc == 0 and out is not None and 'chart' not in (out or {}),
     f"rc={rc} out_keys={list((out or {}).keys())[:6]}")
@@ -1050,7 +1050,7 @@ rec("PF1-profile结构完整", out is not None and all(
     k in out for k in ('rows', 'cols', 'columns', 'grain', 'relations', 'signals', 'row_quality')),
     f"{list((out or {}).keys())}")
 
-# PF2: 客观类型（无 role 字段）——数值列带 numeric 块、时间列带 time 块、文本列带 top_values
+
 _cols = {c['name']: c for c in (out or {}).get('columns', [])}
 rec("PF2-profile无role只有客观事实", 'role' not in (_cols.get('月份') or {})
     and 'role' not in (_cols.get('地区') or {})
@@ -1067,13 +1067,13 @@ rec("PF2-profile基数与分布", _cols.get('月份', {}).get('cardinality') == 
     f"{_cols.get('月份', {}).get('cardinality')} {_cols.get('地区', {}).get('top_values')} "
     f"{_cols.get('销售额', {}).get('numeric')}")
 
-# PF3: 粒度——唯一键必须来自非数值列，且能识别出「月份+地区」组合键
+
 _grain = (out or {}).get('grain', {})
 rec("PF3-profile实体粒度", '销售额' not in _grain.get('unique_keys', [])
     and ['月份', '地区'] in _grain.get('unique_key_pairs', []),
     f"{_grain}")
 
-# PF4: 候选洞察信号——整体上行掩盖下仍能抓出「华南」逆势下滑
+
 _kinds = [s['kind'] for s in (out or {}).get('signals', [])]
 _div = next((s for s in (out or {}).get('signals', []) if s['kind'] == 'divergent_category'), None)
 _trend = next((s for s in (out or {}).get('signals', []) if s['kind'] == 'trend'), None)
@@ -1086,25 +1086,25 @@ rec("PF4-profile逆势类别信号", _div is not None and _div['evidence'].get('
     f"{_div}")
 rec("PF4-profile集中度信号", 'concentration' in _kinds, f"{_kinds}")
 
-# PF5: 不产图型建议——「出什么图」由 agent 从 columns/signals 自行判断，profile 不代笔
+
 rec("PF5-profile不产图型建议", 'recommendations' not in (out or {}),
     f"{list((out or {}).keys())}")
 
-# PF6: data_parser.py --profile 与 cli.py --profile 输出等价（两个入口都可用）
+
 rc2, out2, _ = profile(DATA / 'panel.csv', via='dp')
 rec("PF6-dataparser同入口画像", rc2 == 0 and out2 is not None
     and out2.get('rows') == (out or {}).get('rows')
     and [s['kind'] for s in out2.get('signals', [])] == _kinds,
     f"rc={rc2} rows={out2 and out2.get('rows')}")
 
-# PF7: 数据质量信号（常量列 / 高缺失列）
+
 rc3, out3, _ = profile(DATA / 'quality.csv')
 _k3 = {s['kind']: s for s in (out3 or {}).get('signals', [])}
 rec("PF7-profile常量与缺失信号", 'constant' in _k3 and 'missing' in _k3
     and _k3['missing']['columns'] == ['备注'] and _k3['missing']['evidence']['rate'] >= 0.6,
     f"{ {k: v['columns'] for k, v in _k3.items()} }")
 
-# PF8/PF9/PF10: 粒度口径自检——明细画 line 必须报警，聚合后与散点不误报
+
 (rc4, out4, _), (rc5, out5, _), (rc6, out6, _) = run_many([
     [DATA / 'panel.csv', 'line', '--title', 'PF8', '--x-axis', '月份', '--y-axis', '销售额'],
     [DATA / 'panel.csv', 'bar', '--title', 'PF9', '--x-axis', 'name', '--y-axis', 'value',
@@ -1121,24 +1121,24 @@ for nm, rc, res in (('PF9-聚合后不报警', rc5, out5), ('PF10-散点明细�
                                 for a in (res or {}).get('chart', {}).get('advisories', [])),
         f"{(res or {}).get('chart', {}).get('advisories')}")
 
-# PF11: --emit-charts 已删除——「出什么图」由 agent 决策，不再由 profile 代写配置。
-# 传 --emit-charts 应报结构化错误（参数已移除），绝不静默忽略。
+
+
 rc7, out7, se7 = run_cli([DATA / 'panel.csv', '--profile', '--emit-charts', 'x.json'])
 rec("PF11-emit-charts已移除并报错", rc7 == 1 and '--emit-charts' in se7,
     f"rc={rc7} se={se7[:160]}")
 
-# ══════════════════ R: 8.4.0 改造项回归（① ③ ⑤）══════════════════
+
 print("\n─── R: 8.4.0 改造项回归 ───")
 
-# 脏表样本：第 0 行是子表头（分类列有值、数值列全空 → 疑似非数据行）。
-# 姓名/科目 均有重复取值，无唯一键（供 R4 验证 grain.note 动态化）。
+
+
 (DATA / 'dirty.csv').write_text(
     "姓名,科目,成绩\n考核项,分值,\n张三,数学,85\n张三,数学,90\n", encoding='utf-8')
-# 稀疏相关样本：y 列仅 1 个非空值，与 x 相关会触发 numpy cov 的 RuntimeWarning
+
 (DATA / 'sparse_corr.csv').write_text(
     "x,y\n1,10\n2,\n3,\n4,\n5,\n", encoding='utf-8')
 
-# R1: ① --profile --transform-code 生效 + 白名单外参数报错
+
 rc, out, se = run_cli([DATA / 'panel.csv', '--profile',
                        '--transform-code', "result = df.groupby('地区')['销售额'].sum().reset_index()"])
 rec("R1-profile+transform生效(rows变化)", rc == 0 and out is not None and out.get('rows') == 4,
@@ -1147,14 +1147,14 @@ rc, out, se = run_cli([DATA / 'panel.csv', '--profile', '--x-axis', '地区'])
 rec("R1-profile白名单外参数报错", rc == 1 and 'CHART_CONFIG_ERROR' in se and '--x-axis' in se,
     f"rc={rc} se={se[:150]}")
 
-# R2: ③a --profile --drop-rows 生效 + advisory
+
 rc, out, se = run_cli([DATA / 'dirty.csv', '--profile', '--drop-rows', '0'])
 rec("R2-profile+drop-rows生效+advisory",
     rc == 0 and out is not None and out.get('rows') == 2
     and any('--drop-rows' in a for a in out.get('advisories', [])),
     f"rc={rc} rows={out and out.get('rows')} adv={out and out.get('advisories')}")
 
-# R3: ③b row_quality 脏表命中、整洁表零命中
+
 rc, out, se = run_cli([DATA / 'dirty.csv', '--profile'])
 _sus = (out or {}).get('row_quality', {}).get('suspicious_non_data_rows', [])
 rec("R3-row_quality脏表命中", rc == 0 and [r['row'] for r in _sus] == [0], f"rc={rc} sus={_sus}")
@@ -1162,14 +1162,14 @@ rc2, out2, se2 = run_cli([DATA / 'panel.csv', '--profile'])
 _sus2 = (out2 or {}).get('row_quality', {}).get('suspicious_non_data_rows', [])
 rec("R3-row_quality整洁表零命中", rc2 == 0 and _sus2 == [], f"rc={rc2} sus={_sus2}")
 
-# R4: ⑤-1 grain.note 随唯一键动态变化（panel 有组合键，freq 单列重复无键）
+
 rc3, out3, _ = run_cli([DATA / 'freq.csv', '--profile'])
 _note_has = (out2 or {}).get('grain', {}).get('note', '')
 _note_no = (out3 or {}).get('grain', {}).get('note', '')
 rec("R4-grain.note有键说存在", '存在唯一键' in _note_has and '无唯一键' not in _note_has, f"{_note_has}")
 rec("R4-grain.note无键说无", '无唯一键' in _note_no and '存在唯一键' not in _note_no, f"{_note_no}")
 
-# R5: ⑤-2 长标题截断挂 advisory
+
 rc, out, se = run_cli([DATA / 'cities.csv', 'bar',
                        '--title', '这是一个非常非常长的中文标题用来验证文件名是否会被静默截断到三十个字符',
                        '--x-axis', '城市', '--y-axis', '销售额'])
@@ -1177,12 +1177,12 @@ rec("R5-长标题截断挂advisory",
     rc == 0 and out and any('截断' in a for a in out['chart'].get('advisories', [])),
     f"rc={rc} adv={out and out['chart'].get('advisories')}")
 
-# R6: ⑤-3 相关计算不再产生 RuntimeWarning（y 列仅 1 个非空值）
+
 rc, out, se = run_cli([DATA / 'sparse_corr.csv', '--profile'])
 rec("R6-profile无RuntimeWarning", 'RuntimeWarning' not in se, f"se={se[:150]}")
 
-# R7: 语义判断交 agent——profile 不做 role 归类、不做图型推荐。
-# 值形态保护仍生效：前导零 / 超长数字保持字符串；普通数字串正常数值化（是否 ID 由 agent 判断）
+
+
 _df_ghost = pd.DataFrame({
     '地区': ['华北', '华东', '华南', '西南', '华北', '华东'],
     '子表头': ['科目', '分值', None, None, None, None],
@@ -1196,8 +1196,8 @@ rec("R7-profile不产推荐", 'recommendations' not in _prof,
 rec("R7-profile不产role", all('role' not in c for c in _prof['columns']),
     f"{[c['name'] for c in _prof['columns'] if 'role' in c]}")
 
-# R7 后半：值形态保护——前导零、超长数字保持字符串，普通数字正常数值化。
-# 「编号」是普通 1 位数字 → 数值化（是否 ID 交给 agent 判断，不再靠列名词表）。
+
+
 _data = {
     '编号_前导零': ['007', '008', '012', '013'],
     '长单号': ['202409120001234567', '202409120001234568', '202409120001234569', '202409120001234570'],
@@ -1217,7 +1217,7 @@ rec("R7-普通数字正常数值化", pd.api.types.is_numeric_dtype(_df_id['金�
     and float(_df_id['金额'].iloc[0]) == 120.5,
     f"dtype={_df_id['金额'].dtype}")
 
-# ══════════════════ 汇总 ══════════════════
+
 print("\n" + "═" * 60)
 print(f"总计: {PASS + FAIL} | 通过: {PASS} | 失败: {FAIL}")
 if FAILURES:

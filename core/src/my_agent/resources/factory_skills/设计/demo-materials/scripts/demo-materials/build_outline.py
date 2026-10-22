@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
-"""
-大纲骨架生成：素材库 → outline.json（页面 P-x + 要点占位）
 
-骨架只给「结构」，不给「内容」：每页预置角色/标题/目标，并按素材相似度推荐候选，
-要点需由 AI 依据候选素材填写（quote 必须逐字来自素材），填完跑 check_outline.py 校验。
-"""
+
+
+
+
+
 import argparse
 import datetime
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from lib_outline import (  # noqa: E402
+from lib_outline import (  
     DEFAULT_PAGES, ROLE_MINUTES, empty_outline, load_json, save_json,
     similarity, die,
 )
 
-# 三套主线预设
+
 PRESETS = {
-    "problem": DEFAULT_PAGES,  # 客户还不觉得痛：背景→痛点→方案→…
+    "problem": DEFAULT_PAGES,  
     "solution": [
         {"role": "封面", "title": "开场", "goal": "一句话讲清方案与价值"},
         {"role": "背景", "title": "需求回顾", "goal": "对齐客户已提出的需求"},

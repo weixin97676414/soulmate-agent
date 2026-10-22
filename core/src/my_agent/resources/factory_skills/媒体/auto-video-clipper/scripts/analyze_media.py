@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-AI视频剪辑 - 素材分析脚本
-功能：自动分析素材目录，识别视频/音频/图片，提取元数据，建立索引
-"""
+
+
+
+
 
 import os
 import json
@@ -12,26 +12,26 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional
 
-# 配置区域 - 用户可修改
+
 DEFAULT_CONFIG = {
-    "input_dir": "",  # 素材输入目录
-    "output_dir": "",  # 分析结果输出目录
+    "input_dir": "",  
+    "output_dir": "",  
     "supported_video": [".mp4", ".mov", ".avi", ".mkv", ".flv", ".wmv"],
     "supported_audio": [".mp3", ".wav", ".aac", ".flac", ".ogg"],
     "supported_image": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"],
-    "ffmpeg_path": "ffmpeg",  # FFmpeg路径，如已安装可留空
-    "whisper_model": "base"  # whisper模型大小: tiny/base/small/medium/large
+    "ffmpeg_path": "ffmpeg",  
+    "whisper_model": "base"  
 }
 
 class MediaAnalyzer:
-    """素材分析器"""
+
     
     def __init__(self, config: Dict = None):
         self.config = {**DEFAULT_CONFIG, **(config or {})}
         self.results = []
         
     def scan_directory(self, directory: str) -> List[Path]:
-        """扫描目录下的所有媒体文件"""
+
         media_files = []
         directory = Path(directory)
         
@@ -44,10 +44,10 @@ class MediaAnalyzer:
             media_files.extend(directory.rglob(f"*{ext}"))
             media_files.extend(directory.rglob(f"*{ext.upper()}"))
         
-        return list(set(media_files))  # 去重
+        return list(set(media_files))  
     
     def get_video_info(self, file_path: Path) -> Dict:
-        """获取视频文件信息"""
+
         cmd = [
             self.config["ffmpeg_path"], "-i", str(file_path)
         ]
@@ -80,7 +80,7 @@ class MediaAnalyzer:
             }
     
     def get_image_info(self, file_path: Path) -> Dict:
-        """获取图片文件信息"""
+
         return {
             "path": str(file_path),
             "name": file_path.name,
@@ -89,7 +89,7 @@ class MediaAnalyzer:
         }
     
     def get_audio_info(self, file_path: Path) -> Dict:
-        """获取音频文件信息"""
+
         return {
             "path": str(file_path),
             "name": file_path.name,
@@ -98,7 +98,7 @@ class MediaAnalyzer:
         }
     
     def _extract_duration(self, ffmpeg_output: str) -> Optional[float]:
-        """从FFmpeg输出提取时长"""
+
         import re
         match = re.search(r"Duration: (\d{2}):(\d{2}):(\d{2})\.(\d{2})", ffmpeg_output)
         if match:
@@ -107,29 +107,29 @@ class MediaAnalyzer:
         return None
     
     def _extract_resolution(self, ffmpeg_output: str) -> Optional[str]:
-        """从FFmpeg输出提取分辨率"""
+
         import re
         match = re.search(r"(\d{3,4}x\d{3,4})", ffmpeg_output)
         return match.group(1) if match else None
     
     def _extract_fps(self, ffmpeg_output: str) -> Optional[float]:
-        """从FFmpeg输出提取帧率"""
+
         import re
         match = re.search(r"(\d+(?:\.\d+)?)\s*fps", ffmpeg_output)
         return float(match.group(1)) if match else None
     
     def _extract_codec(self, ffmpeg_output: str) -> Optional[str]:
-        """从FFmpeg输出提取编码器"""
+
         import re
         match = re.search(r"Video: (\w+)", ffmpeg_output)
         return match.group(1) if match else None
     
     def _has_audio(self, ffmpeg_output: str) -> bool:
-        """检查是否有音频流"""
+
         return "Audio:" in ffmpeg_output
     
     def analyze(self, input_dir: str, output_dir: str = None) -> Dict:
-        """执行素材分析"""
+
         print(f"[AI剪辑] 开始分析素材目录: {input_dir}")
         
         media_files = self.scan_directory(input_dir)
@@ -155,7 +155,7 @@ class MediaAnalyzer:
             
             results["files"].append(info)
             
-            # 分类统计
+            
             if "type" in info:
                 if info["type"] == "video":
                     results["video_count"] = results.get("video_count", 0) + 1
@@ -164,7 +164,7 @@ class MediaAnalyzer:
                 elif info["type"] == "audio":
                     results["audio_count"] = results.get("audio_count", 0) + 1
         
-        # 计算总时长
+        
         total_duration = sum(
             f.get("duration", 0) for f in results["files"] 
             if f.get("type") == "video"
@@ -172,7 +172,7 @@ class MediaAnalyzer:
         results["total_duration_seconds"] = total_duration
         results["total_duration_formatted"] = self._format_duration(total_duration)
         
-        # 保存结果
+        
         if output_dir:
             os.makedirs(output_dir, exist_ok=True)
             output_file = os.path.join(output_dir, "media_analysis.json")
@@ -184,7 +184,7 @@ class MediaAnalyzer:
         return results
     
     def _format_duration(self, seconds: float) -> str:
-        """格式化时长"""
+
         if seconds is None:
             return "未知"
         hours = int(seconds // 3600)
@@ -198,7 +198,7 @@ class MediaAnalyzer:
             return f"{secs}秒"
     
     def generate_report(self, results: Dict) -> str:
-        """生成分析报告"""
+
         report = f"""
 ╔══════════════════════════════════════════════════════════════╗
 ║                    AI视频剪辑 - 素材分析报告                   ║
@@ -231,7 +231,7 @@ class MediaAnalyzer:
 
 
 def main():
-    """命令行入口"""
+
     import argparse
     
     parser = argparse.ArgumentParser(description="AI视频剪辑 - 素材分析")
@@ -241,17 +241,17 @@ def main():
     
     args = parser.parse_args()
     
-    # 加载配置
+    
     config = DEFAULT_CONFIG.copy()
     if args.config and os.path.exists(args.config):
         with open(args.config, "r", encoding="utf-8") as f:
             config.update(json.load(f))
     
-    # 执行分析
+    
     analyzer = MediaAnalyzer(config)
     results = analyzer.analyze(args.input, args.output)
     
-    # 输出报告
+    
     print(analyzer.generate_report(results))
     
     return results

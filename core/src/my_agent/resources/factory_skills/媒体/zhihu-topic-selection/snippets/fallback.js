@@ -1,7 +1,7 @@
-/**
- * 备用源获取 - Fallback Source Fetcher
- * 从无需认证的备用数据源获取知乎热榜
- */
+
+
+
+
 
 const fs = require('fs');
 const path = require('path');
@@ -45,9 +45,9 @@ class FallbackFetcher {
     ];
   }
 
-  /**
-   * 解析 zhihu-hot-hub 格式
-   */
+  
+
+
   parseHotHubData(raw) {
     const items = [];
     if (Array.isArray(raw)) {
@@ -65,9 +65,9 @@ class FallbackFetcher {
     return items;
   }
 
-  /**
-   * 解析知乎官方API格式
-   */
+  
+
+
   parseZhihuApiData(raw) {
     const items = [];
     const dataList = raw.data || [];
@@ -86,7 +86,7 @@ class FallbackFetcher {
   }
 
   async fetch() {
-    // 按优先级排序
+    
     const sorted = [...this.sources].sort((a, b) => (a.priority || 99) - (b.priority || 99));
 
     for (const source of sorted) {
@@ -124,7 +124,7 @@ class FallbackFetcher {
           };
         }
       } catch {
-        // 尝试下一个备用源
+        
         continue;
       }
     }

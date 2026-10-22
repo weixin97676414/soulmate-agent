@@ -79,7 +79,7 @@ def check_scope(original: str, candidate: str, plan: dict) -> dict:
 
 
 def write_candidate(original: str, plan: dict, output: str) -> dict:
-    """Apply the validated literal plan to a new file; never overwrite a draft."""
+
     expected = expected_text(original, plan)
     path = Path(output)
     if path.suffix.lower() not in {".txt", ".md"}:

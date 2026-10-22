@@ -9,10 +9,10 @@ const { spawn } = require('node:child_process');
 const host = '127.0.0.1';
 const port = Number(process.env.STUDENT_GROWTH_PORT || 8766);
 
-/**
- * Resolve the student-growth-ops directory without relying on a fixed machine path.
- * Order: env override → sibling of server/ → cwd/student-growth-ops → cwd (when already inside skill root).
- */
+
+
+
+
 function resolveSkillRoot() {
   const envRoot = process.env.STUDENT_GROWTH_OPS_ROOT;
   if (envRoot && envRoot.trim()) {

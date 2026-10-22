@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
-"""graph.json -> Mermaid / PlantUML 结构化文本。
 
-结构化文本可嵌入 Markdown 文档、进 Git 做版本管理、在多种渲染器里预览。
-用法: python gen_mermaid.py graph.json -o out.mmd [--format mermaid|plantuml]
-"""
+
+
+
+
 import argparse
 import os
 import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from lib_graph import load, style_of  # noqa: E402
+from lib_graph import load, style_of  
 
-# type -> (mermaid 左定界, 右定界)
+
 MMD_SHAPE = {
     "actor":     ("((", "))"),
     "gateway":   ("{{", "}}"),
@@ -38,7 +38,7 @@ MMD_EDGE = {
 }
 
 
-# Mermaid erDiagram 关系基数：label 里的 "1:N" -> 连线符号
+
 CARD_MMD = {
     "1:1": "||--||", "1:N": "||--o{", "1:n": "||--o{",
     "N:1": "}|--||", "n:1": "}|--||",
@@ -51,7 +51,7 @@ def esc(t):
 
 
 def er_name(n):
-    """Mermaid erDiagram 实体名仅接受 ASCII 标识符；中文回退到 id 并加对照注释。"""
+
     lb = (n.get("label") or "").strip()
     if lb and lb.isascii() and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", lb):
         return lb, False
@@ -75,7 +75,7 @@ def to_mermaid(g):
                 L.append("    %s -) %s: %s" % (e["source"], e["target"],
                                                esc(e.get("label") or "")))
             elif e.get("type") == "return":
-                # 返回消息方向以建模为准（source 即发起返回的一方），只改线型
+                
                 L.append("    %s -->> %s: %s" % (e["source"], e["target"],
                                                  esc(e.get("label") or "")))
             else:
@@ -103,7 +103,7 @@ def to_mermaid(g):
             body.append('    %s %s %s : "%s"' % (s, sym, t, esc(e.get("desc") or "")))
         L.append("erDiagram")
         if alias:
-            # 顶格书写，Mermaid 只认行首的 %% 注释；用 format 避免 %% 被转义
+            
             L.append("%% 实体名对照（Mermaid 实体名不支持中文，此处用 id 代替）：")
             for k, v in alias.items():
                 L.append("%%   {} = {}".format(k, v))
@@ -119,7 +119,7 @@ def to_mermaid(g):
                                              esc(e.get("label") or "")))
         return "\n".join(L) + "\n"
 
-    # architecture / flowchart / c4
+    
     L.append("flowchart %s" % direction)
     gm = {x["id"]: x for x in g["groups"]}
     in_group = {n["id"]: n.get("group") for n in g["nodes"]}
@@ -147,7 +147,7 @@ def to_mermaid(g):
             L.append("    %s %s|%s| %s" % (e["source"], arrow, lb, e["target"]))
         else:
             L.append("    %s %s %s" % (e["source"], arrow, e["target"]))
-    # 样式补充：外部系统虚线
+    
     for n in g["nodes"]:
         if n.get("type") == "external":
             L.append("    style %s stroke-dasharray: 5 5" % n["id"])

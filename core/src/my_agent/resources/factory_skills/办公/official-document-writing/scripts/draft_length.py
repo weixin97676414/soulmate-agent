@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure draft length before substantive review; no host lifecycle required."""
+
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ TRIAL_NOTICE = "文后提示：本稿为拟生成稿件。"
 
 
 def count_length(text: str, mode: str = "nonspace") -> int:
-    """Reuse the existing review-gate counting convention as a pure function."""
+
     if mode == "cjk":
         return len(re.findall(r"[\u3400-\u4dbf\u4e00-\u9fff]", text))
     if mode != "nonspace":

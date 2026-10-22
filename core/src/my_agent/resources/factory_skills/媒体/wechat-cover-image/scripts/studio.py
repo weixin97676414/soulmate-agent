@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-公众号爆款封面工坊 · 工具脚本（本地运行）
 
-子命令：
-  preview  生成自包含 HTML 方案册（注入 covers 数据 + 拷贝图片到 assets/）
-  compose  用 Pillow 将中文标题清晰合成到视觉底图的「标题安全区」
-  check    校验封面尺寸/比例，给出缩略识别度与安全区建议
 
-所有能力均为本地/内置运行。
-需要 Pillow 时（compose/check）：在托管环境执行  pip install pillow
-"""
+
+
+
+
+
+
+
+
+
 
 import os
 import re
@@ -24,9 +24,9 @@ REF_DIR = os.path.join(os.path.dirname(HERE), "references")
 TEMPLATE = os.path.join(REF_DIR, "cover_preview_template.html")
 
 
-# ---------------------------------------------------------------------------
-# 通用工具
-# ---------------------------------------------------------------------------
+
+
+
 def _die(msg, code=1):
     print("❌ " + msg, file=sys.stderr)
     sys.exit(code)
@@ -39,9 +39,9 @@ def _read_json(path_or_stdin):
         return json.load(f)
 
 
-# ---------------------------------------------------------------------------
-# 子命令：preview
-# ---------------------------------------------------------------------------
+
+
+
 def cmd_preview(args):
     if not os.path.exists(TEMPLATE):
         _die("未找到模板: %s" % TEMPLATE)
@@ -61,7 +61,7 @@ def cmd_preview(args):
             return ""
         src = val if os.path.isabs(val) else os.path.join(out_dir, val)
         if not os.path.exists(src):
-            return val  # 远程 URL 等原样保留
+            return val  
         base = os.path.basename(src)
         name, ext = os.path.splitext(base)
         safe = "".join(c if c.isalnum() or c in "-_" else "_" for c in name)
@@ -92,9 +92,9 @@ def cmd_preview(args):
     print("✓ 共 %d 套方案，图片已拷贝到 assets/" % len(items))
 
 
-# ---------------------------------------------------------------------------
-# 字体探测（CJK）
-# ---------------------------------------------------------------------------
+
+
+
 def _cjk_font_candidates():
     env = os.environ.get("GZH_COVER_FONT")
     if env and os.path.exists(env):
@@ -115,7 +115,7 @@ def _cjk_font_candidates():
             "/System/Library/Fonts/Hiragino Sans GB.ttc",
             "/Library/Fonts/Arial Unicode.ttf",
         ]
-    else:  # linux
+    else:  
         cands = [
             "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
             "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
@@ -132,7 +132,7 @@ def _load_font(size, bold=False):
     except Exception:
         return None
     cands = _cjk_font_candidates()
-    # 优先 Bold 变体
+    
     if bold:
         bold_cands = [c for c in cands if ("bold" in c.lower() or "bd" in c.lower() or "hei" in c.lower())]
         cands = bold_cands + cands
@@ -147,9 +147,9 @@ def _load_font(size, bold=False):
         return None
 
 
-# ---------------------------------------------------------------------------
-# 子命令：compose（标题精排）
-# ---------------------------------------------------------------------------
+
+
+
 def _wrap_text(draw, text, font, max_width):
     lines = []
     cur = ""
@@ -180,10 +180,10 @@ def _is_light(hexcolor):
 
 
 def _fit_layout(draw, w, h, title, subtitle, pos, max_lines=2):
-    """
-    在底部（或顶部）安全区内自适配合适字号与位置。
-    返回 dict，包含所有排版图元参数。
-    """
+
+
+
+
     region_ratio = 0.46 if pos != "top" else 0.38
     region_h = int(h * region_ratio)
     pad_x = int(w * 0.05)
@@ -209,7 +209,7 @@ def _fit_layout(draw, w, h, title, subtitle, pos, max_lines=2):
         sfont = _load_font(sub_size, bold=False) if subtitle else None
 
         bar_h = max(5, int(size * 0.16))
-        # 间距：标题-色条 10px；色条-副标题 10px；副标题-区域底 pad_bottom
+        
         gaps = 10 + (10 if subtitle else 0)
         total_h = block_h + bar_h + sub_h + gaps + pad_bottom
 
@@ -230,7 +230,7 @@ def _fit_layout(draw, w, h, title, subtitle, pos, max_lines=2):
             break
 
     if best is None:
-        # 兜底：最小字号
+        
         size = min_size
         tfont = _load_font(size, bold=True) or _load_font(size, bold=False)
         lines = _wrap_text(draw, title, tfont, max_text_w)[:max_lines]
@@ -248,7 +248,7 @@ def _fit_layout(draw, w, h, title, subtitle, pos, max_lines=2):
             "pad_bottom": pad_bottom,
         }
 
-    # 计算 Y 坐标（从底往上堆叠）
+    
     b = best
     if pos == "top":
         title_top = int(h * 0.14)
@@ -286,7 +286,7 @@ def cmd_compose(args):
     subtitle = args.subtitle or ""
     tag = args.tag or ""
 
-    # 安全区高度
+    
     region_ratio = 0.46 if pos != "top" else 0.38
     region_h = int(h * region_ratio)
     if pos == "top":
@@ -299,7 +299,7 @@ def cmd_compose(args):
     scrim_color = (0, 0, 0) if light_title else (255, 255, 255)
     max_alpha = 150 if light_title else 170
 
-    # 渐变蒙版
+    
     overlay = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     od = ImageDraw.Draw(overlay)
     for y in range(region_top, region_bottom):
@@ -309,7 +309,7 @@ def cmd_compose(args):
     img = Image.alpha_composite(img, overlay)
     draw = ImageDraw.Draw(img)
 
-    # 标签（角标）
+    
     tag_size = max(18, int(w * 0.028))
     gfont = _load_font(tag_size, bold=True)
     if tag and gfont:
@@ -327,21 +327,21 @@ def cmd_compose(args):
 
     layout = _fit_layout(draw, w, h, title, subtitle, pos)
 
-    # 副标题
+    
     if subtitle and layout["sfont"]:
         stroke = max(1, int(layout["sub_size"] * 0.04))
         draw.text((layout["pad_x"], layout["sub_top"]), subtitle,
                   font=layout["sfont"], fill=title_color,
                   stroke_width=stroke, stroke_fill=scrim_color)
 
-    # 强调色条（分隔副标题与主标题）
+    
     accent_w = int(w * 0.10)
     draw.rectangle([
         layout["pad_x"], layout["bar_top"],
         layout["pad_x"] + accent_w, layout["bar_bottom"]
     ], fill=args.accent)
 
-    # 主标题
+    
     stroke = max(1, int(layout["size"] * 0.03))
     y = layout["title_top"]
     for ln in layout["lines"]:
@@ -362,9 +362,9 @@ def _add_suffix(path, suffix):
     return root + suffix + (ext or ".png")
 
 
-# ---------------------------------------------------------------------------
-# 子命令：check（自检）
-# ---------------------------------------------------------------------------
+
+
+
 def cmd_check(args):
     try:
         from PIL import Image
@@ -411,9 +411,9 @@ def cmd_check(args):
     print("标题安全区建议：主体居中偏上，标题落底部1/3，缩至108px仍可辨。")
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
+
+
+
 def main():
     ap = argparse.ArgumentParser(description="公众号爆款封面工坊工具")
     sub = ap.add_subparsers(dest="cmd")

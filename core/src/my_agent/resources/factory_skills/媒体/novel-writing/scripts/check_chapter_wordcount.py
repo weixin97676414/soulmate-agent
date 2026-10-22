@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-网文章节字数检查脚本
-支持多平台预设，也可自定义字数区间
-"""
+
+
+
+
 
 import io
 import re
@@ -30,7 +30,7 @@ PLATFORM_PRESETS = {
 
 
 def count_chinese_words(text: str) -> int:
-    """统计中文字符个数（不含 Markdown 格式符号）"""
+
     text = re.sub(r'#{1,6}\s*', '', text)
     text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
     text = re.sub(r'\*(.*?)\*', r'\1', text)
@@ -42,7 +42,7 @@ def count_chinese_words(text: str) -> int:
 
 
 def extract_content_from_chapter(file_path: Path) -> str:
-    """从章节文件中提取正文内容（跳过元数据部分）"""
+
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
@@ -57,7 +57,7 @@ def extract_content_from_chapter(file_path: Path) -> str:
 
 
 def check_chapter(file_path: str, min_words: int, max_words: int) -> dict:
-    """检查单个章节的字数"""
+
     path = Path(file_path)
     if not path.exists():
         return {
@@ -92,7 +92,7 @@ def check_chapter(file_path: str, min_words: int, max_words: int) -> dict:
 
 def check_all_chapters(directory: str, pattern: str = '第*.md',
                        min_words: int = 2500, max_words: int = 3500) -> list:
-    """检查目录下所有章节文件"""
+
     dir_path = Path(directory)
     if not dir_path.exists():
         print(f'错误: 目录不存在 - {directory}')
@@ -103,7 +103,7 @@ def check_all_chapters(directory: str, pattern: str = '第*.md',
 
 
 def print_results(results: list, min_words: int, max_words: int, platform_label: str = ''):
-    """打印检查报告"""
+
     if not results:
         print('没有找到章节文件')
         return
@@ -165,7 +165,7 @@ def print_usage():
 
 
 def parse_args(argv: list) -> dict:
-    """解析命令行参数"""
+
     if len(argv) < 2:
         return {'error': 'usage'}
 

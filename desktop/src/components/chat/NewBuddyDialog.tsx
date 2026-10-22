@@ -4,19 +4,19 @@ import { useEffect, useState } from 'react'
 import { BuddyImportPanel } from '@/components/chat/BuddyImportPanel'
 import { Modal } from '@/components/ui'
 
-/**
- * 「New Buddy」点开后的**新建方式选择**。
- *
- * 三选一（产品约定）：
- * ①手动配置（原来的新建表单）
- * ②导入搭子 —— **一个压缩包**：搭子 json + 这个搭子的多个技能包
- * ③导入搭子群 —— **一个压缩包**：group.json + 多个搭子包
- *
- * ⚠️ 这里**没有**「导入技能组」这一项：技能包随搭子包一起进来，
- * 用户不需要分别导两次（产品明确要求"后端只提供一个包"）。
- *
- * 选项写成数组而不是三段硬编码：将来要加一项（比如"从官网挑搭子"）只加一条。
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 export type NewBuddyChoice = 'manual' | 'buddy' | 'group'
 
 const OPTIONS: Array<{
@@ -95,12 +95,12 @@ export function NewBuddyDialog({
   )
 }
 
-/**
- * 「新建搭子」的完整流程：先选方式，选了导入就切到导入面板。
- *
- * 抽成一个组件是为了让**搭子栏**与**设置 → 搭子**两处共用同一份接线 ——
- * 两处各写一遍的话，"在这里能导入、在那里按钮点了没反应"迟早会出现。
- */
+
+
+
+
+
+
 export function NewBuddyFlow({
   open,
   onClose,
@@ -108,12 +108,12 @@ export function NewBuddyFlow({
 }: {
   open: boolean
   onClose: () => void
-  /** 选了「手动配置」：调用方去开自己的新建表单 */
+  
   onManual: () => void
 }) {
   const [kind, setKind] = useState<'buddy' | 'group' | null>(null)
 
-  // 每次重新打开都从"选方式"开始：否则上次停在导入面板，这次点开就直接是它
+  
   useEffect(() => {
     if (!open) setKind(null)
   }, [open])

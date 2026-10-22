@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Generate journal-format figure legends from the same JSON used by gen_figure.py.
 
-Produces copy-ready legend text ("Figure 1 | Title. ...") with per-panel
-sentences, error-bar definitions, and n values inferred from the data.
 
-Usage:
-  python gen_legend.py -d data.json -t "Response to treatment" -f 1
-  python gen_legend.py -d panels.json --type composite -t "Three-panel summary"
-  python gen_legend.py -d data.json -o legend.txt
-"""
+
+
+
+
+
+
+
+
 import argparse
 import json
 import sys
@@ -32,7 +32,7 @@ def _names(names, limit=6):
 
 
 def legend_for(data, chart_type, title="", error_type="s.e.m."):
-    """Return journal-format legend text for the given data dict."""
+
     series = data.get("series", data.get("datasets", {}))
     labels = data.get("labels", data.get("x", []))
     errors = data.get("errors", {})
@@ -117,7 +117,7 @@ def legend_for(data, chart_type, title="", error_type="s.e.m."):
         return (f"Figure: {title + '. ' if title else ''}Dual-axis chart: left axis shows "
                 f"{l_names or 'left series'}; right axis shows {r_names or 'right series'}.{err_note}")
 
-    # bar / line / stacked / box / violin share the series-based form
+    
     if series:
         n_series = len(series)
         chart_word = {"bar": "Grouped bar chart", "grouped_bar": "Grouped bar chart",

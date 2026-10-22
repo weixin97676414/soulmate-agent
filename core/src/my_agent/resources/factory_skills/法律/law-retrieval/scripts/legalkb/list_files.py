@@ -1,11 +1,11 @@
-"""列出目录下所有支持的法律文件"""
+
 import sys
 import os
 from pathlib import Path
 
 
 def list_files(directory: str) -> None:
-    """列出所有 PDF 和 Word 文件"""
+
     dir_path = Path(directory)
     if not dir_path.exists():
         print(f"[ERROR] 目录不存在: {directory}")

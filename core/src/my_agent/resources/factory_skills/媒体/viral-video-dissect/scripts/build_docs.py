@@ -1,41 +1,41 @@
-"""
-build_docs.py — 拆解 / 八维报告「一次多格式」文档生成器（v2.22 新增）
-========================================================================
-由「短视频爆款8维拆解与反向二创」技能在步骤 9.5「文档交付选项」调用。
 
-解决的问题：
-  · 用户常要「Word + HTML 都要」（如放资料库多人编辑 + 浏览器速览），逐个跑三次脚本太碎；
-  · 八维自分析线（归属②）与拆解二创线（归属①）共用同一套文档出口，避免归属② 只出 PDF。
 
-能力：
-  - 一份 Markdown 源 → 一次生成 PDF / HTML / Word 的任意组合（互不依赖，单份失败不影响其它）。
-  - 复用既有 `build_pdf.py` / `build_html.py` / `build_docx.py`，不重复实现渲染逻辑。
-  - 三格式共用同一份 Markdown 源：封面 + 目录 + 页码逻辑一致，结构完全对齐。
-  - 报错统一走 `_friendly_error.py` 友好化层（v2.21 起），普通人能看懂。
-  - 汇总回执：一次列出每份文档的 路径 / 大小 / 状态，便于 agent 转述给用户。
 
-用法：
-  python scripts/build_docs.py --md <报告.md> --formats pdf,html,docx
-  python scripts/build_docs.py --md <报告.md> --formats all            # 三格式全出
-  python scripts/build_docs.py --md <报告.md> --formats word,html      # 别名 word=docx
-  python scripts/build_docs.py --md <报告.md> --formats docx --out-dir D:/reports
 
-参数：
-  --md            输入 Markdown 报告路径（必需）
-  --formats       逗号分隔：pdf / html / docx(或 word) / all；默认 all
-  --out-dir       输出目录（默认与 --md 同目录）
-  --title         封面主题（默认取文件名去扩展名）
-  --date          产出日期 YYYY-MM-DD（默认今天）
-  --brand         封面打印品牌署名行（含联系方式）；默认不打印
-  --yes           透传给子脚本：跳过依赖安装确认（非交互环境用）
 
-退出码（沿用 _friendly_error 语义）：
-  0  全部成功
-  1  内部错误 / 参数不合法
-  2  输入错误（md 不存在 / 格式名不认识）
-  3  权限 / 设备异常
-  10 部分格式失败（至少一份成功）
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 from __future__ import annotations
 
 import argparse
@@ -45,11 +45,11 @@ import sys
 from datetime import date
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import _friendly_error as _fe  # noqa: E402
+import _friendly_error as _fe  
 
 SKILL_NAME = "短视频爆款8维拆解与二创"
 
-# 格式别名 → (规范名, 子脚本, 扩展名, 依赖说明)
+
 FORMATS = {
     "pdf": ("pdf", "build_pdf.py", ".pdf", "reportlab"),
     "html": ("html", "build_html.py", ".html", "零依赖"),
@@ -57,7 +57,7 @@ FORMATS = {
     "word": ("docx", "build_docx.py", ".docx", "python-docx"),
 }
 
-# 场景选型建议（供 agent 转述给用户，来源：SKILL.md 步骤 9.5 场景选型速查表）
+
 SCENE_HINT = {
     "pdf": "存档 / 打印 / 对外转发（不可编辑）",
     "docx": "资料库入库 / 多人协作编辑 / 二次排版（可编辑，协作首选）",
@@ -66,7 +66,7 @@ SCENE_HINT = {
 
 
 def parse_formats(raw: str) -> list[str]:
-    """解析 --formats，返回规范名列表（去重、保序）。"""
+
     if not raw:
         raise ValueError("没有指定任何格式")
     raw = raw.strip().lower()
@@ -90,15 +90,15 @@ def parse_formats(raw: str) -> list[str]:
 
 def build_one(md_path: str, fmt: str, out_path: str, title: str,
               date_str: str, brand: bool, yes: bool) -> tuple[bool, str]:
-    """生成单份文档，返回 (是否成功, 说明)。"""
+
     _, script, _ext, dep = FORMATS[fmt]
     script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), script)
     cmd = [sys.executable, script_path, "--md", md_path, "--out", out_path,
            "--title", title, "--date", date_str]
     if brand:
         cmd.append("--brand")
-    # --yes 是「跳过依赖安装确认」开关，只对需要装依赖的子脚本透传。
-    # build_html.py 纯标准库零依赖，不认该参数，透传会直接 argparse 报错退出（v2.23 修复）。
+    
+    
     if yes and dep != "零依赖":
         cmd.append("--yes")
     try:
@@ -108,7 +108,7 @@ def build_one(md_path: str, fmt: str, out_path: str, title: str,
     if proc.returncode == 0:
         size = os.path.getsize(out_path) if os.path.exists(out_path) else 0
         return True, "%.1f KB" % (size / 1024)
-    # 子脚本失败：把它的 stderr（已是友好化文案）透出来
+    
     detail = (proc.stderr or proc.stdout or "").strip()
     if not detail:
         detail = "子脚本 %s 退出码 %d" % (script, proc.returncode)
@@ -211,7 +211,7 @@ def main() -> int:
 
 
 def _check_isolated_venv():
-    """拒绝在系统 Python 中执行，强制要求隔离 venv。"""
+
     if sys.prefix == sys.base_prefix:
         sys.stderr.write(
             "⛔ 必须在隔离 venv 内运行（拒绝系统 Python）。\n"

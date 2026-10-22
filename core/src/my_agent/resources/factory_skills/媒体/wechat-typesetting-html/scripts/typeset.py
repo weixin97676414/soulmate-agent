@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""WeChat Editorial Studio: standalone Markdown/HTML -> WeChat-friendly HTML."""
+
 from __future__ import annotations
 
 import argparse
@@ -30,7 +30,7 @@ def esc(value: Any) -> str:
 
 
 def normalize_inline(text: str, theme: dict) -> str:
-    # Protect inline code and images/links before simple emphasis transforms.
+    
     stash: list[str] = []
 
     def hold(raw: str) -> str:
@@ -42,7 +42,7 @@ def normalize_inline(text: str, theme: dict) -> str:
     s = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", lambda m: hold(render_link(m.group(1), m.group(2), theme)), s)
     s = re.sub(r"`([^`]+)`", lambda m: hold(f'<code class="wx-inline-code">{esc(m.group(1))}</code>'), s)
     s = esc(s)
-    # Emphasis after escaping; placeholders survive.
+    
     s = re.sub(r"\*\*(.+?)\*\*", rf'<strong style="font-weight:700;color:{theme["text"]}">\1</strong>', s)
     s = re.sub(r"__(.+?)__", rf'<strong style="font-weight:700;color:{theme["text"]}">\1</strong>', s)
     s = re.sub(r"~~(.+?)~~", r"<del>\1</del>", s)
@@ -102,7 +102,7 @@ def classify_theme(text: str) -> str:
     }
     for theme, words in groups.items():
         scores[theme] = sum(s.count(w.lower()) for w in words)
-    # Long-form analysis gets editorial if no specialized intent wins.
+    
     if len(text) > 5000:
         scores["editorial-ink"] += 3
     return max(scores, key=scores.get)
@@ -298,7 +298,7 @@ def render_blocks(lines: list[str], theme: dict) -> str:
         if re.match(r"^!\[[^\]]*\]\([^)]+\)$", line.strip()):
             flush_paragraph(); out.append(f'<section class="wx-figure">{normalize_inline(line.strip(), theme)}</section>'); i += 1; continue
 
-        # Short italic line after image -> likely caption. Keep as caption rather than generic paragraph.
+        
         if re.match(r"^\*[^*\n]+\*$", line.strip()) and out and 'class="wx-figure"' in out[-1]:
             caption = line.strip()[1:-1].strip()
             out.append(f'<p class="wx-caption">{esc(caption)}</p>'); i += 1; continue
@@ -345,8 +345,8 @@ def wrap_html(body: str, theme_id: str, title: str, preview: bool = False) -> st
     """
     if preview:
         return f'<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{esc(title or "微信文章预览")}</title><style>{css}</style></head><body><main class="wx-shell">{body}</main></body></html>'
-    # Inline styles are intentionally approximated by style attributes in a second pass for common elements.
-    # WeChat preserves inline styles more consistently than a <style> block when pasted.
+    
+    
     inline = body
     inline = inline.replace('class="wx-p"', f'style="margin:0 0 {paragraph_gap};line-height:{line_height};color:{theme["text"]};font-size:{body_size}"')
     inline = inline.replace('class="wx-kicker"', f'style="font-size:14px;color:{theme["accent"]};font-weight:700;margin:0 0 16px"')
@@ -477,7 +477,7 @@ def main() -> int:
     if theme_id not in THEMES:
         print(f"错误：未知主题 {theme_id}。请使用 --list-themes 查看。", file=sys.stderr); return 2
 
-    # Safe mode never invents containers; semantic containers are already explicit in source.
+    
     global CURRENT_THEME
     CURRENT_THEME = THEMES[theme_id]
     body = render_blocks(raw_with_assets.splitlines(), CURRENT_THEME)

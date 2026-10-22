@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""
-PE Compliance Data Processing Script
 
-This script provides data processing functions for the PECompliance skill,
-including document parsing, deadline calculation, and risk assessment.
 
-Requirements:
-    pip install pdfplumber openpyxl python-docx pandas numpy
-"""
+
+
+
+
+
+
+
 
 import sys
 import os
@@ -19,7 +19,7 @@ from typing import Dict, List, Optional, Any, Tuple
 import argparse
 
 try:
-    import pymupdf  # 极速PDF提取
+    import pymupdf  
     PY_MUPDF_SUPPORT = True
 except ImportError:
     PY_MUPDF_SUPPORT = False
@@ -55,7 +55,7 @@ except ImportError:
 
 
 class PEComplianceProcessor:
-    """Main processor for PE compliance data"""
+
 
     def __init__(self, jurisdiction: str = "US", fund_type: str = "Buyout"):
         self.jurisdiction = jurisdiction.upper()
@@ -63,7 +63,7 @@ class PEComplianceProcessor:
         self.regulatory_frameworks = self._load_frameworks()
 
     def _load_frameworks(self) -> Dict[str, Any]:
-        """Load regulatory frameworks based on jurisdiction and fund type"""
+
         frameworks = {
             "US": {
                 "SEC": {
@@ -125,11 +125,11 @@ class PEComplianceProcessor:
             }
         }
 
-        # Return frameworks for the selected jurisdiction
+        
         return frameworks.get(self.jurisdiction, frameworks["US"])
 
     def parse_document(self, file_path: str) -> Dict[str, Any]:
-        """Parse document and extract compliance-relevant information"""
+
         path = Path(file_path)
         if not path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
@@ -144,7 +144,7 @@ class PEComplianceProcessor:
             "entities_found": []
         }
 
-        # Extract text based on file type
+        
         if path.suffix.lower() == '.pdf' and (PY_MUPDF_SUPPORT or PDF_PLUMBER_SUPPORT):
             extracted_data["extracted_text"] = self._extract_from_pdf(file_path)
         elif path.suffix.lower() == '.docx' and DOCX_SUPPORT:
@@ -157,7 +157,7 @@ class PEComplianceProcessor:
             print(f"Unsupported file type: {path.suffix}")
             return extracted_data
 
-        # Analyze extracted text
+        
         extracted_data["compliance_keywords"] = self._find_compliance_keywords(
             extracted_data["extracted_text"]
         )
@@ -167,10 +167,10 @@ class PEComplianceProcessor:
         return extracted_data
 
     def _extract_from_pdf(self, file_path: str) -> str:
-        """Extract text from PDF file using pymupdf (fast) or pdfplumber"""
+
         text = ""
 
-        # 优先使用 pymupdf (极速提取)
+        
         if PY_MUPDF_SUPPORT:
             try:
                 import pymupdf
@@ -185,7 +185,7 @@ class PEComplianceProcessor:
             except Exception as e:
                 print(f"Warning: pymupdf extraction failed, falling back to pdfplumber: {e}")
 
-        # 回退到 pdfplumber
+        
         if PDF_PLUMBER_SUPPORT:
             try:
                 with pdfplumber.open(file_path) as pdf:
@@ -199,7 +199,7 @@ class PEComplianceProcessor:
         return text
 
     def _extract_from_docx(self, file_path: str) -> str:
-        """Extract text from Word document"""
+
         text = ""
         try:
             doc = docx.Document(file_path)
@@ -210,7 +210,7 @@ class PEComplianceProcessor:
         return text
 
     def _extract_from_excel(self, file_path: str) -> str:
-        """Extract text from Excel file"""
+
         text = ""
         try:
             wb = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
@@ -225,7 +225,7 @@ class PEComplianceProcessor:
         return text
 
     def _extract_from_txt(self, file_path: str) -> str:
-        """Extract text from plain text file"""
+
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 return f.read()
@@ -234,7 +234,7 @@ class PEComplianceProcessor:
             return ""
 
     def _find_compliance_keywords(self, text: str) -> List[str]:
-        """Find compliance-related keywords in text"""
+
         keywords = [
             "compliance", "regulation", "SEC", "AIFMD", "AML", "KYC", "FATCA",
             "CRS", "ESG", "risk", "governance", "audit", "reporting", "disclosure",
@@ -250,10 +250,10 @@ class PEComplianceProcessor:
         return found
 
     def _find_dates(self, text: str) -> List[str]:
-        """Find dates in text (simple regex)"""
+
         date_patterns = [
-            r'\d{1,2}[/-]\d{1,2}[/-]\d{2,4}',  # MM/DD/YYYY or DD/MM/YYYY
-            r'\d{4}[/-]\d{1,2}[/-]\d{1,2}',    # YYYY/MM/DD
+            r'\d{1,2}[/-]\d{1,2}[/-]\d{2,4}',  
+            r'\d{4}[/-]\d{1,2}[/-]\d{1,2}',    
             r'(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{1,2},? \d{4}'
         ]
 
@@ -265,13 +265,13 @@ class PEComplianceProcessor:
         return dates
 
     def _find_entities(self, text: str) -> List[str]:
-        """Find potential entity names (simple heuristic)"""
-        # Look for capitalized phrases
+
+        
         entity_pattern = r'[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+'
         return re.findall(entity_pattern, text)
 
     def calculate_deadlines(self, start_date: str = None) -> Dict[str, str]:
-        """Calculate compliance deadlines based on jurisdiction"""
+
         if start_date is None:
             start_date = datetime.date.today().isoformat()
 
@@ -283,27 +283,27 @@ class PEComplianceProcessor:
         deadlines = {}
 
         if self.jurisdiction == "US":
-            # SEC Form ADV annual filing (March 31)
+            
             adv_deadline = datetime.date(start.year, 3, 31)
             if start > adv_deadline:
                 adv_deadline = datetime.date(start.year + 1, 3, 31)
             deadlines["Form ADV Annual"] = adv_deadline.isoformat()
 
-            # Form PF quarterly (end of quarter + 60 days)
-            # Simplified calculation
+            
+            
             quarter_month = ((start.month - 1) // 3) * 3 + 1
             quarter_end = datetime.date(start.year, quarter_month + 2, 30)
             pf_deadline = quarter_end + datetime.timedelta(days=60)
             deadlines["Form PF Quarterly"] = pf_deadline.isoformat()
 
         elif self.jurisdiction == "EU":
-            # AIFMD Annex IV annual (April 30)
+            
             annexiv_deadline = datetime.date(start.year, 4, 30)
             if start > annexiv_deadline:
                 annexiv_deadline = datetime.date(start.year + 1, 4, 30)
             deadlines["AIFMD Annex IV Annual"] = annexiv_deadline.isoformat()
 
-            # AIFMD Annex IV semi-annual (October 31)
+            
             annexiv_semi = datetime.date(start.year, 10, 31)
             if start > annexiv_semi:
                 annexiv_semi = datetime.date(start.year + 1, 10, 31)
@@ -312,30 +312,30 @@ class PEComplianceProcessor:
         return deadlines
 
     def assess_risk(self, extracted_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Assess compliance risk based on extracted data"""
+
         risk_score = 0
         max_score = 100
         findings = []
 
-        # Check for compliance keywords
+        
         keywords_found = extracted_data.get("compliance_keywords", [])
         if len(keywords_found) < 3:
             risk_score += 20
             findings.append("Limited compliance terminology found in documents")
 
-        # Check for dates
+        
         dates_found = extracted_data.get("dates_found", [])
         if len(dates_found) == 0:
             risk_score += 15
             findings.append("No specific dates found for compliance deadlines")
 
-        # Check document completeness
+        
         text_length = len(extracted_data.get("extracted_text", ""))
         if text_length < 1000:
             risk_score += 10
             findings.append("Document appears brief; may lack detailed compliance information")
 
-        # Calculate risk level
+        
         risk_level = "Low"
         if risk_score > 50:
             risk_level = "High"
@@ -355,7 +355,7 @@ class PEComplianceProcessor:
         }
 
     def generate_checklist(self) -> List[Dict[str, Any]]:
-        """Generate compliance checklist based on jurisdiction and fund type"""
+
         checklist = []
 
         for framework, details in self.regulatory_frameworks.items():
@@ -372,7 +372,7 @@ class PEComplianceProcessor:
         return checklist
 
     def build_compliance_prompt(self, extracted_text: str, file_name: str = "") -> str:
-        """构建包含最新监管条例检索要求的提示词"""
+
         base_prompt = f"""你是一名拥有15年经验的顶尖私募股权（PE/VC）基金法务与合规总监。
 
 ## 审查文本
@@ -416,7 +416,7 @@ class PEComplianceProcessor:
         return base_prompt
 
     def generate_word_report(self, analysis_results: Dict[str, Any], output_path: str = None) -> str:
-        """生成带层级标题的Word文档报告"""
+
         if not DOCX_SUPPORT:
             print("Error: python-docx not installed. Cannot generate Word report.")
             return ""
@@ -427,21 +427,21 @@ class PEComplianceProcessor:
             from docx.enum.text import WD_ALIGN_PARAGRAPH
             from docx.enum.style import WD_STYLE_TYPE
 
-            # 创建文档
+            
             doc = Document()
 
-            # 添加标题
+            
             title = doc.add_heading('私募基金合规审查报告', 0)
             title.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-            # 添加报告信息
+            
             doc.add_paragraph(f"生成时间：{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             doc.add_paragraph(f"审查文件：{analysis_results.get('file_name', 'N/A')}")
             doc.add_paragraph(f"文件类型：{analysis_results.get('file_type', 'N/A')}")
             doc.add_paragraph(f"文件大小：{analysis_results.get('file_size', 0)} bytes")
             doc.add_paragraph("")
 
-            # 1. 合规健康度概览
+            
             doc.add_heading('【1】合规健康度概览', level=1)
             risk_level = analysis_results.get('risk_assessment', {}).get('risk_level', '未知')
             risk_score = analysis_results.get('risk_assessment', {}).get('risk_score', 0)
@@ -450,7 +450,7 @@ class PEComplianceProcessor:
             p.add_run(f"总体合规风险等级：").bold = True
             p.add_run(f" {risk_level}（风险分数：{risk_score}/100）")
 
-            # 致命否决项
+            
             doc.add_heading('最致命"否决项"', level=2)
             findings = analysis_results.get('risk_assessment', {}).get('findings', [])
             if findings:
@@ -459,7 +459,7 @@ class PEComplianceProcessor:
             else:
                 doc.add_paragraph("未发现致命否决项")
 
-            # 2. 红线违规预警
+            
             doc.add_heading('【2】红线违规预警（重大风险）', level=1)
             keywords = analysis_results.get('compliance_keywords', [])
             if keywords:
@@ -469,14 +469,14 @@ class PEComplianceProcessor:
             else:
                 doc.add_paragraph("未检测到明显的合规关键词")
 
-            # 日期发现
+            
             dates = analysis_results.get('dates_found', [])
             if dates:
                 doc.add_paragraph("文档中发现以下关键日期：")
-                for date in dates[:10]:  # 最多显示10个日期
+                for date in dates[:10]:  
                     doc.add_paragraph(f"• {date}", style='ListBullet')
 
-            # 3. 操作风险排查明细（8大模块）
+            
             doc.add_heading('【3】操作风险排查明细（基于8大模块）', level=1)
             modules = [
                 "1. 登记备案模块",
@@ -495,7 +495,7 @@ class PEComplianceProcessor:
                 doc.add_paragraph("风险等级：待评估")
                 doc.add_paragraph("")
 
-            # 4. 合规整改与商业博弈建议
+            
             doc.add_heading('【4】合规整改与商业博弈建议', level=1)
             recommendations = analysis_results.get('risk_assessment', {}).get('recommendations', [])
             if recommendations:
@@ -505,7 +505,7 @@ class PEComplianceProcessor:
             else:
                 doc.add_paragraph("请结合具体文档内容提供定制化建议")
 
-            # 添加监管依据
+            
             doc.add_heading('监管依据', level=2)
             regulations = [
                 "《私募投资基金监督管理条例》",
@@ -517,7 +517,7 @@ class PEComplianceProcessor:
             for reg in regulations:
                 doc.add_paragraph(f"• {reg}", style='ListBullet')
 
-            # 保存文档
+            
             if output_path is None:
                 desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
                 output_path = os.path.join(desktop, '私募合规报告.docx')
@@ -531,7 +531,7 @@ class PEComplianceProcessor:
 
 
 def main():
-    """Command-line interface for the PE Compliance processor"""
+
     parser = argparse.ArgumentParser(description="PE Compliance Data Processor")
     parser.add_argument("--file", type=str, help="Path to document for analysis")
     parser.add_argument("--jurisdiction", type=str, default="US",
@@ -554,7 +554,7 @@ def main():
 
     args = parser.parse_args()
 
-    # Initialize processor
+    
     processor = PEComplianceProcessor(
         jurisdiction=args.jurisdiction,
         fund_type=args.fund_type
@@ -562,7 +562,7 @@ def main():
 
     results = {}
 
-    # Process file if provided
+    
     if args.file:
         print(f"Analyzing document: {args.file}")
         extracted_data = processor.parse_document(args.file)
@@ -572,9 +572,9 @@ def main():
             risk_assessment = processor.assess_risk(extracted_data)
             results["risk_assessment"] = risk_assessment
 
-        # 构建综合分析结果用于Word报告
+        
         if args.word_report:
-            # 确保有风险评估结果
+            
             if args.risk:
                 assessment = risk_assessment
             else:
@@ -591,24 +591,24 @@ def main():
                 print(f"Word报告已生成：{report_path}")
                 results["word_report_path"] = report_path
 
-            # 构建合规审查提示词
+            
             prompt = processor.build_compliance_prompt(
                 extracted_data.get("extracted_text", ""),
                 extracted_data.get("file_name", "")
             )
             results["compliance_prompt"] = prompt[:1000] + "..." if len(prompt) > 1000 else prompt
 
-    # Generate checklist if requested
+    
     if args.checklist:
         checklist = processor.generate_checklist()
         results["compliance_checklist"] = checklist
 
-    # Calculate deadlines if requested
+    
     if args.deadlines:
         deadlines = processor.calculate_deadlines()
         results["compliance_deadlines"] = deadlines
 
-    # Output results
+    
     if args.output == "json":
         print(json.dumps(results, indent=2, ensure_ascii=False))
     elif args.output == "text":

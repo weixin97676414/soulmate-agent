@@ -7,7 +7,7 @@ import { Button, Field, Input, Modal } from '@/components/ui'
 import { useAppStore } from '@/stores/appStore'
 import type { ProviderPreset } from '@/types'
 
-/** 向导收集到的东西。**真正落库由调用方做**，见组件说明。 */
+
 export interface ModelWizardResult {
   preset: ProviderPreset
   baseUrl: string
@@ -17,21 +17,21 @@ export interface ModelWizardResult {
 
 const STEPS = ['选择服务商', '填密钥、选模型', '测试并保存'] as const
 
-/**
- * 添加服务商的三步向导。
- *
- * ## 为什么只"问"不"存"
- *
- * 落库（模型配置 + 密码）由调用方完成。因为"整份提交要带哪些字段"是**一处**
- * 实现（`ModelSettings` 的 save），向导再写一遍必然会长歪 —— 本项目已经因为
- * 漏字段吃过三次亏（supports_vision、价格三字段、MCP 的 transport）。
- *
- * ## 为什么保留手动输入与高级设置
- *
- * 自动拉取模型列表是"让默认路径最省事"，不是"唯一路径"。部分网关不提供
- * `/models`，或需要额外权限 —— 没有手填兜底的话，用户正好卡在这一步，
- * 而这恰恰是零基础用户最没有能力自救的地方。
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export function ModelWizard({
   open,
   presets,
@@ -55,7 +55,7 @@ export function ModelWizard({
   const [test, setTest] = useState<{ ok: boolean; text: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // 每次打开都重置：上一次填了一半的密钥留在界面上，既让人困惑也不安全
+  
   useEffect(() => {
     if (!open) return
     setStep(0)
@@ -86,8 +86,8 @@ export function ModelWizard({
     setError(null)
     try {
       const result = await api.testModel({
-        // 用草稿 spec 测试：**不需要先保存**才能验连接。
-        // 先存再测会让"填错了"这件事在数据库里留下一条坏配置。
+        
+        
         spec: {
           id: 'wizard-preview',
           name: `${preset.name} · ${modelName}`.trim(),
@@ -182,7 +182,7 @@ export function ModelWizard({
         </div>
       }
     >
-      {/* 步骤指示：让用户知道"还差几步"，而不是面对一个不知道有多长的表单 */}
+      {}
       <div className="mb-4 flex items-center gap-2">
         {STEPS.map((label, index) => (
           <div key={label} className="flex items-center gap-2">
@@ -230,15 +230,15 @@ export function ModelWizard({
                 {item.name}
               </span>
               <span className="w-full truncate text-[11.5px] text-ink-faint">{item.base_url}</span>
-              {/* 跳的是 **`apply_url`（申请页）**，不是 `docs`（文档首页）：
-                  用户卡住的地方是"去哪儿弄一把 Key"（统一口径，
-                  与导航页、模型设置页三处一致）。没有申请页的（自定义服务商）
-                  退回文档首页；两个都没有就**不渲染** —— 不画一个点了没反应的壳。 */}
+              {
+
+
+}
               {item.apply_url || item.docs ? (
                 <span
                   className="flex items-center gap-1 text-[11px] text-brand hover:underline"
                   onClick={(event) => {
-                    // 卡片本身是"选中服务商"，点链接不该顺带选中它
+                    
                     event.stopPropagation()
                     void window.agentBridge?.openExternal(item.apply_url || item.docs)
                   }}
@@ -330,7 +330,7 @@ export function ModelWizard({
             </div>
             <div className="flex justify-between gap-3 py-0.5">
               <span className="text-ink-faint">API Key</span>
-              {/* 只回显末四位：界面不需要为了"确认填了没"而把明文再铺一遍 */}
+              {}
               <span className="text-ink">{apiKey ? `••••${apiKey.slice(-4)}` : '（未填写）'}</span>
             </div>
           </div>

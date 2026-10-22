@@ -1,18 +1,18 @@
-"""剪贴板技能：读文本、读图片、写文本、写图片。
 
-## 为什么这算"桌面端优势能力"
 
-模型自己既看不见剪贴板也写不进去。没有这两个技能时，用户只能听到
-"请你把刚才那段复制一下、再粘到 XX 里" —— 而这恰恰是桌面端最该替用户做的事。
 
-## 权限分级
 
-- 读**文本** safe：不改任何东西；
-- 读**图片** confirm：它会把剪贴板里的图片落成产物文件（剪贴板可能含私密截图，
-  落盘是"改动"）；
-- 写文本 / 写图片 confirm：会覆盖用户当前的剪贴板内容 —— 用户正在复制粘贴的
-  东西被顶掉是很烦的事，所以必须让他点一下。
-"""
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -28,22 +28,22 @@ from ..decorator import skill
 
 logger = logging.getLogger(__name__)
 
-# 剪贴板里可能是一整篇文档；这里只做**回显长度**的上报，不截断内容本身
+
 MAX_ECHO_CHARS = 2000
 
 
 def _to_skill_error(exc: windows_api.WindowsApiError) -> SkillExecutionError:
-    """系统能力失败 → 技能错误。
 
-    必须转换：技能层抛别的异常类型会让整轮对话以一个看不懂的 400 收场，
-    而用户需要看到的是"这台机器不支持调亮度"这种人话。
-    """
+
+
+
+
     text = exc.message if not exc.detail else f"{exc.message}（{exc.detail}）"
     return SkillExecutionError(text)
 
 
 class ClipboardReadTextParams(BaseModel):
-    """读剪贴板文本不需要参数 —— 保留空模型是为了让装饰器能生成 schema。"""
+    pass
 
 
 @skill(
@@ -69,7 +69,7 @@ class ClipboardReadTextSkill(BaseSkill):
 
         if not text:
             return {"text": "", "length": 0, "message": "剪贴板里没有文本内容。"}
-        # 日志只记长度：剪贴板里可能是密码、验证码、私聊内容
+        
         logger.info("读取剪贴板文本（%s 字符）", len(text))
         return {
             "text": text,

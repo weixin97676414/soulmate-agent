@@ -1,16 +1,16 @@
-"""群聊里的确认通道。
 
-用户报的问题是「群聊中的 buddy 使用技能时需要确认，无法弹出确认弹窗，
-导致任务无法进行」。根因是构造群成员 Agent 时**没有注入确认通道**，
-于是 confirm 级技能必然走到 `permission.py` 的"没有可用的确认通道"分支被拒。
 
-这组用例守四件事（顺序就是它们出错的代价，从高到低）：
 
-1. 群讨论里 confirm 级技能**真的能弹窗**，批准后讨论继续（核心诉求）；
-2. 群级「一律批准」打开后不再弹窗 —— 但它**只放行 confirm 级**，admin 级仍要确认；
-3. 群级设置（思考强度 / 权限策略）覆盖成员各自的设置；
-4. 讨论被叫停时不留悬挂确认（否则用户再触发同一操作会撞上"已有一项待确认"）。
-"""
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -26,11 +26,11 @@ from .conftest import event_collector, install_fake_model, wait_for
 
 
 def register_probe_skill(runtime, calls: list[str], *, name: str = "write_note") -> None:
-    """注册一个 confirm 级技能，执行时往 ``calls`` 里记一笔。
 
-    用它而不是断言回复文本：**要证明的是"这个技能真的被执行了"**，
-    而模型的措辞每次都可能不一样，拿措辞当断言等于给自己埋一个偶尔才红的用例。
-    """
+
+
+
+
     from my_agent.skill.base import BaseSkill
     from my_agent.skill.decorator import skill as skill_decorator
 
@@ -41,7 +41,7 @@ def register_probe_skill(runtime, calls: list[str], *, name: str = "write_note")
         permission_level="confirm",
     )
     class _Probe(BaseSkill):
-        async def run(self, ctx, **params):  # type: ignore[no-untyped-def]
+        async def run(self, ctx, **params):  
             calls.append(name)
             return "写入成功"
 
@@ -58,7 +58,7 @@ async def _create_group(client, *, name: str = "确认测试群") -> dict:
 
 
 async def _consume_discuss(client, group_id: str, topic: str) -> list[tuple[str, dict]]:
-    """在后台消费一次群讨论的 SSE 流。"""
+
     events: list[tuple[str, dict]] = []
     async with client.stream(
         "POST", f"/v1/groups/{group_id}/discuss", json={"topic": topic}
@@ -74,7 +74,7 @@ async def _consume_discuss(client, group_id: str, topic: str) -> list[tuple[str,
 
 
 async def test_group_discuss_asks_for_confirmation_and_continues(runtime, client):
-    """群讨论里 confirm 级技能：弹窗 → 批准 → 讨论继续。"""
+
     calls: list[str] = []
     register_probe_skill(runtime, calls)
     llm = FakeLLM(
@@ -101,7 +101,7 @@ async def test_group_discuss_asks_for_confirmation_and_continues(runtime, client
         assert asked, f"群聊里没有弹出确认请求，收到的事件：{[n for n, _ in events]}"
 
         data = next(payload for name, payload in events if name == "permission_request")
-        # 确认框必须说清"是谁要做什么"：只有技能名的话，用户在群聊里会一头雾水
+        
         assert data["skill_name"] == "write_note"
         assert data["group_id"] == group["id"]
         assert data["assistant_id"] == "soulmate"
@@ -117,11 +117,11 @@ async def test_group_discuss_asks_for_confirmation_and_continues(runtime, client
 
 
 async def test_group_discuss_denied_keeps_going(runtime, client):
-    """拒绝之后讨论**不能崩**。
 
-    技能会被记成"用户拒绝"，模型据此换个说法继续 —— 用户点「拒绝」的意图是
-    "别做这件事"，而不是"把这场讨论废掉"。
-    """
+
+
+
+
     calls: list[str] = []
     register_probe_skill(runtime, calls, name="write_note")
     llm = FakeLLM(
@@ -155,7 +155,7 @@ async def test_group_discuss_denied_keeps_going(runtime, client):
 
 
 async def test_group_auto_approve_skips_the_dialog(runtime, client):
-    """群级「一律批准」：不再弹窗，直接执行。"""
+
     calls: list[str] = []
     register_probe_skill(runtime, calls)
     llm = FakeLLM(
@@ -187,11 +187,11 @@ async def test_group_auto_approve_skips_the_dialog(runtime, client):
 
 
 async def test_group_confirm_does_not_bypass_admin_level(runtime, client):
-    """**群级开关不是高危后门**：admin 级操作即使开了「一律批准」也必须确认。
 
-    这条是安全边界，不是体验问题：`permission.py` 只在 confirm 级放行
-    auto_approve，这里从群聊侧再钉一遍。
-    """
+
+
+
+
     calls: list[str] = []
 
     from my_agent.skill.base import BaseSkill
@@ -204,7 +204,7 @@ async def test_group_confirm_does_not_bypass_admin_level(runtime, client):
         permission_level="admin",
     )
     class _Danger(BaseSkill):
-        async def run(self, ctx, **params):  # type: ignore[no-untyped-def]
+        async def run(self, ctx, **params):  
             calls.append("danger_delete")
             return "已删除"
 
@@ -234,52 +234,52 @@ async def test_group_confirm_does_not_bypass_admin_level(runtime, client):
     )
 
 
-def test_group_level_settings_override_members(runtime):
-    """群级思考强度 / 权限策略覆盖成员各自的设置。"""
-    # 构造 Agent 需要能取到模型；这两个用例不跑对话，给个空剧本即可
+async def test_group_level_settings_override_members(runtime):
+
+    
     install_fake_model(runtime, FakeLLM([]))
     group = make_group("覆盖测试群")
     member = runtime.assistants.get("soulmate")
     assert member is not None
 
-    # 成员自己设了高，但群级设了低 → 群优先
+    
     member = member.model_copy(update={"reasoning_effort": "high"})
     scoped = group.model_copy(update={"reasoning_effort": "low"})
 
-    agent = _build_group_agent(runtime, scoped, member, history=[])
+    agent = await _build_group_agent(runtime, scoped, member, history=[], thread_id="t")
     assert agent.config.reasoning_effort == "low"
 
-    # 群级**显式**留空 → 回落到成员自己的设置。
-    #
-    # ⚠️ 必须显式传 `None`：出厂默认已经从 `None` 改成了 `"medium"`
-    # （"每次创建的新群与新对话，思考强度默认为中"），
-    # 所以 `make_group` 造出来的那个群**有值**，不会回落。
-    # `None` 仍然合法 —— 界面上选「跟随每个搭子」就是它，只是不再是默认。
+    
+    
+    
+    
+    
+    
     cleared = group.model_copy(update={"reasoning_effort": None})
-    fallback = _build_group_agent(runtime, cleared, member, history=[])
+    fallback = await _build_group_agent(runtime, cleared, member, history=[], thread_id="t")
     assert fallback.config.reasoning_effort == "high"
 
 
-def test_group_agent_has_confirm_channel(runtime):
-    """群成员 Agent 必须带确认通道（这正是本次修的那个 bug）。"""
+async def test_group_agent_has_confirm_channel(runtime):
+
     install_fake_model(runtime, FakeLLM([]))
     group = make_group("通道测试群")
     member = runtime.assistants.get("soulmate")
     assert member is not None
 
-    agent = _build_group_agent(runtime, group, member, history=[])
+    agent = await _build_group_agent(runtime, group, member, history=[], thread_id="t")
     assert agent.ctx.has_confirm_channel is True
 
     scoped = group.model_copy(update={"confirm_mode": "auto_approve"})
-    scoped_agent = _build_group_agent(runtime, scoped, member, history=[])
-    # 群级策略覆盖成员自己的（soulmate 默认交互式）。
-    # ⚠️ `ctx.confirm_mode` 现在是**惰性提供者**（任务跑到一半改策略要立刻生效，
-    # 见 PermissionGuard.effective_mode），所以这里断言"实际生效值"而不是那个字段。
+    scoped_agent = await _build_group_agent(runtime, scoped, member, history=[], thread_id="t")
+    
+    
+    
     assert runtime.skills.guard.effective_mode(scoped_agent.ctx) == "auto_approve"
 
 
 async def test_group_patch_supports_partial_updates(client):
-    """PATCH 是局部更新：只改传进来的字段，且空串 = 清回默认。"""
+
     group = await _create_group(client, name="补丁群")
 
     first = await client.patch(
@@ -289,7 +289,7 @@ async def test_group_patch_supports_partial_updates(client):
     assert first.status_code == 200, first.text
     assert first.json()["reasoning_effort"] == "high"
     assert first.json()["confirm_mode"] == "auto_approve"
-    # 名字没提就不该动
+    
     assert first.json()["name"] == "补丁群"
 
     second = await client.patch(
@@ -303,11 +303,11 @@ async def test_group_patch_supports_partial_updates(client):
 
 
 async def test_cancelled_discussion_leaves_no_pending_confirm(runtime, client):
-    """叫停讨论后不能留下悬挂确认。
 
-    留下的后果很具体：用户再触发同一个操作会撞上"已经有一项待确认"，
-    而界面上完全看不出为什么没反应 —— 只能等满确认超时。
-    """
+
+
+
+
     calls: list[str] = []
     register_probe_skill(runtime, calls)
     llm = FakeLLM(
@@ -332,7 +332,7 @@ async def test_cancelled_discussion_leaves_no_pending_confirm(runtime, client):
                 lambda: any(name == "permission_request" for name, _ in events), timeout=10
             )
             assert runtime.pending_confirms, "此刻应当有一个等待中的确认"
-            # 用户点「停止」＝前端断开连接，服务端生成器随即被取消
+            
             await resp.aclose()
 
         assert await wait_for(lambda: not runtime.pending_confirms, timeout=10), (
@@ -343,44 +343,44 @@ async def test_cancelled_discussion_leaves_no_pending_confirm(runtime, client):
 
 
 def make_group(name: str) -> GroupProfile:
-    """造一个群对象（不落盘）。
 
-    只关心"Agent 是怎么构造出来的"那几个用例不需要走 HTTP 建群：
-    建群会顺带触发配置落盘，而这里要验的是取参数的优先级。
-    """
+
+
+
+
     return GroupProfile(id="g-test", name=name, member_assistant_ids=["soulmate", "LoveBuddy"])
 
 
-# --------------------------------------------------------------------------- #
-# 群设置与单聊设置**不能互相串**（特别强调）
-# --------------------------------------------------------------------------- #
+
+
+
 async def test_群权限设置不会影响单聊(runtime, client):
-    """⚠️ 这条守的是一个**必须一直成立的边界**：
 
-    "单聊的权限设置是管每个搭子在单聊中权限的；群聊的权限设置是管群里每个搭子
-    在群聊当中权限的，千万不能搞混。"
 
-    实现上它们读的是**两个不同的字段**（见下面两条断言各自的来源），但这条路径
-    太容易被"顺手统一一下"改坏 —— 比如有人觉得"群和单聊应该共用一份权限策略"，
-    把群级设置写进搭子档案。那样用户改一个群，单聊里的行为会跟着变，
-    而这两个页面看起来毫无关系，他永远查不出是哪里动的手。
 
-    判据是"群改过之后，单聊那条链的取值**一点没变**"，而不是某个具体值：
-    `assistant_confirm_mode` 在搭子没设时返回 `None`（= 沿用全局，那条回落由
-    `PermissionGuard.effective_mode` 做），所以断言 `None`/`interactive` 都不对 ——
-    真正要钉的是"它不受群影响"。
-    """
+
+
+
+
+
+
+
+
+
+
+
+
     before = runtime.assistant_confirm_mode("soulmate")
 
     group = await _create_group(client, name="权限隔离测试群")
-    # 群级设成自动批准
+    
     patched = await client.patch(
         f"/v1/groups/{group['id']}", json={"confirm_mode": "auto_approve"}
     )
     assert patched.status_code == 200, patched.text
     assert patched.json()["confirm_mode"] == "auto_approve"
 
-    # 单聊侧：读的是**搭子档案 → 全局**这条链，与刚才那个群毫无关系
+    
     after = runtime.assistant_confirm_mode("soulmate")
     assert after == before, (
         "群级权限设置泄漏到单聊了 —— 单聊读的应当是搭子档案 / 全局，不能读群"
@@ -389,16 +389,16 @@ async def test_群权限设置不会影响单聊(runtime, client):
 
 
 async def test_群思考强度默认是中(runtime, client):
-    """新建的群默认「中」，不是"跟随每个搭子"。
 
-    为什么值得钉住：`None` = "跟随每个成员自己的设置"，而群成员常常各有各的档位
-    （甚至有的没设）—— 新群第一次讨论会想多久，用户完全预料不到。而"思考强度"
-    恰恰是他为了**这一次讨论**才去调的东西，得先有个确定的起点。
-    """
+
+
+
+
+
     group = await _create_group(client, name="思考强度默认值测试群")
     assert group["reasoning_effort"] == "medium"
 
-    # `None` 仍然合法（界面上选"跟随每个搭子"就是它），只是**不再是出厂值**
+    
     cleared = await client.patch(
         f"/v1/groups/{group['id']}", json={"reasoning_effort": ""}
     )

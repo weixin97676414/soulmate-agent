@@ -7,11 +7,11 @@ import {
 	useVideoConfig,
 } from 'remotion';
 
-/*
- * Highlight a word in a sentence with a spring-animated wipe effect.
- */
 
-// Ideal composition size: 1280x720
+
+
+
+
 
 const COLOR_BG = '#ffffff';
 const COLOR_TEXT = '#000000';

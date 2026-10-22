@@ -1,9 +1,9 @@
-"""生活类数据仓储：记账与提醒。
 
-这两块数据的共同点是「量小、结构简单、纯本地」，因此直接放 SQLite，
-不引入额外存储。记账的分类用一个关键词表做启发式推断——模型往往只给出
-「中午吃饭 35 元」这样的口语描述，让用户每次都手动选分类不现实。
-"""
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -17,9 +17,9 @@ from .db import Database
 
 logger = logging.getLogger(__name__)
 
-# --------------------------------------------------------------------------- #
-# 分类推断
-# --------------------------------------------------------------------------- #
+
+
+
 EXPENSE_CATEGORIES = [
     "餐饮",
     "交通",
@@ -55,19 +55,19 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
     "通讯": ("话费", "流量", "充值", "电话费", "手机费"),
 }
 
-# 平局时的优先级：越具体的分类排在越前面。
-# 例如「买药」同时命中「买」（购物）与「药」（医疗），显然应归为医疗；
-# 「买书」同理应归为教育。没有这张表就只能靠字典序，结果会随分类名而变化。
+
+
+
 CATEGORY_PRIORITY = ["医疗", "教育", "居住", "交通", "通讯", "人情", "娱乐", "餐饮", "其他", "购物"]
 _PRIORITY_INDEX = {name: index for index, name in enumerate(CATEGORY_PRIORITY)}
 
 
 def guess_category(text: str) -> str:
-    """按关键词猜分类，猜不到归入「其他」。
 
-    打分规则：同一分类命中的关键词**长度之和**（越长越具体、越可信）；
-    分数相同则按 ``CATEGORY_PRIORITY`` 决定，保证结果稳定可预测。
-    """
+
+
+
+
     haystack = (text or "").lower()
     if not haystack:
         return "其他"
@@ -83,11 +83,11 @@ def guess_category(text: str) -> str:
     return min(scores, key=lambda name: (-scores[name], _PRIORITY_INDEX.get(name, 99)))
 
 
-# --------------------------------------------------------------------------- #
-# 周期解析
-# --------------------------------------------------------------------------- #
+
+
+
 def period_range(period: str, *, today: date | None = None) -> tuple[str, str] | None:
-    """把周期名解析成 ``(start_date, end_date)``（含两端），``all`` 返回 None。"""
+
     base = today or date.today()
     normalized = (period or "month").strip().lower()
 
@@ -122,9 +122,9 @@ def period_range(period: str, *, today: date | None = None) -> tuple[str, str] |
     )
 
 
-# --------------------------------------------------------------------------- #
-# 记账
-# --------------------------------------------------------------------------- #
+
+
+
 @dataclass
 class ExpenseRecord:
     id: int
@@ -159,7 +159,7 @@ class ExpenseRepository:
     ) -> ExpenseRecord:
         final_category = (category or "").strip() or guess_category(note)
         final_date = (spent_on or "").strip() or date.today().isoformat()
-        # 统一成 YYYY-MM-DD，模型可能给出 2026/9/17 这类写法
+        
         final_date = _normalize_date(final_date)
 
         new_id = await self._db.insert(
@@ -167,8 +167,8 @@ class ExpenseRepository:
             "VALUES (?, ?, ?, ?, ?)",
             (float(amount), final_category, note or "", final_date, time.time()),
         )
-        # 用刚拿到的 rowid 精确回查，而不是 ``ORDER BY id DESC LIMIT 1`` ——
-        # 后者在并发下会取到别人刚插入的那条（见 Database.insert 的说明）
+        
+        
         row = await self._db.fetch_one("SELECT * FROM expenses WHERE id = ?", (new_id,))
         assert row is not None
         return self._row(row)
@@ -293,14 +293,14 @@ def _normalize_date(value: str) -> str:
         if fmt == "%m-%d":
             parsed = parsed.replace(year=date.today().year)
         return parsed.date().isoformat()
-    # 解析不了就用今天，并在日志里留痕而不是直接抛错打断记账
+    
     logger.warning("无法解析日期 %r，按今天处理", value)
     return date.today().isoformat()
 
 
-# --------------------------------------------------------------------------- #
-# 提醒
-# --------------------------------------------------------------------------- #
+
+
+
 @dataclass
 class ReminderRecord:
     id: int
@@ -376,7 +376,7 @@ class ReminderRepository:
         return [self._row(row) for row in rows]
 
     async def due(self, *, now: float | None = None) -> list[ReminderRecord]:
-        """取出所有到点且尚未触发的提醒。"""
+
         moment = now if now is not None else time.time()
         rows = await self._db.fetch_all(
             "SELECT * FROM reminders WHERE status = 'pending' AND remind_at <= ? ORDER BY remind_at",
@@ -385,12 +385,12 @@ class ReminderRepository:
         return [self._row(row) for row in rows]
 
     async def mark_fired(self, reminder_id: int) -> bool:
-        """标记提醒已触发；返回 False 表示它已被触发过或已取消。
 
-        把「先 SELECT 查状态、再 UPDATE」压成一条带条件 UPDATE：
-        原写法两步之间隔着 await，而调度循环是定时跑的 —— 上一轮还没走完
-        下一轮就进来了，同一条提醒会被触发**两次**，用户收到重复提醒。
-        """
+
+
+
+
+
         affected = await self._db.execute_affected(
             "UPDATE reminders SET status = 'fired', fired_at = ? "
             "WHERE id = ? AND status = 'pending'",
@@ -399,7 +399,7 @@ class ReminderRepository:
         return affected > 0
 
     async def cancel(self, reminder_id: int) -> bool:
-        """取消提醒；返回 False 表示它不存在或已经不在待触发状态。"""
+
         affected = await self._db.execute_affected(
             "UPDATE reminders SET status = 'cancelled' WHERE id = ? AND status = 'pending'",
             (reminder_id,),

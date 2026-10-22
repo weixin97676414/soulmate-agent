@@ -29,12 +29,12 @@ function formatDuration(ms?: number): string {
   return `${(ms / 1000).toFixed(2)} s`
 }
 
-/**
- * 工具调用卡片 —— 本产品与普通聊天客户端最核心的差异点。
- *
- * 折叠时一眼能看到「调用了什么、耗时多久、成功还是失败」；
- * 展开后能看到完整参数与返回结果，让 Agent 的行为完全透明可查。
- */
+
+
+
+
+
+
 export function ToolCallCard({ tool }: { tool: ToolCallState }) {
   const [open, setOpen] = useState(false)
   const meta = STATUS_META[tool.status]
@@ -71,8 +71,8 @@ export function ToolCallCard({ tool }: { tool: ToolCallState }) {
 
         <span className="min-w-0 flex-1" />
 
-        {/* 该次调用的时刻（时间跟工具卡走，正文里不许再出现
-            模型自己写的时间戳）。悬停给完整日期。 */}
+        {
+}
         {tool.startedAt !== undefined ? (
           <span className="shrink-0 text-[11.5px] text-ink-faint" title={`开始于 ${formatClock(tool.startedAt)}`}>
             {formatClock(tool.startedAt)}

@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
-"""登录小红书网页版，保存登录态。
 
-两种登录方式：
 
-    python xhs_login.py                 # App 扫码（默认）
-    python xhs_login.py --mode qr       # App 扫码
-    python xhs_login.py --mode web      # 手机号 + 短信验证码（不用手机 App）
-    python xhs_login.py --check         # 只检查登录态是否有效
-    python xhs_login.py --reset         # 只清除登录态与缓存后退出
 
-**每次登录前都会先清空历史登录态**（`reset_runtime()`）：
-storage_state / cookies / 浏览器缓存 / browser_profile 全部删除，保证是全新会话。
-本技能不提供免登录通道 —— 列表页的 noteId 只有登录态才下发。
 
-`--mode web` 全程在浏览器窗口里完成，不需要掏手机：脚本只负责打开页面并切到
-「手机号登录」标签，手机号与验证码由用户自己输入（敏感信息不经过本脚本）。
 
-登录态写入 .runtime/storage_state.json 与 .runtime/cookies.json，
-后续 xhs_crawl.py 的 persistent / http 通道会自动复用。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 from __future__ import annotations
 
 import argparse
@@ -28,17 +28,17 @@ import time
 
 from xhs_common import BASE, COOKIE_FILE, STATE_FILE, ensure_runtime, log
 
-#: 可能出现在登录面板上的「手机号登录」入口文案
+
 SMS_TAB_TEXTS = ("手机号登录", "手机登录", "短信登录", "验证码登录")
 PHONE_PLACEHOLDERS = ("手机号", "请输入手机号", "输入手机号")
 
 
 def wait_for_login(page, timeout: int = 300, hint: str = "") -> bool:
-    """轮询 cookie，等待 web_session 出现即视为登录成功。
 
-    只认 `web_session`：`a1`、`webId`、`acw_tc` 等是访客 cookie，打开页面就有，
-    若把它们当凭证会导致「还没登录就判定成功」。
-    """
+
+
+
+
     deadline = time.time() + timeout
     log.info("等待登录完成（最长 %s 秒）%s", timeout, hint)
     last_log = 0.0
@@ -47,7 +47,7 @@ def wait_for_login(page, timeout: int = 300, hint: str = "") -> bool:
             cookies = {c.get("name") for c in page.context.cookies()}
             if "web_session" in cookies:
                 return True
-        except Exception:  # noqa: BLE001
+        except Exception:  
             pass
         remain = int(deadline - time.time())
         if remain % 30 == 0 and remain != last_log and remain > 0:
@@ -58,50 +58,50 @@ def wait_for_login(page, timeout: int = 300, hint: str = "") -> bool:
 
 
 def open_login_panel(page, prefer_sms: bool = True) -> bool:
-    """打开登录面板。`prefer_sms=True` 时额外切到「手机号登录」标签。
 
-    扫码模式（`prefer_sms=False`）只负责把登录面板弹出来，让二维码自己显示，
-    **不要**切到手机号标签——切走之后二维码就消失了。
-    两种模式下失败都不影响用户手动操作。
-    """
+
+
+
+
+
     try:
         page.goto(f"{BASE}/explore", wait_until="domcontentloaded")
         page.wait_for_timeout(2500)
-    except Exception as err:  # noqa: BLE001
+    except Exception as err:  
         log.warning("打开首页失败：%s", str(err)[:100])
         return False
 
-    # 1) 若登录面板未自动弹出，点一下「登录」
+    
     for selector in ("text=登录", "button:has-text('登录')", ".login-btn", "#login-btn"):
         try:
             page.click(selector, timeout=2500)
             page.wait_for_timeout(1200)
             break
-        except Exception:  # noqa: BLE001
+        except Exception:  
             continue
 
     if not prefer_sms:
         log.info("已弹出登录面板，请使用小红书 App 扫码")
         return True
 
-    # 2) 切到手机号登录标签
+    
     for text in SMS_TAB_TEXTS:
         try:
             page.click(f"text={text}", timeout=2000)
             page.wait_for_timeout(1000)
             log.info("已切换到「%s」", text)
             return True
-        except Exception:  # noqa: BLE001
+        except Exception:  
             continue
 
-    # 3) 兜底：有些版本是 tab 形式
+    
     for selector in (".tab-item:has-text('手机')", "[class*='phone']", "li:has-text('手机')"):
         try:
             page.click(selector, timeout=2000)
             page.wait_for_timeout(1000)
             log.info("已通过选择器切到手机号登录")
             return True
-        except Exception:  # noqa: BLE001
+        except Exception:  
             continue
 
     log.warning("未能自动切换到「手机号登录」标签，请在窗口里手动点一下")
@@ -109,11 +109,11 @@ def open_login_panel(page, prefer_sms: bool = True) -> bool:
 
 
 def interactive_login(page, mode: str = "qr", timeout: int = 600) -> bool:
-    """在一个**已打开的**浏览器页面上引导用户完成登录，返回是否成功。
 
-    供 `xhs_crawl.py` 复用同一个会话（避免为登录再开一个浏览器窗口）。
-    调用方负责保存登录态（`session.save_state()`）。
-    """
+
+
+
+
     if mode == "qr":
         open_login_panel(page, prefer_sms=False)
         banner = [
@@ -175,7 +175,7 @@ def main() -> int:
         return check_only()
 
     ensure_runtime()
-    # 本技能不复用历史登录态：每次登录前先清干净，保证是全新会话
+    
     from xhs_common import reset_runtime
     reset_runtime(logger=log)
     from xhs_browser import BrowserSession
@@ -187,7 +187,7 @@ def main() -> int:
         try:
             page.goto(f"{BASE}/user/profile/self", wait_until="domcontentloaded")
             page.wait_for_timeout(1500)
-        except Exception:  # noqa: BLE001
+        except Exception:  
             pass
         session.save_state()
 
@@ -197,5 +197,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     from xhs_env import ensure_ready
-    ensure_ready(need_browser=True)      # 扫码必须有浏览器，缺就自动装
+    ensure_ready(need_browser=True)      
     raise SystemExit(main())

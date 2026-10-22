@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""异常兜底诊断系统（v3.0.0 自 gen_figure.py 拆出；行为完全一致）。
-分级退出码（3 数据/4 环境/6 内存）、中文三段式诊断、字段名近似匹配纠错。"""
+
+
 import sys
 
-# ── 分级退出码（v2.8 定义，v2.10 拆出）──────────────────────────────────
-# 退出码：0 成功；1 参数/校验致命错；2 --verify 重叠与批量部分失败（历史语义不变）；
-# 3 数据或格式错误；4 环境或依赖错误；5 看门狗超时；6 内存护栏拒绝（降级重试仍败）。
+
+
+
 _EXIT_DATA_CLASSES = {
     "ValueError", "KeyError", "IndexError", "TypeError", "AttributeError",
     "ZeroDivisionError", "OverflowError", "ArithmeticError",
@@ -20,7 +20,7 @@ _EXIT_ENV_CLASSES = {
 
 
 def _classify_exit_code(e):
-    """v3 兜底路径的退出码分类：数据侧=3、环境侧=4、内存=6、其余=2（历史语义）。"""
+
     try:
         cls = type(e).__name__
         if cls == "MemoryError":
@@ -39,7 +39,7 @@ def _classify_exit_code(e):
 
 
 
-# ── A2(v2.7)：异常兜底 v3 —— 任何未知异常都输出「中文诊断 + 原文 + 针对性建议」──
+
 _EXC_ZH_V3 = {
     "MemoryError": ("内存不足", "数据量超出可用内存：减少行数/列数（热图先聚合行、散点抽样），"
                     "或关闭其他占内存的程序后重试"),
@@ -112,7 +112,7 @@ _KNOWN_DATA_FIELDS = [
 
 
 def _diagnose_exception(e):
-    """v3 兜底诊断：返回 (中文诊断, 原文, [建议1, 建议2, 建议3])。本函数自身永不抛异常。"""
+
     try:
         cls = type(e).__name__
         qual = f"{type(e).__module__}.{cls}"
@@ -122,7 +122,7 @@ def _diagnose_exception(e):
                 zh, why = z2, w2
                 break
         tips = []
-        # v2.9：KeyError 字段名近似匹配（JSON 字段拼写错误给中文纠错提示）
+        
         if cls == "KeyError" and getattr(e, "args", None) \
                 and isinstance(e.args[0], str) and e.args[0]:
             import difflib as _dif

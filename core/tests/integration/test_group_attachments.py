@@ -1,10 +1,10 @@
-"""群聊里的附件与图片。
 
-用户的要求是"群聊输入栏与单聊完全一致"，而单聊能拖文件进去 —— 所以群里也得能。
-这条链路里最容易出问题的是**附件到底进没进成员的上下文**：
-界面上传成功了、气泡也画出来了，但每个成员看到的 prompt 里没有附件信息，
-于是搭子全程在对空气说话。所以这里断言的是"模型实际收到的内容"。
-"""
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -49,12 +49,12 @@ async def _make_group(client, name: str = "附件测试群") -> dict:
 
 
 def _seen_text(llm: FakeLLM) -> str:
-    """模型实际收到的全部内容（跨所有调用）—— 用它断言"附件真的进了上下文"。"""
+
     return "\n".join("".join(message.content for message in call) for call in llm.calls)
 
 
 async def test_attachment_reaches_every_member(runtime, client):
-    """附件要进**每个成员**看到的上下文，不只是第一个发言的搭子。"""
+
     llm = FakeLLM(
         [
             "我看了附件，先说说结构。\n[END_VOTE]",
@@ -71,7 +71,7 @@ async def test_attachment_reaches_every_member(runtime, client):
     )
 
     assert "topic" in [name for name, _ in events]
-    # 界面上的话题事件只放用户自己说的话：附件是以胶囊展示的
+    
     topic = next(data for name, data in events if name == "topic")
     assert topic["content"] == "按附件里的需求讨论"
     assert "需求说明.md" not in topic["content"]
@@ -81,12 +81,12 @@ async def test_attachment_reaches_every_member(runtime, client):
 
 
 async def test_image_reaches_members(runtime, client):
-    """图片要走 images 通道（本体发给模型），而不是只给个文件名。"""
+
     llm = FakeLLM(["图上有个错别字。\n[END_VOTE]", "同意。\n[AGREE]", "结论：已确认。"])
     install_fake_model(runtime, llm)
     group = await _make_group(client, "图片测试群")
 
-    # 1x1 的 PNG：内容不重要，要验证的是"图片被当成图片送出去了"
+    
     png = (
         b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
         b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01"
@@ -96,14 +96,14 @@ async def test_image_reaches_members(runtime, client):
 
     await _discuss(client, group["id"], {"topic": "看图", "images": [file_id]})
 
-    # FakeLLM 只记录 messages，图片是通过 images 参数单独传的；
-    # 这里能验证的是"带图讨论没有报错且正常收敛"，图片本体由 chat.py 的同一条
-    # 构造函数负责（那条链路已有单测覆盖）
+    
+    
+    
     assert llm.calls, "带图讨论没有调用模型"
 
 
 async def test_unknown_attachment_does_not_break_the_discussion(runtime, client):
-    """附件 id 失效（文件被删）时不能把整场讨论打挂 —— 少个附件也要能聊。"""
+
     llm = FakeLLM(["我们直接聊。\n[END_VOTE]", "同意。\n[AGREE]", "结论：聊完了。"])
     install_fake_model(runtime, llm)
     group = await _make_group(client, "坏附件群")
@@ -116,7 +116,7 @@ async def test_unknown_attachment_does_not_break_the_discussion(runtime, client)
 
 
 async def test_summary_also_sees_the_attachments(runtime, client):
-    """最终总结也要能看到附件：总结往往是引用附件内容最多的一段。"""
+
     llm = FakeLLM(
         [
             LLMResponse(content="先看附件。", finish_reason="stop"),

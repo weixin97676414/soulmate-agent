@@ -16,5 +16,9 @@
     "rootDir": ".",
     "types": ["node"]
   },
-  "include": ["electron/**/*.ts", "shared/**/*.ts"]
+  "include": ["electron/**/*.ts", "shared/**/*.ts"],
+  // 测试文件不参与构建：它们在 vitest 里跑，不该进 dist-electron。
+  // （踩过：测试里用了顶层 await，vitest 自己能转译所以单测全绿，
+  //   但 build:electron 的 tsc 直接报 TS1378，症状是"单测通过、打包挂"。）
+  "exclude": ["electron/**/*.test.ts"]
 }

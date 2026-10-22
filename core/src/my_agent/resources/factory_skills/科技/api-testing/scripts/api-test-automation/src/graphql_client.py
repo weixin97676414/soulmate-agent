@@ -1,7 +1,7 @@
-"""GraphQL Client Module
 
-Provides GraphQL query and mutation support.
-"""
+
+
+
 
 import json
 from typing import Any, Dict, Optional
@@ -11,7 +11,7 @@ import requests
 
 
 class GraphQLClient:
-    """GraphQL Client for API testing."""
+
     
     def __init__(self, endpoint: str, headers: Optional[Dict[str, str]] = None):
         self.endpoint = endpoint
@@ -19,12 +19,12 @@ class GraphQLClient:
         self.headers.setdefault("Content-Type", "application/json")
         
     def set_auth(self, token: str):
-        """Set authentication token."""
+
         self.headers["Authorization"] = f"Bearer {token}"
     
     def query(self, query: str, variables: Optional[Dict[str, Any]] = None,
               operation_name: Optional[str] = None) -> Dict[str, Any]:
-        """Execute GraphQL query synchronously."""
+
         payload = {"query": query}
         if variables:
             payload["variables"] = variables
@@ -46,7 +46,7 @@ class GraphQLClient:
     
     async def query_async(self, query: str, variables: Optional[Dict[str, Any]] = None,
                           operation_name: Optional[str] = None) -> Dict[str, Any]:
-        """Execute GraphQL query asynchronously."""
+
         payload = {"query": query}
         if variables:
             payload["variables"] = variables
@@ -69,16 +69,16 @@ class GraphQLClient:
     
     def mutate(self, mutation: str, variables: Optional[Dict[str, Any]] = None,
                operation_name: Optional[str] = None) -> Dict[str, Any]:
-        """Execute GraphQL mutation."""
+
         return self.query(mutation, variables, operation_name)
     
     async def mutate_async(self, mutation: str, variables: Optional[Dict[str, Any]] = None,
                            operation_name: Optional[str] = None) -> Dict[str, Any]:
-        """Execute GraphQL mutation asynchronously."""
+
         return await self.query_async(mutation, variables, operation_name)
     
     def introspect(self) -> Dict[str, Any]:
-        """Get GraphQL schema introspection."""
+
         introspection_query = """
         {
           __schema {
@@ -102,9 +102,9 @@ class GraphQLClient:
         return self.query(introspection_query)
     
     def validate_query(self, query: str) -> bool:
-        """Validate if query is syntactically correct."""
+
         try:
-            # Basic syntax validation
+            
             query = query.strip()
             if not query:
                 return False
@@ -117,7 +117,7 @@ class GraphQLClient:
 
 
 class GraphQLError(Exception):
-    """GraphQL error exception."""
+
     
     def __init__(self, errors):
         self.errors = errors

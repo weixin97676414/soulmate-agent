@@ -1,21 +1,21 @@
-"""浏览器自动化技能（读写分级）。
 
-设计遵循两条原则：
 
-1. **读写分级**（与框架的权限模型一致）：打开网页、读正文、看快照、截图、查标签
-   都是**只读**，直接执行（safe）；点击/填表/滚动这类会**改变对端真实状态**的动作
-   需要用户确认（confirm）。如果连"打开看看"都要弹确认，用户会把确认框当噪声点掉，
-   确认机制就失效了。
 
-2. **稳定句柄 + 动作后重快照**（吸收自 openclaw 的 browser-automation 范式）：
-   - 标签页用我们自己起的 ``label`` 定位，**不用浏览器内部会变的 tabId**；
-   - 快照里的 ``ref`` 只是给模型的编号，真正的定位靠**可见文本/角色**，
-     所以导航/弹窗之后让模型重新快照、用新文案定位，就不会有"陈旧引用"问题；
-   - 遇到登录/验证码/2FA，结果里会带 ``blocked=True`` —— **停下来告诉用户**，
-     而不是循环重试。
 
-所有动作都走 ``browser/session.py`` 的进程级单例：同一份浏览器实例、同一份登录态。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ from ...skill.decorator import skill
 
 
 def _profile_dir(ctx: SkillContext) -> Path:
-    """浏览器持久化 profile 的落点（登录态保存在这里）。"""
+
     if ctx.paths is not None:
         return Path(ctx.paths.data_dir) / "browser-profile"
     return Path.cwd() / "browser-profile"
@@ -42,7 +42,7 @@ async def _context(ctx: SkillContext) -> Any:
 
 
 async def _blocker(ctx: SkillContext, page: Any) -> dict[str, Any] | None:
-    """命中登录/验证码等人工环节时，返回"停下来说明"的提示。"""
+
     reason = await browser.detect_blocker(page)
     if reason is None:
         return None
@@ -211,7 +211,7 @@ class BrowserActParams(BaseModel):
     ),
     params_model=BrowserActParams,
     category="system",
-    # confirm：点击/填表会改对端真实状态
+    
     permission_level="confirm",
     tags=["浏览器", "交互", "写入"],
 )

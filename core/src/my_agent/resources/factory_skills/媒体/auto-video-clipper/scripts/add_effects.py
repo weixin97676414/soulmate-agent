@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-AI视频剪辑 - 特效与滤镜脚本
-功能：自动添加滤镜、特效、画面优化
-"""
+
+
+
+
 
 import os
 import json
@@ -14,17 +14,17 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 DEFAULT_CONFIG = {
-    "filter": "auto",  # auto/vivid/vintage/cool/warm/bw
+    "filter": "auto",  
     "filter_strength": 1.0,
     "brightness": 0,
     "contrast": 1.0,
     "saturation": 1.0,
     "sharpness": 1.0,
-    "effects": [],  # 光晕/粒子/模糊/缩放
-    "effect_timestamps": []  # 特效添加时间点
+    "effects": [],  
+    "effect_timestamps": []  
 }
 
-# 预设滤镜配置
+
 FILTER_PRESETS = {
     "auto": {},
     "vivid": {"eq=saturation=1.3:contrast=1.2", "colorlevels=rimax=0.9:gimax=0.9:bimax=0.9"},
@@ -36,7 +36,7 @@ FILTER_PRESETS = {
     "portrait": {"setpts=PTS+3/TB", "unsharp=5:5:0.8:3:3:0.4"}
 }
 
-# 特效配置
+
 EFFECT_PRESETS = {
     "vignette": {
         "name": "暗角",
@@ -62,15 +62,15 @@ class EffectsProcessor:
         self.ffmpeg_path = "ffmpeg"
         
     def detect_scene_type(self, video_file: str) -> str:
-        """检测场景类型（模拟）"""
-        # 实际应用中应使用AI视觉分析
+
+        
         scene_types = ["landscape", "portrait", "indoor", "night", "action"]
         detected = random.choice(scene_types)
         print(f"[特效] 检测到场景类型: {detected}")
         return detected
     
     def get_filter_for_scene(self, scene_type: str) -> str:
-        """根据场景类型选择滤镜"""
+
         filter_map = {
             "landscape": "vivid",
             "portrait": "portrait",
@@ -81,21 +81,21 @@ class EffectsProcessor:
         return filter_map.get(scene_type, "auto")
     
     def build_filter_string(self, scene_type: str = None) -> str:
-        """构建滤镜字符串"""
+
         filters = []
         
-        # 自动模式：检测场景
+        
         if self.config["filter"] == "auto":
             filter_type = scene_type or "auto"
         else:
             filter_type = self.config["filter"]
         
-        # 添加基础滤镜
+        
         if filter_type in FILTER_PRESETS and FILTER_PRESETS[filter_type]:
             base_filter = list(FILTER_PRESETS[filter_type])[0]
             filters.append(base_filter)
         
-        # 添加画面调整
+        
         adjustments = []
         if self.config["brightness"] != 0:
             adjustments.append(f"eq=brightness={self.config['brightness']}")
@@ -107,14 +107,14 @@ class EffectsProcessor:
         if adjustments:
             filters.extend(adjustments)
         
-        # 添加锐化
+        
         if self.config["sharpness"] != 1.0:
             filters.append(f"unsharp=5:5:{self.config['sharpness']}")
         
         return ",".join(filters) if filters else "null"
     
     def apply_filter(self, video_file: str, output_dir: str) -> str:
-        """应用滤镜"""
+
         print("[特效] 正在应用滤镜...")
         
         scene_type = self.detect_scene_type(video_file)
@@ -142,7 +142,7 @@ class EffectsProcessor:
         return output_file
     
     def add_vignette(self, video_file: str, output_dir: str) -> str:
-        """添加暗角效果"""
+
         print("[特效] 正在添加暗角...")
         
         output_file = os.path.join(output_dir, "vignette_video.mp4")
@@ -158,7 +158,7 @@ class EffectsProcessor:
         return output_file if os.path.exists(output_file) else video_file
     
     def add_blur(self, video_file: str, start_time: float, duration: float, output_dir: str) -> str:
-        """添加模糊效果"""
+
         print(f"[特效] 正在添加模糊效果 ({start_time}s, {duration}s)...")
         
         output_file = os.path.join(output_dir, "blur_video.mp4")
@@ -174,7 +174,7 @@ class EffectsProcessor:
         return output_file if os.path.exists(output_file) else video_file
     
     def add_glow(self, video_file: str, output_dir: str) -> str:
-        """添加光晕效果"""
+
         print("[特效] 正在添加光晕...")
         
         output_file = os.path.join(output_dir, "glow_video.mp4")
@@ -190,7 +190,7 @@ class EffectsProcessor:
         return output_file if os.path.exists(output_file) else video_file
     
     def add_zoom_effect(self, video_file: str, output_dir: str) -> str:
-        """添加缩放效果"""
+
         print("[特效] 正在添加缩放效果...")
         
         output_file = os.path.join(output_dir, "zoom_video.mp4")
@@ -207,12 +207,12 @@ class EffectsProcessor:
         return output_file if os.path.exists(output_file) else video_file
     
     def enhance_video(self, video_file: str, output_dir: str) -> str:
-        """综合画面增强"""
+
         print("[特效] 正在优化画面...")
         
         output_file = os.path.join(output_dir, "enhanced_video.mp4")
         
-        # 综合优化：锐化、去噪、色彩校正
+        
         filter_str = "unsharp=5:5:0.8:3:3:0.4,eq=brightness=0.05:contrast=1.1:saturation=1.1,hqdn3d=4:3:6:4"
         
         cmd = [
@@ -232,7 +232,7 @@ class EffectsProcessor:
         return output_file
     
     def process(self, video_file: str, output_dir: str = None, config: Dict = None) -> str:
-        """执行特效处理流程"""
+
         if config:
             self.config.update(config)
         
@@ -249,15 +249,15 @@ class EffectsProcessor:
         
         current_file = video_file
         
-        # 1. 应用滤镜
+        
         current_file = self.apply_filter(current_file, output_dir)
         
-        # 2. 添加指定特效
+        
         for effect in self.config["effects"]:
             if effect == "vignette":
                 current_file = self.add_vignette(current_file, output_dir)
             elif effect == "blur":
-                # 在指定时间添加模糊
+                
                 for ts in self.config.get("effect_timestamps", []):
                     current_file = self.add_blur(current_file, ts["start"], ts["duration"], output_dir)
             elif effect == "glow":
@@ -265,7 +265,7 @@ class EffectsProcessor:
             elif effect == "zoom":
                 current_file = self.add_zoom_effect(current_file, output_dir)
         
-        # 3. 画面增强
+        
         final_file = self.enhance_video(current_file, output_dir)
         
         print(f"[特效] ============================================")

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-AI视频剪辑 - 自动剪辑核心脚本
-功能：根据配置自动执行剪辑决策，包括片段选取、转场添加、时长控制等
-"""
+
+
+
+
 
 import os
 import json

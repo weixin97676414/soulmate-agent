@@ -1,23 +1,23 @@
-"""日历服务：本地 `.ics` 与 CalDAV 两个后端，技能只认这一个门面。
 
-## 为什么要有这一层
 
-技能里如果直接 `if 配了 CalDAV: ... else 本地文件: ...`，这段判断会在
-"查看 / 新建 / 修改 / 删除"四个技能里各写一遍，然后慢慢长歪（有的地方忘了
-处理 CalDAV 没配好的情况）。集中在这里，四个技能都只调同一个门面。
 
-## auto 模式的语义
 
-``mode="auto"``（默认）：**配了 CalDAV 就用在线，没配就用本地文件**。
-零基础用户什么都不用配就能用；配过的用户不必再回来手动切一次。
-用户也可显式选 ``local`` / ``caldav`` 固定住。
 
-## CalDAV 用的是最小实现
 
-CalDAV 本质是 WebDAV + iCalendar：`PROPFIND` 找日历集合、`REPORT` 查时间段、
-`PUT` / `DELETE` 写删。这些用现成的 httpx 就能做，不必为此引入
-`caldav` / `icalendar` 两个库（它们还会捎上 requests 等一串依赖）。
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -41,11 +41,11 @@ _CALDAV_NS = "urn:ietf:params:xml:ns:caldav"
 
 
 class CalendarError(Exception):
-    """日历操作失败（网络、认证、格式）。
 
-    故意与 ``ConfigError`` 分开：前者是"这次操作没成功"，后者是"配置本身不合法"，
-    两者给用户的行动建议完全不同（重试 / 去改配置）。
-    """
+
+
+
+
 
     def __init__(self, message: str, *, detail: str = "") -> None:
         super().__init__(message)
@@ -54,7 +54,7 @@ class CalendarError(Exception):
 
 
 class CalendarBackend(Protocol):
-    """后端只需要这四件事。"""
+
 
     label: str
 
@@ -67,17 +67,17 @@ class CalendarBackend(Protocol):
     async def delete_event(self, uid: str) -> bool: ...
 
 
-# --------------------------------------------------------------------------- #
-# 本地文件后端
-# --------------------------------------------------------------------------- #
-class LocalIcsBackend:
-    """把日历存在本机的一个 `.ics` 文件里。
 
-    改动策略是"读全量 → 改 → 整份写回"：文件在本地、量级很小（几千条也就几百 KB），
-    而"按行打补丁"才是真正容易把文件写坏的写法。
-    好处还有一点：这份文件本身就是标准格式，用户可以直接导入系统日历或手机，
-    或者把我们导出的日程导回去 —— 数据不是锁在应用里的。
-    """
+
+
+class LocalIcsBackend:
+
+
+
+
+
+
+
 
     def __init__(
         self,
@@ -88,8 +88,8 @@ class LocalIcsBackend:
     ) -> None:
         self.path = path
         self.calendar_name = calendar_name
-        # 「只改开始时间」时用来兜底时长；门面总会把配置值传进来，
-        # 直接构造（如单测）时退化到 60 分钟，与 CalendarSettings 的默认值一致。
+        
+        
         self._default_duration = default_duration or timedelta(minutes=60)
 
     @property
@@ -107,13 +107,13 @@ class LocalIcsBackend:
     def _write(self, events: list[CalendarEvent]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         text = build_ics(events, calendar_name=self.calendar_name)
-        # 先写临时文件再改名：中途失败也不会把用户原来的日程毁掉
+        
         tmp = self.path.with_suffix(".ics.tmp")
         tmp.write_text(text, encoding="utf-8")
         tmp.replace(self.path)
 
     async def list_events(self, start: datetime, end: datetime) -> list[CalendarEvent]:
-        # 文件 IO 放到线程里：日程文件可以有几千条，读它不该卡住事件循环
+        
         import asyncio
 
         events = await asyncio.to_thread(self._read)
@@ -140,8 +140,8 @@ class LocalIcsBackend:
             for index, item in enumerate(events):
                 if item.uid != uid:
                     continue
-                # 合并语义（含"只改开始时间要顺延结束时间"）统一在 ics.apply_changes 里，
-                # 两个后端共用同一份，免得本地与 CalDAV 长期不一致
+                
+                
                 try:
                     updated = apply_changes(item, changes, default_duration=self._default_duration)
                 except ValueError as exc:
@@ -167,16 +167,16 @@ class LocalIcsBackend:
         return await asyncio.to_thread(_delete)
 
 
-# --------------------------------------------------------------------------- #
-# CalDAV 后端
-# --------------------------------------------------------------------------- #
-class CalDavBackend:
-    """最小 CalDAV 客户端。
 
-    先按用户填的地址当"日历集合"直接试；如果它其实是个首页（很多服务商给的是
-    账号首页），再走一次标准发现：``current-user-principal`` → ``calendar-home-set``
-    → 第一个日历集合。发现失败时给出**能照着做**的提示，而不是一个 404。
-    """
+
+
+class CalDavBackend:
+
+
+
+
+
+
 
     def __init__(self, settings: CalendarSettings) -> None:
         self._settings = settings
@@ -186,7 +186,7 @@ class CalDavBackend:
     def label(self) -> str:
         return f"在线日历（{self._settings.caldav_url}）"
 
-    # ---- 基础请求 ------------------------------------------------------ #
+    
     def _base_url(self) -> str:
         url = (self._settings.caldav_url or "").strip()
         try:
@@ -227,13 +227,13 @@ class CalDavBackend:
             raise CalendarError("日历服务拒绝了这个账号（检查账号密码是否写对）。")
         return response
 
-    # ---- 发现日历集合 -------------------------------------------------- #
+    
     async def _resolve_collection(self) -> str:
         if self._collection:
             return self._collection
 
         base = self._base_url()
-        # ① 用户填的就是日历集合？
+        
         probe = await self._request(
             "PROPFIND",
             base,
@@ -247,7 +247,7 @@ class CalDavBackend:
             self._collection = base if base.endswith("/") else f"{base}/"
             return self._collection
 
-        # ② 走标准发现：先问"我是谁"，再问"我的日历在哪儿"
+        
         principal = await self._discover_href(
             base, f'<d:propfind xmlns:d="{_DAV_NS}"><d:prop><d:current-user-principal/></d:prop></d:propfind>'
         )
@@ -286,7 +286,7 @@ class CalDavBackend:
 
     @staticmethod
     def _first_href(xml_text: str) -> str:
-        """取第一个 href 的文本（这些发现响应里 href 就是答案）。"""
+
         try:
             root = ElementTree.fromstring(xml_text)
         except ElementTree.ParseError:
@@ -298,7 +298,7 @@ class CalDavBackend:
 
     @staticmethod
     def _calendar_hrefs(xml_text: str) -> list[str]:
-        """列出响应里所有"是日历"的 href（resourcetype 里带 calendar）。"""
+
         try:
             root = ElementTree.fromstring(xml_text)
         except ElementTree.ParseError:
@@ -316,7 +316,7 @@ class CalDavBackend:
                     break
         return hrefs
 
-    # ---- 四个动作 ------------------------------------------------------ #
+    
     async def list_events(self, start: datetime, end: datetime) -> list[CalendarEvent]:
         collection = await self._resolve_collection()
         body = (
@@ -354,7 +354,7 @@ class CalDavBackend:
             body=build_ics([event]),
             headers={
                 "Content-Type": "text/calendar; charset=utf-8",
-                # 「只有不存在时才创建」：并发生成同一个 UID 时不至于互相覆盖
+                
                 "If-None-Match": "*",
             },
         )
@@ -366,7 +366,7 @@ class CalDavBackend:
 
     async def update_event(self, uid: str, changes: dict[str, Any]) -> CalendarEvent:
         target = await self._find_event(uid)
-        # 与本地后端共用同一份合并语义（只改开始时间 → 结束时间顺延）
+        
         try:
             updated = apply_changes(
                 target,
@@ -397,8 +397,8 @@ class CalDavBackend:
         return response.status_code < 400
 
     async def _find_event(self, uid: str) -> CalendarEvent:
-        # 用"最近一年到未来一年"这种宽窗口找它：真实日历里没有按 UID 精确查的接口，
-        # 硬编码一个太窄的窗口会让"下周的会议"查不到
+        
+        
         now = datetime.now()
         events = await self.list_events(now - timedelta(days=365), now + timedelta(days=365))
         found = next((item for item in events if item.uid == uid), None)
@@ -407,11 +407,11 @@ class CalDavBackend:
         return found
 
 
-# --------------------------------------------------------------------------- #
-# 门面
-# --------------------------------------------------------------------------- #
+
+
+
 class CalendarService:
-    """技能侧的日历门面（通过 ``ctx.service("calendar")`` 取得）。"""
+
 
     def __init__(self, settings: CalendarSettings, paths: Any) -> None:
         self._settings = settings
@@ -433,7 +433,7 @@ class CalendarService:
         return CalDavBackend(self._settings)
 
     def describe_backend(self) -> str:
-        """当前实际读写的是哪个日历（技能返回文案要用，免得用户以为写进了在线日历）。"""
+
         return self._backend().label
 
     @property
@@ -453,7 +453,7 @@ class CalendarService:
         return await self._backend().delete_event(uid)
 
     async def test_connection(self) -> dict[str, Any]:
-        """设置页的「测试连接」：只读一次时间窗，能列出日程就算通。"""
+
         if not (self._settings.caldav_url and self._settings.caldav_username):
             raise CalendarError("还没填 CalDAV 地址或账号。")
         backend = CalDavBackend(self._settings)

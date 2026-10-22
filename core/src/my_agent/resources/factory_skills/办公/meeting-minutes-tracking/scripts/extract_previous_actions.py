@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-extract_previous_actions.py — 定位上一期周期性例会纪要并提取该期待办，供本期复盘承接。
 
-用法：
-  python extract_previous_actions.py --root <项目根> --before 20260725 --json
-  python extract_previous_actions.py --file <上一期会议纪要.docx> --json
 
-可选：
-  --archive-subdir 指定归档子目录（如 "项目管理/每周验收和回款会议"），
-                    缺省时在 --root 下递归搜索 "*会议纪要*.docx"。
 
-输出 prior_action_items 草稿。进展状态、进展说明和本周处理必须再根据本周转写填写，
-本脚本不推断任务进展。
-"""
+
+
+
+
+
+
+
+
+
+
+
 import argparse
 import glob
 import json

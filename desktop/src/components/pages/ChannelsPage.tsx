@@ -1,18 +1,18 @@
 import { Info, Radio } from 'lucide-react'
 
-/**
- * 「频道」页 —— 本轮为**规划占位**（用户明确的路线图项）：
- *
- * 目标形态（对齐 openclaw 的 channels）：把助手接入外部 IM/平台 ——
- * 微信、企业微信、Telegram、飞书等。核心模型：
- * - 接入时选择**哪个 Buddy** 接入该频道；
- * - 一个 Buddy 可以同时接入**多个**频道；一个频道也可以配**多个** Buddy
- *   （适配多设备 / 多平台 / 多账号）；
- * - ⚠️ 个别平台**只支持单频道接入**（如微信：同一账号同时只能挂一个会话通道），
- *   接入向导里会显式提示。
- *
- * 真正的接入需要各平台的机器人凭证与回调服务，随「频道接入」版本交付。
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 export function ChannelsPage() {
   return (
     <div className="flex min-w-0 flex-1 flex-col overflow-y-auto px-8 py-6">
@@ -54,7 +54,7 @@ export function ChannelsPage() {
   )
 }
 
-/** 「权益」页 —— 占位（约定的导航顺序里预留的位置）。 */
+
 export function BenefitsPage() {
   return (
     <div className="flex min-w-0 flex-1 flex-col overflow-y-auto px-8 py-6">

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""
-HealthFit 数据备份脚本
-功能：备份 data/ 目录到 data/db/backup/
 
-隐私设计：
-  private_sexual_health.json 默认被排除在所有备份之外。
-  如需包含，请使用 --include-private 参数运行，并在交互式提示中确认。
-  这是 SKILL.md 中"二次确认"承诺的实际实现。
-"""
+
+
+
+
+
+
+
+
 
 import sys
 import shutil
@@ -20,9 +20,9 @@ import string
 from datetime import datetime
 from pathlib import Path
 
-# 配置日志
+
 def setup_logging():
-    """设置日志记录"""
+
     log_path = Path(__file__).parent.parent / "data" / "backup.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     
@@ -36,19 +36,19 @@ def setup_logging():
 
 logger = setup_logging()
 
-# ─── 敏感文件名单 ─────────────────────────────────────────────────────────────
-# 此名单中的文件默认被排除在备份之外。
-# 用户须同时满足以下两个条件才能将其包含在备份中：
-#   1. 运行时附加 --include-private 参数
-#   2. 在交互式提示中手动输入"yes"确认
+
+
+
+
+
 PRIVATE_FILES = {
     "private_sexual_health.json",
 }
-# ─────────────────────────────────────────────────────────────────────────────
+
 
 
 def get_skill_dir() -> Path:
-    """获取 HealthFit skill 根目录（本脚本所在目录的上两级）"""
+
     return Path(__file__).parent.parent
 
 
@@ -61,11 +61,11 @@ def get_backup_dir() -> Path:
 
 
 def _confirm_private_inclusion() -> bool:
-    """
-    在备份敏感文件前进行交互式二次确认（增强版）。
-    包含随机验证码确认和操作日志记录。
-    仅当用户输入正确验证码时返回 True。
-    """
+
+
+
+
+
     print()
     print("=" * 60)
     print("⚠️  警告：高度敏感数据备份确认  ⚠️")
@@ -86,7 +86,7 @@ def _confirm_private_inclusion() -> bool:
 """)
     print("=" * 60)
     
-    # 随机验证码确认
+    
     verify_code = ''.join(random.choices(string.ascii_uppercase, k=6))
     print(f"\n请输入以下验证码以确认：{verify_code}")
     
@@ -96,7 +96,7 @@ def _confirm_private_inclusion() -> bool:
         logger.warning("私密文件备份验证失败")
         return False
     
-    # 记录操作日志
+    
     log_path = Path(__file__).parent.parent / "data" / "security_log.txt"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with open(log_path, "a", encoding="utf-8") as f:
@@ -108,7 +108,7 @@ def _confirm_private_inclusion() -> bool:
 
 
 def check_disk_space(required_mb: int = 100) -> bool:
-    """检查磁盘空间是否充足"""
+
     try:
         import shutil
         total, used, free = shutil.disk_usage(Path(__file__).parent)
@@ -120,11 +120,11 @@ def check_disk_space(required_mb: int = 100) -> bool:
         return True
     except Exception as e:
         logger.error(f"磁盘空间检查失败：{e}")
-        return True  # 检查失败时不阻止备份
+        return True  
 
 
 def safe_copy(src: Path, dest: Path) -> bool:
-    """安全复制文件，带错误处理"""
+
     try:
         if not src.exists():
             logger.warning(f"源文件不存在：{src}")
@@ -149,7 +149,7 @@ def safe_copy(src: Path, dest: Path) -> bool:
 
 
 def backup_with_retry(src: Path, dest: Path, max_retries: int = 3) -> bool:
-    """带重试的备份"""
+
     for attempt in range(max_retries):
         if safe_copy(src, dest):
             return True
@@ -159,15 +159,15 @@ def backup_with_retry(src: Path, dest: Path, max_retries: int = 3) -> bool:
 
 
 def _copy_json_dir(json_dir: Path, dest: Path, include_private: bool) -> dict:
-    """
-    将 json/ 目录复制到目标路径，并对私密文件进行过滤。
 
-    返回摘要字典：{copied: [...], skipped: [...]}
-    """
+
+
+
+
     dest.mkdir(parents=True, exist_ok=True)
     summary = {"copied": [], "skipped": []}
 
-    # 复制顶层 JSON 文件（按名单过滤，使用安全复制）
+    
     for src_file in json_dir.glob("*.json"):
         if src_file.name in PRIVATE_FILES:
             if include_private:
@@ -183,7 +183,7 @@ def _copy_json_dir(json_dir: Path, dest: Path, include_private: bool) -> dict:
             else:
                 summary["skipped"].append(src_file.name + " (复制失败)")
 
-    # 完整复制 daily/ 子目录（该目录中不存在私密文件）
+    
     daily_src = json_dir / "daily"
     if daily_src.exists():
         shutil.copytree(daily_src, dest / "daily")
@@ -194,13 +194,13 @@ def _copy_json_dir(json_dir: Path, dest: Path, include_private: bool) -> dict:
 
 
 def create_backup(include_private: bool = False) -> Path:
-    """
-    在 data/db/backup/ 下创建带时间戳的备份。
 
-    Args:
-        include_private: 若为 True（且用户已确认），则同时备份私密文件。
-                         若为 False（默认），私密文件将被静默排除。
-    """
+
+
+
+
+
+
     data_dir = get_data_dir()
     backup_dir = get_backup_dir()
     backup_dir.mkdir(parents=True, exist_ok=True)
@@ -217,7 +217,7 @@ def create_backup(include_private: bool = False) -> Path:
     txt_count = 0
     db_count = 0
 
-    # ── JSON 目录 ──────────────────────────────────────────────────────────────
+    
     json_dir = data_dir / "json"
     if json_dir.exists():
         json_summary = _copy_json_dir(json_dir, backup_path / "json", include_private)
@@ -225,7 +225,7 @@ def create_backup(include_private: bool = False) -> Path:
         if json_summary["skipped"]:
             print(f"  ⚠ 已排除（私密）：{', '.join(json_summary['skipped'])}")
 
-    # ── TXT 目录 ───────────────────────────────────────────────────────────────
+    
     txt_dir = data_dir / "txt"
     if txt_dir.exists():
         dest_txt = backup_path / "txt"
@@ -235,7 +235,7 @@ def create_backup(include_private: bool = False) -> Path:
         txt_count = len(list(dest_txt.glob("*.txt")))
         print(f"✓ 已备份 TXT 日志：{txt_count} 个")
 
-    # ── SQLite 数据库 ──────────────────────────────────────────────────────────
+    
     db_dir = data_dir / "db"
     if db_dir.exists():
         dest_db = backup_path / "db"
@@ -245,7 +245,7 @@ def create_backup(include_private: bool = False) -> Path:
             db_count += 1
         print(f"✓ 已备份 SQLite 数据库：{db_count} 个")
 
-    # ── 备份清单 ───────────────────────────────────────────────────────────────
+    
     manifest = {
         "backup_time": timestamp,
         "backup_path": str(backup_path),
@@ -267,7 +267,7 @@ def create_backup(include_private: bool = False) -> Path:
 
 
 def cleanup_old_backups(keep_count: int = 4) -> None:
-    """删除最旧的备份目录，仅保留最近 `keep_count` 个。"""
+
     backup_dir = get_backup_dir()
     if not backup_dir.exists():
         return
@@ -309,7 +309,7 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    # 私密文件的二次确认门控
+    
     include_private = False
     if args.include_private:
         include_private = _confirm_private_inclusion()

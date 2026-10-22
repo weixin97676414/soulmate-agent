@@ -1,18 +1,18 @@
-// @vitest-environment happy-dom
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useNotificationStore } from '@/stores/notificationStore'
 
-/**
- * 通知"多久消失"的口径（产品拍板，第 86 批 M-32 落地）。
- *
- * 为什么值得单测：这条规则**只在时间里体现** —— 界面上看不出对错，
- * 而写错了的表现是"带按钮的通知一闪而过，用户根本来不及点"，
- * 事后没人能复现（通知早就没了）。用例把时间轴钉住即可。
- *
- * ⚠️ 模块是全局单例（zustand），所以每个用例先 `clearAll()` —— 否则前一条的 toast
- * 会留在后面用例里，断言"长度是 1"就会随机红。
- */
+
+
+
+
+
+
+
+
+
+
 describe('通知的消失口径', () => {
   beforeEach(() => {
     vi.useFakeTimers()

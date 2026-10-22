@@ -44,13 +44,13 @@ const PERMISSION_OPTIONS = [
   { value: 'admin', label: '高危（需开启）' },
 ]
 
-/** 与主进程 `secrets.ts` / 后端 `config/secrets.py` 保持一致 */
+
 const SECRET_KEY_HINT = /key|token|secret|password|passwd|credential|auth/i
 
 function emptyConfig(): McpServerConfig {
   return {
     name: '',
-    // 新建默认是本地 stdio 服务 —— 最常见的用法，且不需要额外填地址
+    
     transport: 'stdio',
     url: '',
     headers: {},
@@ -77,7 +77,7 @@ function argsToLines(args: string[]): string {
   return args.join('\n')
 }
 
-/** 传输方式的中文说明（表单下拉用） */
+
 const TRANSPORT_OPTIONS: Array<{ value: McpServerConfig['transport']; label: string }> = [
   { value: 'stdio', label: '本地进程（stdio）' },
   { value: 'streamable_http', label: '远程 · Streamable HTTP' },
@@ -102,9 +102,9 @@ function textToEnv(text: string): Record<string, string> {
   return env
 }
 
-// --------------------------------------------------------------------------- //
-// 工具列表
-// --------------------------------------------------------------------------- //
+
+
+
 function ToolRow({
   server,
   tool,
@@ -117,8 +117,8 @@ function ToolRow({
   busy: boolean
 }) {
   const override = server.permission_overrides?.[tool.name] ?? ''
-  // 服务端只返回"用户覆盖值"，自动推断结果显示在选项文案里由用户自己判断，
-  // 这里额外提示一下注解来源，帮助用户决定要不要覆盖
+  
+  
   const hint = tool.destructive
     ? '服务端声明为破坏性操作'
     : tool.read_only
@@ -130,37 +130,37 @@ function ToolRow({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[12.5px] font-medium text-ink">{tool.title || tool.name}</span>
-          {/* break-all：某些 Server 的工具名会很长且没有可断点
-              （形如 `get_user_profile_by_external_account_identifier`），
-              不断词会让整个 flex 行被撑开、把右侧说明挤到几乎没有宽度 */}
+          {
+
+}
           <code className="rounded-[4px] bg-panel px-1 py-[1px] text-[11px] break-all text-ink-faint">
             {tool.name}
           </code>
         </div>
-        {/*
-          ⚠️ 这行的样式是**刻意的**，别简化：
-          - `break-words` + `min-w-0`：说明文字里可能出现超长无断点串
-            （URL、base64、驼峰标识符），不给断词策略它会横向撑破容器；
-          - `whitespace-normal`：`white-space` 是**继承属性**。全局的按钮样式
-            带 `whitespace-nowrap`（保证按钮文字单行），一旦这段文本落在某个
-            被 nowrap 覆盖的子树里，它就会变成**一行到底**。显式归位最稳。
-        */}
+        {
+
+
+
+
+
+
+}
         <p className="mt-0.5 min-w-0 text-[11.5px] leading-relaxed break-words whitespace-normal text-ink-soft">
           {tool.description || '（服务端未提供描述）'}
         </p>
         <p className="mt-0.5 text-[11px] break-words whitespace-normal text-ink-faint">{hint}</p>
       </div>
 
-      {/*
-        宽度必须由**外层容器**给定，不能靠给 Select 传 `w-[128px] shrink-0`。
-        `ui.tsx` 的控件基类里写死了 `w-full`（大量调用点依赖那个默认），
-        与传入的 `w-[128px]` 是**同属性工具类冲突** —— 实际 `w-full` 生效，
-        下拉框占满整行，把同一 flex 行里左边的文字列挤到接近 0 宽。
-        用户看到的现象就是工具名与描述"一个字一行"（截图确认过）。
+      {
 
-        套一层定宽容器之后，`Select` 的 `w-full` 只在容器内生效，
-        两边都拿到想要的宽度。**不要去改 `ui.tsx`** —— 那会波及所有调用点。
-      */}
+
+
+
+
+
+
+
+}
       <div className="mt-0.5 w-[128px] shrink-0">
         <Select
           value={override}
@@ -179,9 +179,9 @@ function ToolRow({
   )
 }
 
-// --------------------------------------------------------------------------- //
-// 服务卡片
-// --------------------------------------------------------------------------- //
+
+
+
 function ServerCard({
   server,
   busy,
@@ -195,8 +195,8 @@ function ServerCard({
   server: McpServerStatus
   busy: boolean
   onToggle: (enabled: boolean) => void
-  /** 打开编辑表单。**必须是一个看得见的按钮**（产品要求）：
-   *  以前只有"重启/停止/删除"三个图标，想改地址只能删了重建。 */
+  
+
   onEdit: () => void
   onRestart: () => void
   onStop: () => void
@@ -266,7 +266,7 @@ function ServerCard({
             onChange={onToggle}
             label={`启用 ${server.name}`}
           />
-          {/* 可见的「配置」按钮：不管内置还是手动添加的，入口都一样 */}
+          {}
           <Button size="sm" variant="secondary" onClick={onEdit} disabled={busy}>
             配置
           </Button>
@@ -335,9 +335,9 @@ function ServerCard({
   )
 }
 
-// --------------------------------------------------------------------------- //
-// 主组件
-// --------------------------------------------------------------------------- //
+
+
+
 export function McpSettings() {
   const api = useAppStore((state) => state.api)
   const reloadSkills = useAppStore((state) => state.reloadSkills)
@@ -352,11 +352,11 @@ export function McpSettings() {
   const [form, setForm] = useState<McpServerConfig | null>(null)
   const [formIsNew, setFormIsNew] = useState(true)
   const [pendingDelete, setPendingDelete] = useState<McpServerStatus | null>(null)
-  // 「添加服务」先问"用哪种方式"：手填表单 / 粘贴 JSON。
-  // 以前是两个并列按钮，用户每次都要纠结点哪个；其实这是一个问题的两条路径。
+  
+  
   const [addChoiceOpen, setAddChoiceOpen] = useState(false)
 
-  // ---- 粘贴 JSON 批量添加 ---------------------------------------------- //
+  
   const [jsonOpen, setJsonOpen] = useState(false)
   const [jsonText, setJsonText] = useState('')
   const [jsonBusy, setJsonBusy] = useState(false)
@@ -406,12 +406,12 @@ export function McpSettings() {
     void load()
   }, [load])
 
-  // 服务端状态一变就同步到界面；同时刷新技能清单，
-  // 因为 MCP 工具会随连接状态增删，技能页签要跟着变。
-  //
-  // ⚠️ 刷新技能**要防抖**：一个服务从 starting → ready（或反复重连）会连发多条
-  // `mcp_status`，每条都打一次 `/v1/skills` 是纯粹的浪费 —— 而那个接口要序列化
-  // 全部技能的参数 schema，是这里最重的一个请求。
+  
+  
+  
+  
+  
+  
   const skillsRefreshTimer = useRef<number | null>(null)
   useEffect(() => {
     const refreshSkillsSoon = () => {
@@ -438,7 +438,7 @@ export function McpSettings() {
     })
   }, [reloadSkills])
 
-  // 组件卸载时把待触发的刷新取消掉，避免对已卸载视图写状态
+  
   useEffect(
     () => () => {
       if (skillsRefreshTimer.current !== null) {
@@ -469,8 +469,8 @@ export function McpSettings() {
       command: form.command.trim(),
       url: form.url.trim(),
     }
-    // 校验跟着**传输方式**走：本地服务要启动命令，远程服务要地址。
-    // 以前只校验命令，于是远程服务在表单里根本填不出来（反馈 #12）。
+    
+    
     if (!payload.name) {
       setError('服务名不能为空。')
       return
@@ -487,7 +487,7 @@ export function McpSettings() {
       formIsNew ? api.createMcpServer(payload) : api.updateMcpServer(payload.name, payload),
     )
 
-    // 密钥类环境变量交给主进程加密保存（后端落盘时会把它们剥掉）
+    
     const secrets = Object.fromEntries(
       Object.entries(payload.env).filter(([key, value]) => SECRET_KEY_HINT.test(key) && value),
     )
@@ -508,14 +508,14 @@ export function McpSettings() {
     setForm(preset ? { ...emptyConfig(), ...preset.server } : emptyConfig())
   }
 
-  /**
-   * 打开「配置」。
-   *
-   * 服务端返回的是 `McpServerStatus`（配置 + 运行状态），而表单只能提交配置 ——
-   * 所以这里**显式挑出配置字段**，不把 `state`/`tools`/`restarts` 之类带进表单。
-   * 带着它们虽然不会报错（后端 Pydantic 只取自己认识的字段），但会让"表单里
-   * 到底有哪些东西"变得含混，也会在下一次扩展时踩到。
-   */
+  
+
+
+
+
+
+
+
   const openEdit = (server: McpServerStatus) => {
     setError(null)
     setFormIsNew(false)
@@ -589,7 +589,7 @@ export function McpSettings() {
         </div>
       ) : null}
 
-      {/* 快速添加 */}
+      {}
       {sdkAvailable && presets.length > 0 ? (
         <div className="mt-5">
           <div className="mb-2 text-[12.5px] font-medium text-ink-soft">快速添加</div>
@@ -615,7 +615,7 @@ export function McpSettings() {
         </div>
       ) : null}
 
-      {/* 服务列表 */}
+      {}
       <div className="mt-5 flex flex-col gap-3">
         {servers.map((server) => (
           <ServerCard
@@ -650,7 +650,7 @@ export function McpSettings() {
         ) : null}
       </div>
 
-      {/* 添加方式二选一 */}
+      {}
       <Modal
         open={addChoiceOpen}
         onClose={() => setAddChoiceOpen(false)}
@@ -697,7 +697,7 @@ export function McpSettings() {
         </div>
       </Modal>
 
-      {/* 添加 / 编辑 */}
+      {}
       <Modal
         open={form !== null}
         onClose={() => setForm(null)}
@@ -732,8 +732,8 @@ export function McpSettings() {
               />
             </Field>
 
-            {/* 传输方式：以前表单里**没有**这个字段，于是只能配 stdio 的本地服务，
-                远程 MCP（url + headers）只能靠"粘贴 JSON"绕过去（反馈 #12）。 */}
+            {
+}
             <Field label="连接方式" className="col-span-2">
               <Select
                 value={form.transport}
@@ -867,7 +867,7 @@ export function McpSettings() {
         ) : null}
       </Modal>
 
-      {/* 删除确认 */}
+      {}
       <Modal
         open={pendingDelete !== null}
         onClose={() => setPendingDelete(null)}
@@ -898,7 +898,7 @@ export function McpSettings() {
         </p>
       </Modal>
 
-      {/* 粘贴 JSON 批量添加 */}
+      {}
       <Modal
         open={jsonOpen}
         onClose={() => setJsonOpen(false)}

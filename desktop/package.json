@@ -1,7 +1,7 @@
 {
   "name": "soulmate-desktop",
   "productName": "Soulmate Agent",
-  "version": "0.0.1",
+  "version": "1.0.1",
   "private": true,
   "description": "自研智能体框架的 Windows 桌面客户端",
   "author": "Soulmate Team",
@@ -75,6 +75,34 @@
         "to": "dist"
       }
     ],
+    "mac": {
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Soulmate Agent 需要使用麦克风进行语音对话。",
+        "NSCameraUsageDescription": "Soulmate Agent 需要使用摄像头进行拍摄。"
+      },
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
     "win": {
       "icon": "assets/icon.ico",
       "target": [
@@ -94,7 +122,8 @@
       "installerIcon": "assets/icon.ico",
       "uninstallerIcon": "assets/icon.ico",
       "installerHeaderIcon": "assets/icon.ico",
-      "include": "build/installer.nsh"
+      "include": "build/installer.nsh",
+      "deleteAppDataOnUninstall": true
     }
   }
 }

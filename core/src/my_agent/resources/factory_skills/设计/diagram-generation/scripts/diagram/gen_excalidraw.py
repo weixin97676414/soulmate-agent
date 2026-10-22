@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""graph.json -> .excalidraw（Excalidraw 原生 JSON）。
 
-关键点：文字以独立 text 元素绑定到容器的 containerId / boundElements，
-否则打开后只看到空框没有字。手绘风（roughness=1），适合方案评审。
 
-用法: python gen_excalidraw.py graph.json -o out.excalidraw
-"""
+
+
+
+
+
 import argparse
 import hashlib
 import json
@@ -13,7 +13,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from lib_graph import load, layout, style_of, edge_style, text_width  # noqa: E402
+from lib_graph import load, layout, style_of, edge_style, text_width  
 
 
 def seed_of(key):
@@ -43,7 +43,7 @@ def build(g):
     em = {e["id"]: e for e in g["edges"]}
     elements = []
 
-    # 分组：虚线矩形 + 标题文本
+    
     for gid, box in groups.items():
         tid = gid + "_t"
         elements.append(base(gid, "rectangle", box["x"], box["y"],
@@ -51,7 +51,7 @@ def build(g):
                              {"strokeStyle": "dashed", "strokeWidth": 1,
                               "roundness": {"type": 3},
                               "boundElements": [{"id": tid, "type": "text"}]}))
-        # 标题绑定到框体（verticalAlign=top 贴顶），拖动分组时标题跟随
+        
         elements.append(base(tid, "text",
                              box["x"] + 10, box["y"] + 6,
                              text_width(box["label"], 12) + 8, 20,
@@ -61,7 +61,7 @@ def build(g):
                               "textAlign": "left", "verticalAlign": "top",
                               "containerId": gid, "lineHeight": 1.25}))
 
-    # 节点
+    
     for nid, d in nodes.items():
         src = nm.get(nid) or {}
         shape, fill, stroke, _, _, radius = style_of(src)
@@ -87,7 +87,7 @@ def build(g):
                               "textAlign": "center", "verticalAlign": "middle",
                               "containerId": nid, "lineHeight": 1.25}))
 
-    # 连线
+    
     for e in edges:
         src = em.get(e["id"]) or {}
         dashed, arrow, width = edge_style(e)

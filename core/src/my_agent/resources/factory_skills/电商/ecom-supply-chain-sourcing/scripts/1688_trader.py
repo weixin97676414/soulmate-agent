@@ -1,38 +1,38 @@
 #!/usr/bin/env python3
-"""
-1688 爆款操盘手 — 主入口脚本
 
-【运行环境】
-  - Python 3.7+
-  - requests 库（pip install requests）
-  - 网络：访问 *.1688.com（可选 ALI_APP_KEY/ALI_APP_SECRET 增强）
 
-【凭证说明】
-  - 基础功能：无需任何凭证
-  - 增强功能（可选）：配置 ALI_APP_KEY / ALI_APP_SECRET 环境变量
-    获取方式：https://open.1688.com/ → 创建应用
 
-用法:
-  python3 1688_trader.py search <关键词>          # 搜索商品
-  python3 1688_trader.py factory <关键词>         # 搜索源头工厂
-  python3 1688_trader.py detail <商品ID>           # 商品详情
-  python3 1688_trader.py profit <进价> <售价>     # 利润计算
-  python3 1688_trader.py full <关键词>            # 全链路：选品+找商+询盘
 
-示例:
-  python3 1688_trader.py search 宠物智能喂食器
-  python3 1688_trader.py factory 智能喂食器 --province 浙江
-  python3 1688_trader.py detail 628734562812
-  python3 1688_trader.py profit 150 89.9 --platform amazon --weight-g 1200 --units 100
-  python3 1688_trader.py full 户外储能电源
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import sys
 import json
 import re
 import os
 
-# 添加 scripts 同级路径以便导入 local 模块
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
 
@@ -41,7 +41,7 @@ from search_factories import search_factories
 from product_detail import get_product_detail
 from calc_profit import calc_profit as do_calc, PLATFORM_PARAMS, parse_args as calc_parse_args
 
-# ANSI 颜色输出
+
 GREEN = "\033[92m"
 YELLOW = "\033[93m"
 RED = "\033[91m"
@@ -58,7 +58,7 @@ R = RESET; G = GREEN; Y = YELLOW; R_ = RED; B = BLUE; BB = BOLD
 
 
 def cmd_search(args: list):
-    """1688 商品搜索"""
+
     kw = " ".join(args)
     if not kw:
         print(f"{R_}[用法] {B}search <关键词> [--page N] [--min-price X] [--max-price Y] [--factory-only]")
@@ -108,7 +108,7 @@ def cmd_search(args: list):
 
 
 def cmd_factory(args: list):
-    """1688 工厂搜索"""
+
     kw = " ".join(args)
     if not kw:
         print(f"{R_}[用法] factory <关键词> [--province 省名]")
@@ -151,7 +151,7 @@ def cmd_factory(args: list):
 
 
 def cmd_detail(args: list):
-    """商品详情"""
+
     if not args:
         print(f"{R_}[用法] detail <商品ID或1688链接>")
         return
@@ -194,13 +194,13 @@ def cmd_detail(args: list):
 
 
 def cmd_profit(args: list):
-    """利润计算"""
+
     if len(args) < 2:
         print(f"{R_}[用法] profit <进货价(元)> <售价(美元)> [--platform amazon|tiktok|shopify|temu]")
         print(f"       [--weight-g X] [--freight-kg Y] [--units N] [--currency USD|EUR|GBP]")
         return
 
-    # 用 argparse 解析利润参数
+    
     raw = [args[0], args[1]] + args[2:]
     sys.argv = ["calc"] + raw
     import argparse
@@ -244,7 +244,7 @@ def cmd_profit(args: list):
 
 
 def cmd_full(args: list):
-    """全链路选品+找商+利润分析"""
+
     kw = " ".join(args)
     if not kw:
         print(f"{R_}[用法] full <关键词（产品品类）>")
@@ -255,19 +255,19 @@ def cmd_full(args: list):
     print(f"  产品: {Y}{kw}{B}")
     print(f"{'═'*55}{R}\n")
 
-    # Step 1: 搜索商品
+    
     print(f"{BB}[1/3] 🔍 搜索 1688 市场数据...{R}")
     prod_result = search_products(kw, page=1)
     items = prod_result.get("items", []) if prod_result.get("success") else []
     print(f"   找到 {Y}{len(items)}{R} 件相关商品\n")
 
-    # Step 2: 搜索工厂
+    
     print(f"{BB}[2/3] 🏭 穿透搜索源头工厂...{R}")
     fac_result = search_factories(kw, page=1)
     factories = fac_result.get("items", []) if fac_result.get("success") else []
     print(f"   找到 {Y}{len(factories)}{R} 家源头工厂\n")
 
-    # Step 3: 推荐 Top 产品 & 工厂
+    
     if items:
         top = items[0]
         print(f"{BB}📦 推荐商品 (Top 1){R}")
@@ -284,7 +284,7 @@ def cmd_full(args: list):
         if top_f.get("旺铺链接"):
             print(f"   🔗 {top_f['旺铺链接']}\n")
 
-    # Step 4: 利润计算（用商品价格估算）
+    
     if items and factories:
         price = items[0].get("price", "150")
         try: price = float(price)
@@ -322,7 +322,7 @@ def cmd_full(args: list):
     print(f"  分析完毕。如需询盘话术或详细报告，请告诉我具体需求。")
 
 
-# --- 命令行路由 ---
+
 COMMANDS = {
     "search":    (cmd_search,    "搜索 1688 商品"),
     "factory":   (cmd_factory,   "搜索 1688 源头工厂"),

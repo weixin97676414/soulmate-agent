@@ -1,10 +1,10 @@
-// verify_via_cli.js — 折叠状态权威验证（v1.3.3）
-// 用途：serverFetch(/api/v4/answers/{aid}) 自 2026-08-26 起恒 403，验证一律走官方 CLI。
-// 用法：AID=<answer id> ego-browser nodejs < scripts/verify_via_cli.js
-//   或参数文件 /tmp/zhihu_verify_params.json：{ "aid": "2078xxxxx", "type": "answer|pin" }
-// 判定：CLI me contents 中该 aid 的 Summary 非空 = 未折叠；Summary 为空 = 已折叠。
-// 注意：刚发布索引可能滞后 1-2 分钟（Item 缺失 ≠ 折叠，等一会再跑一次）。
-// ⚠️ 本脚本由 ego-browser nodejs 运行（继承登录态 task space），但 CLI 调用走本机 child_process。
+
+
+
+
+
+
+
 
 (async () => {
   const fs = require('fs')
@@ -21,7 +21,7 @@
   if (!aid) { cliLog('ERROR: no AID (env AID=xxx or params file .aid)'); return }
   if (!['answer', 'pin'].includes(type)) type = 'answer'
 
-  // 定位 zhihu-cli：PATH 优先，回退 macOS 默认安装路径
+  
   let cli = 'zhihu-cli'
   try { cp.execSync('command -v zhihu-cli', { stdio: 'ignore' }) } catch (e) {
     const fallback = require('path').join(require('os').homedir(), 'Library', 'Application Support', 'zhihu-cli', 'current', 'zhihu-cli')

@@ -4,8 +4,8 @@ import os
 from pathlib import Path
 
 def parse_resume_text(text):
-    """使用大模型解析简历文本为结构化JSON"""
-    # 构建提示词
+
+    
     prompt = f"""
 请将以下简历文本解析为标准JSON格式，严格遵循以下结构：
 {{
@@ -72,10 +72,10 @@ def parse_resume_text(text):
 {text}
 """
     
-    # 调用本地大模型（这里使用OpenClaw内置的大模型能力）
+    
     try:
-        # 这里可以直接调用当前会话的大模型能力
-        # 实际使用时，这个脚本会被AI agent调用，直接返回结构化结果
+        
+        
         return {
             "status": "success",
             "prompt": prompt,

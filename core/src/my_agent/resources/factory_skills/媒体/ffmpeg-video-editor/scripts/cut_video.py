@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Cut Video — 按时间轴剪切视频"""
+
 import argparse, os, subprocess, sys, shutil
 
 def cut_single(input_file: str, start: float, duration: float, output: str) -> bool:
-    """使用 FFmpeg 无损剪切一段视频。"""
+
     cmd = [
         "ffmpeg", "-y",
         "-ss", str(start),
@@ -18,7 +18,7 @@ def cut_single(input_file: str, start: float, duration: float, output: str) -> b
     return result.returncode == 0
 
 def cut_segments(input_file: str, segments: list, output_dir: str) -> list:
-    """按多段列表剪切视频。"""
+
     os.makedirs(output_dir, exist_ok=True)
     base = os.path.splitext(os.path.basename(input_file))[0]
     results = []
@@ -31,7 +31,7 @@ def cut_segments(input_file: str, segments: list, output_dir: str) -> list:
     return results
 
 def parse_segments(seg_str: str) -> list:
-    """解析 '0-30,60-90,120-150' 格式。"""
+
     result = []
     for part in seg_str.split(","):
         part = part.strip()
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         print(f"错误: 文件不存在: {args.input}", file=sys.stderr)
         sys.exit(1)
 
-    # 检查 ffmpeg
+    
     if not shutil.which("ffmpeg"):
         print("错误: ffmpeg 未安装", file=sys.stderr)
         sys.exit(1)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""--wizard 选图向导（v3.0.0 自 gen_figure.py 拆出；行为与 v2.8/v2.9 完全一致）。
-四问生成完整命令：数据形态 → 图型 → 输出格式 → 数据文件；非 TTY 环境打印决策树不挂起。"""
+
+
 import os
 import sys
 
@@ -26,7 +26,7 @@ _WIZARD_FORMATS = [("png", "png（默认，通用）"), ("pdf", "pdf（投稿矢
 
 
 def _wizard_ask(prompt, options, default=1):
-    """问一题；空输入/EOF 落默认。返回选择序号（0 基）。"""
+
     try:
         raw = input(prompt).strip()
     except EOFError:
@@ -43,7 +43,7 @@ def _wizard_ask(prompt, options, default=1):
 
 
 def _wizard_guide():
-    """非交互环境（agent/管道）：打印选图决策树，绝不挂起。"""
+
     print("【选图向导】交互环境可用 `--wizard` 问答式生成命令；当前为非交互环境，以下是决策树：")
     print()
     for i, (shape, types, _t) in enumerate(_WIZARD_SHAPES, 1):
@@ -56,8 +56,8 @@ def _wizard_guide():
 
 
 def _run_wizard():
-    """交互式向导：4 问生成完整命令。AF_WIZARD_FORCE=1 时非 TTY 也走交互
-    （管道喂答案可用于测试/脚本）；EOF 逐题落默认值，永不抛异常挂起。"""
+
+
     interactive = sys.stdin.isatty() or os.environ.get("AF_WIZARD_FORCE")
     if not interactive:
         _wizard_guide()

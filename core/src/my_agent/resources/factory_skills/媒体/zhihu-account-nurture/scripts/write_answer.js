@@ -22,7 +22,7 @@
   cliLog('editor-opened: ' + opened)
   await wait(3)
 
-  // 直接 UTF-8 中文，勿用 String.raw；content 内用空行分段（ClipboardEvent 粘贴保留段落）
+  
   await js('((text) => {'
     + ' const editor = document.querySelector(".public-DraftEditor-content");'
     + ' if (!editor) return false;'

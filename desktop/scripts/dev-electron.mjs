@@ -1,13 +1,13 @@
-/**
- * 开发模式启动器。
- *
- * 1. 等 Vite 开发服务器就绪（避免 Electron 先加载到空白页）；
- * 2. 编译主进程 TypeScript；
- * 3. 启动 Electron，并通过 VITE_DEV_SERVER_URL 指向 Vite。
- *
- * 主进程代码改动后需要重启本脚本（不做主进程热重载，行为更可预测）；
- * 渲染层代码由 Vite HMR 自动更新。
- */
+
+
+
+
+
+
+
+
+
+
 import { spawn, spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import net from 'node:net'

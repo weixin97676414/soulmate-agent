@@ -1,4 +1,4 @@
-"""在本地知识库中全文搜索关键词，支持 PDF 和 Word 文档"""
+
 import sys
 import os
 from pathlib import Path
@@ -7,7 +7,7 @@ import argparse
 
 
 def extract_text_from_pdf(path: Path, max_pages: Optional[int] = None) -> str:
-    """提取 PDF 文本，可限制页数避免超时"""
+
     try:
         import pdfplumber
         with pdfplumber.open(path) as pdf:
@@ -23,7 +23,7 @@ def extract_text_from_pdf(path: Path, max_pages: Optional[int] = None) -> str:
 
 
 def extract_text_from_docx(path: Path) -> str:
-    """提取 DocX 文本"""
+
     try:
         from docx import Document
         doc = Document(path)
@@ -35,7 +35,7 @@ def extract_text_from_docx(path: Path) -> str:
 
 
 def search_file(path: Path, keyword: str, context_chars: int = 150) -> Optional[str]:
-    """在单个文件中搜索关键词，返回匹配片段"""
+
     suffix = path.suffix.lower()
     
     if suffix == ".pdf":
@@ -48,14 +48,14 @@ def search_file(path: Path, keyword: str, context_chars: int = 150) -> Optional[
     if "错误" in text or "失败" in text:
         return text
     
-    # 不区分大小写搜索
+    
     keyword_lower = keyword.lower()
     text_lower = text.lower()
     
     if keyword_lower not in text_lower:
         return None
     
-    # 找出所有匹配位置，返回上下文片段
+    
     results = []
     start = 0
     while True:
@@ -67,7 +67,7 @@ def search_file(path: Path, keyword: str, context_chars: int = 150) -> Optional[
         snippet = text[s:e].replace("\n", " ").strip()
         results.append(f"...{snippet}...")
         start = idx + len(keyword)
-        if len(results) >= 3:  # 每个文件最多3个片段
+        if len(results) >= 3:  
             break
     
     return "\n".join(results)
@@ -76,17 +76,17 @@ def search_file(path: Path, keyword: str, context_chars: int = 150) -> Optional[
 def search_directory(directory: str, keywords: List[str], 
                       file_types: Optional[List[str]] = None,
                       max_files: int = 50) -> List[Tuple[str, str]]:
-    """在目录中搜索多个关键词
-    
-    Args:
-        directory: 搜索目录
-        keywords: 关键词列表（支持 OR 逻辑）
-        file_types: 限定的文件类型，如 [".pdf", ".docx"]
-        max_files: 最大扫描文件数
-    
-    Returns:
-        [(文件路径, 匹配片段), ...]
-    """
+
+
+
+
+
+
+
+
+
+
+
     if file_types is None:
         file_types = [".pdf", ".docx", ".doc"]
     
@@ -107,18 +107,18 @@ def search_directory(directory: str, keywords: List[str],
                 continue
             file_count += 1
             
-            # 搜索任一关键词（OR逻辑）
+            
             for kw in keywords:
                 result = search_file(fpath, kw)
                 if result:
                     matches.append((str(fpath), kw, result))
-                    break  # 一个文件只报告一次
+                    break  
     
     return matches
 
 
 def print_results(matches: List[Tuple[str, str, str]], keywords: List[str]):
-    """格式化输出搜索结果"""
+
     if not matches:
         print(f"[未找到] 关键词 '{'/'.join(keywords)}' 在本地知识库中无匹配")
         return

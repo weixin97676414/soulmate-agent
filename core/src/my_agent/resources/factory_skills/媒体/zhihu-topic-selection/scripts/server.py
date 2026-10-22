@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-"""
-知乎工具后端 API 服务器 - Zhihu Tools Backend API Server
 
-提供 REST API 供前端 HTML 仪表盘调用：
-  GET  /api/topics?source=all&limit=20    获取话题列表
-  POST /api/generate                      生成内容
-  GET  /api/drafts                        获取草稿列表
-  GET  /api/drafts/<id>                   获取单个草稿
-  POST /api/drafts                        保存草稿
-  DELETE /api/drafts/<id>                  删除草稿
-  POST /api/publish                       发布内容
-  GET  /api/cookie/status                 检查Cookie状态
-  POST /api/cookie/refresh                刷新Cookie
 
-启动: python scripts/server.py [port]
-默认端口: 8765
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import sys
 import os
@@ -40,10 +40,10 @@ TZ = timezone(timedelta(hours=8))
 
 
 class APIHandler(BaseHTTPRequestHandler):
-    """API 请求处理器"""
+
 
     def log_message(self, format, *args):
-        """简化日志"""
+
         print(f"  [{self.command}] {self.path}")
 
     def _set_cors(self):
@@ -75,14 +75,14 @@ class APIHandler(BaseHTTPRequestHandler):
         params = parse_qs(parsed.query)
 
         try:
-            # 话题列表
+            
             if path == '/api/topics':
                 source = params.get('source', ['all'])[0]
                 limit = int(params.get('limit', ['30'])[0])
                 topics = self._get_topics(source, limit)
                 self._json({'data': topics, 'count': len(topics)})
 
-            # 草稿列表
+            
             elif path == '/api/drafts':
                 drafts = list_drafts()
                 result = []
@@ -98,7 +98,7 @@ class APIHandler(BaseHTTPRequestHandler):
                     })
                 self._json({'data': result, 'count': len(result)})
 
-            # 单个草稿
+            
             elif path.startswith('/api/drafts/'):
                 draft_id = path.split('/')[-1]
                 draft_path = os.path.join(DRAFTS_DIR, draft_id)
@@ -110,19 +110,19 @@ class APIHandler(BaseHTTPRequestHandler):
                 else:
                     self._json({'error': '草稿不存在'}, 404)
 
-            # Cookie 状态
+            
             elif path == '/api/cookie/status':
                 cookie_ok = self._check_cookie()
                 self._json({'available': cookie_ok})
 
-            # 写作风格
+            
             elif path == '/api/styles':
                 result = {}
                 for k, v in STYLES.items():
                     result[k] = {'name': v['name'], 'tone': v['tone'][:60]}
                 self._json(result)
 
-            # 查询生成任务状态
+            
             elif path.startswith('/api/generate/'):
                 task_id = path.split('/')[-1]
                 task_path = os.path.join(TASKS_DIR, f'{task_id}.json')
@@ -145,7 +145,7 @@ class APIHandler(BaseHTTPRequestHandler):
         body = self._read_body()
 
         try:
-            # 生成内容 → 第一步: 创建任务、返回指令供确认
+            
             if path == '/api/generate':
                 topic = body.get('topic', {})
                 refs = body.get('refs', [])
@@ -164,7 +164,7 @@ class APIHandler(BaseHTTPRequestHandler):
 
                 prompt = build_ai_prompt(topic, refs, style, content_type)
 
-                # 创建任务（状态: 待确认）
+                
                 import uuid
                 task_id = uuid.uuid4().hex[:12]
                 os.makedirs(TASKS_DIR, exist_ok=True)
@@ -191,9 +191,9 @@ class APIHandler(BaseHTTPRequestHandler):
                     'message': '指令已生成，请确认后开始写作'
                 })
 
-            # 确认指令 → 第二步: 触发 AI 生成
+            
             elif path.startswith('/api/generate/') and path.endswith('/confirm'):
-                task_id = path.split('/')[-2]  # /api/generate/{id}/confirm
+                task_id = path.split('/')[-2]  
                 task_path = os.path.join(TASKS_DIR, f'{task_id}.json')
                 if not os.path.exists(task_path):
                     self._json({'error': '任务不存在'}, 404)
@@ -206,7 +206,7 @@ class APIHandler(BaseHTTPRequestHandler):
                 with open(task_path, 'w', encoding='utf-8') as f:
                     json.dump(task, f, ensure_ascii=False, indent=2)
 
-                # 同时写入"当前任务"标记文件，方便调用方 AI 检测
+                
                 current_file = os.path.join(TASKS_DIR, 'current.json')
                 with open(current_file, 'w', encoding='utf-8') as f:
                     json.dump(task, f, ensure_ascii=False, indent=2)
@@ -216,7 +216,7 @@ class APIHandler(BaseHTTPRequestHandler):
                     'message': '指令已确认，AI 正在生成内容...'
                 })
 
-            # 查询生成状态 / 获取结果
+            
             elif path.startswith('/api/generate/') and not path.endswith('/confirm'):
                 task_id = path.split('/')[-1]
                 task_path = os.path.join(TASKS_DIR, f'{task_id}.json')
@@ -227,7 +227,7 @@ class APIHandler(BaseHTTPRequestHandler):
                 else:
                     self._json({'error': '任务不存在'}, 404)
 
-            # 保存草稿
+            
             elif path == '/api/drafts':
                 title = body.get('title', '')
                 content = body.get('body', '')
@@ -243,13 +243,13 @@ class APIHandler(BaseHTTPRequestHandler):
                 path = save_draft(title, content, content_type, topic, style, refs)
                 self._json({'success': True, 'path': path})
 
-            # 发布
+            
             elif path == '/api/publish':
                 draft_id = body.get('draft_id', '')
                 mode = body.get('mode', 'article')
                 urls = body.get('urls', [])
 
-                # 调用 publisher
+                
                 import subprocess
                 node = self._get_node()
                 publisher_script = os.path.join(os.path.dirname(__file__), 'publisher.js')
@@ -263,13 +263,13 @@ class APIHandler(BaseHTTPRequestHandler):
                 if urls:
                     cmd.extend(['--urls', ','.join(urls)])
 
-                # 后台启动发布
+                
                 subprocess.Popen(cmd, cwd=PROJECT_DIR,
                                creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == 'win32' else 0)
 
                 self._json({'success': True, 'message': '发布已启动，请在浏览器窗口中查看进度'})
 
-            # 刷新 Cookie
+            
             elif path == '/api/cookie/refresh':
                 import subprocess
                 node = self._get_node()
@@ -306,7 +306,7 @@ class APIHandler(BaseHTTPRequestHandler):
             self._json({'error': str(e)}, 500)
 
     def _get_topics(self, source, limit):
-        """获取话题列表"""
+
         init_database()
         topics = []
 

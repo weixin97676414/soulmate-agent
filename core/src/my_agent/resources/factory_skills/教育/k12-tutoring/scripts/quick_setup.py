@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-智能老师技能 - 快速依赖检查和安装脚本（Python版本）
-用于在技能加载时自动检查和安装依赖
-"""
+
+
+
+
 
 import subprocess
 import sys
@@ -12,7 +12,7 @@ import importlib
 from pathlib import Path
 
 class DependencyManager:
-    """依赖管理器"""
+
     
     def __init__(self):
         self.errors = []
@@ -20,7 +20,7 @@ class DependencyManager:
         self.installed = []
     
     def log(self, message, level="INFO"):
-        """日志输出"""
+
         prefix = {
             "INFO": "✅",
             "WARN": "⚠️",
@@ -30,7 +30,7 @@ class DependencyManager:
         print(f"{prefix.get(level, '•')} {message}")
     
     def check_command(self, command):
-        """检查命令是否存在"""
+
         try:
             result = subprocess.run(
                 [command, "--version"],
@@ -43,7 +43,7 @@ class DependencyManager:
             return False
     
     def check_python_package(self, package_name, import_name=None):
-        """检查 Python 包是否安装"""
+
         import_name = import_name or package_name
         try:
             importlib.import_module(import_name)
@@ -52,7 +52,7 @@ class DependencyManager:
             return False
     
     def install_python_package(self, package_name, import_name=None):
-        """安装 Python 包"""
+
         import_name = import_name or package_name
         
         try:
@@ -76,7 +76,7 @@ class DependencyManager:
             return False
     
     def check_and_install_python_package(self, package_name, import_name=None, required=True):
-        """检查并安装 Python 包"""
+
         import_name = import_name or package_name
         
         if self.check_python_package(package_name, import_name):
@@ -91,7 +91,7 @@ class DependencyManager:
                 return False
     
     def check_node_package(self, package_name):
-        """检查 Node.js 包是否安装"""
+
         try:
             result = subprocess.run(
                 ["node", "-e", f"require('{package_name}')"],
@@ -104,11 +104,11 @@ class DependencyManager:
             return False
     
     def install_node_package(self, package_name):
-        """安装 Node.js 包"""
+
         try:
             self.log(f"安装 {package_name}...", "INSTALL")
             
-            # 检查是否在项目目录
+            
             if os.path.exists("package.json"):
                 subprocess.run(
                     ["npm", "install", package_name, "--save", "--quiet"],
@@ -117,7 +117,7 @@ class DependencyManager:
                     timeout=60
                 )
             else:
-                # 全局安装或创建临时项目
+                
                 subprocess.run(
                     ["npm", "install", "-g", package_name, "--quiet"],
                     check=True,
@@ -138,7 +138,7 @@ class DependencyManager:
             return False
     
     def check_and_install_node_package(self, package_name, required=True):
-        """检查并安装 Node.js 包"""
+
         if self.check_node_package(package_name):
             self.log(f"{package_name} 已安装", "INFO")
             return True
@@ -151,12 +151,12 @@ class DependencyManager:
                 return False
     
     def setup_all(self):
-        """安装所有依赖"""
+
         print("\n" + "="*50)
         print("  智能老师技能 - 依赖自动安装")
         print("="*50 + "\n")
         
-        # 1. 检查 Python
+        
         self.log("检查 Python 环境...")
         python_version = sys.version_info
         if python_version.major >= 3 and python_version.minor >= 6:
@@ -167,11 +167,11 @@ class DependencyManager:
         
         print()
         
-        # 2. 安装 Python 必需包
+        
         self.log("检查 Python 必需包...")
         required_python_packages = [
-            ("pillow", "PIL"),           # 图像处理
-            ("requests", "requests"),     # HTTP 请求
+            ("pillow", "PIL"),           
+            ("requests", "requests"),     
         ]
         
         for package_name, import_name in required_python_packages:
@@ -179,12 +179,12 @@ class DependencyManager:
         
         print()
         
-        # 3. 安装 Python 可选包
+        
         self.log("检查 Python 可选包...")
         optional_python_packages = [
-            ("pytesseract", "pytesseract"),   # OCR（可选）
-            ("python-docx", "docx"),          # Word 文档（可选，用 Node.js docx 替代）
-            ("openpyxl", "openpyxl"),          # Excel（可选）
+            ("pytesseract", "pytesseract"),   
+            ("python-docx", "docx"),          
+            ("openpyxl", "openpyxl"),          
         ]
         
         for package_name, import_name in optional_python_packages:
@@ -192,7 +192,7 @@ class DependencyManager:
         
         print()
         
-        # 4. 检查 Node.js
+        
         self.log("检查 Node.js 环境...")
         if self.check_command("node"):
             result = subprocess.run(
@@ -207,13 +207,13 @@ class DependencyManager:
         
         print()
         
-        # 5. 安装 Node.js 包
+        
         self.log("检查 Node.js 包...")
         self.check_and_install_node_package("docx", required=True)
         
         print()
         
-        # 6. 检查可选系统依赖
+        
         self.log("检查系统可选依赖...")
         if self.check_command("tesseract"):
             self.log("tesseract OCR 引擎已安装", "INFO")
@@ -223,7 +223,7 @@ class DependencyManager:
         
         print()
         
-        # 7. 总结
+        
         print("="*50)
         
         if self.errors:
@@ -249,7 +249,7 @@ class DependencyManager:
 
 
 def main():
-    """主函数"""
+
     manager = DependencyManager()
     success = manager.setup_all()
     

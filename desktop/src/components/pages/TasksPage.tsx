@@ -25,19 +25,19 @@ import type {
   ScheduledTaskState,
 } from '@/types'
 
-/**
- * 自动化任务页。
- *
- * 放在左侧导航的独立一栏而不是塞进设置里：用户要管的不只是"几点跑"，
- * 还有"跑了没有""为什么没跑"—— 这是**要天天看**的东西，藏进设置的
- * 折叠区里等于没有。
- *
- * 两处刻意的取舍：
- * 1. **不做乐观更新**：任务一旦跑起来是真的花钱，界面显示的状态必须来自
- *    后端（正在跑 / 上次跑的时间都在核心内存里，前端猜不出来）；
- * 2. **条件触发要说清"第一次不执行"**：否则用户建完监控任务盯着看，
- *    发现什么都没发生，只会认为功能坏了。
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 const WEEKDAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 
 const TRIGGER_OPTIONS: Array<{ value: ScheduledTask['trigger']; label: string }> = [
@@ -52,13 +52,13 @@ const CONDITION_OPTIONS: Array<{ value: ScheduledTask['condition']; label: strin
   { value: 'file_changed', label: '文件有更新才执行' },
 ]
 
-/**
- * 把触发方式渲染成一句人话。
- *
- * ⚠️ 与后端 `agent/task_store.py::describe_schedule` 是同一套话术。
- * 模型转述任务时用的是后端那份，界面上是这份 —— 两边措辞不一致会让用户
- * 觉得"它说的和我看到的不是一回事"。
- */
+
+
+
+
+
+
+
 function describeSchedule(task: ScheduledTaskDraft): string {
   if (task.trigger === 'daily') return `每天 ${task.at_time}`
   if (task.trigger === 'weekly') {
@@ -66,13 +66,13 @@ function describeSchedule(task: ScheduledTaskDraft): string {
   }
   const minutes = task.interval_minutes
   const base = minutes >= 60 && minutes % 60 === 0 ? `每 ${minutes / 60} 小时` : `每 ${minutes} 分钟`
-  // 起始时间必须出现在这句人话里：不说的话，"为什么现在还不跑"在界面上毫无线索，
-  // 用户只会看到一条"每 2 小时"的任务安安静静地不动
+  
+  
   const start = humanStartAt(task.start_at)
   return start ? `自 ${start} 起，${base}` : base
 }
 
-/** `T09:00` → `2026年9月30日 09:00`（读不出来返回空串，等同没设起始时间）。 */
+
 function humanStartAt(raw: string): string {
   const text = (raw ?? '').trim()
   if (!text) return ''
@@ -82,12 +82,12 @@ function humanStartAt(raw: string): string {
   return `${Number(year)}年${Number(month)}月${Number(day)}日 ${hour}:${minute}`
 }
 
-/**
- * `Date` → `<input type="datetime-local">` 认的本地时间串（`YYYY-MM-DDTHH:MM`）。
- *
- * ⚠️ 不能图省事用 `toISOString()`：那给的是 **UTC**，东八区用户会看到"少了 8 小时"
- * 的起始时间。这个字段与 `at_time` 同一口径 —— 都是**本机时间**。
- */
+
+
+
+
+
+
 function toLocalStamp(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, '0')
   return (
@@ -130,8 +130,8 @@ function blankDraft(assistantId: string): ScheduledTaskDraft {
     interval_minutes: 60,
     at_time: '09:00',
     weekday: 0,
-    // 默认落在"一小时后的整分"：预填一个明显在未来的时刻，用户一眼就知道这里要填什么；
-    // 留空或填当前时刻会让"新建 → 立刻跑一轮"变成默认行为，那是真花钱的
+    
+    
     start_at: toLocalStamp(new Date(Date.now() + 60 * 60 * 1000)),
     condition: 'none',
     condition_target: '',
@@ -149,8 +149,8 @@ function toDraft(task: ScheduledTaskState): ScheduledTaskDraft {
     interval_minutes: rest.interval_minutes,
     at_time: rest.at_time,
     weekday: rest.weekday,
-    // 老任务可能没有这个字段（后端补的空串）—— 空串在界面上就是"从没设过"，
-    // 编辑时由用户自己填，不要在这里替它猜一个时刻
+    
+    
     start_at: rest.start_at ?? '',
     condition: rest.condition,
     condition_target: rest.condition_target,
@@ -192,8 +192,8 @@ export function TasksPage() {
     void load()
   }, [load])
 
-  // 每 30 秒刷新一次：倒计时、上次执行时间、是否正在跑都来自核心内存，
-  // 前端自己算不出来（尤其是"正在执行"——那决定用户此刻能不能再点一次）
+  
+  
   useEffect(() => {
     const timer = window.setInterval(() => void load(), 30_000)
     return () => window.clearInterval(timer)
@@ -290,12 +290,12 @@ export function TasksPage() {
     }
   }
 
-  /**
-   * 上次**没跑完**的任务（失败 / 被叫停）。
-   *
-   * 后端只保留"没跑完"的记录（跑完就删），所以这里出现的每一条都意味着"还能接着干"。
-   * 用户的原话是"别一次失败全白干" —— 有进度、有「继续」，才不会白干。
-   */
+  
+
+
+
+
+
   const [resumable, setResumable] = useState<RunRecord[]>([])
   const loadRuns = useCallback(async () => {
     if (!api) return
@@ -303,7 +303,7 @@ export function TasksPage() {
       const payload = await api.getRuns()
       setResumable(payload.runs.filter((run) => run.kind === 'task'))
     } catch {
-      // 拿不到续跑列表不该影响任务页本身（它是个附加信息）
+      
       setResumable([])
     }
   }, [api])
@@ -335,7 +335,7 @@ export function TasksPage() {
       await api.dismissRun(run.id)
       await loadRuns()
     } catch {
-      // 忽略失败没有后果（下次进来还会看到它）
+      
     }
   }
 
@@ -356,7 +356,7 @@ export function TasksPage() {
               不会弹确认框（详见左侧「安全与通用」页里的「权限确认」）。
             </p>
 
-            {/* 上次没跑完的那几次：进度已经落盘，点「继续」接着原会话跑（不重复已完成的部分） */}
+            {}
             {resumable.length > 0 ? (
               <div className="mt-3 space-y-1.5">
                 {resumable.map((run) => (
@@ -441,8 +441,8 @@ export function TasksPage() {
                         <Badge tone={task.enabled ? 'success' : 'neutral'}>
                           {task.enabled ? '已启用' : '已停用'}
                         </Badge>
-                        {/* 「内置」= 服务端判定为不可手动修改（我们预置的四条「全员进化中 X」，
-                            以及这四个搭子自己在对话里建的）。这里只展示服务端给的结论 */}
+                        {
+}
                         {task.locked ? <Badge tone="neutral">内置</Badge> : null}
                         {task.running ? <Badge tone="brand">正在执行</Badge> : null}
                       </div>
@@ -466,9 +466,9 @@ export function TasksPage() {
                       <div className="mt-0.5 text-[11.5px] text-ink-faint">
                         上次执行：{formatStamp(task.last_run_at)}
                       </div>
-                      {/* 置灰是**兜底提示**、不是唯一的闸：服务端对改/删会返 409 并给人话，
-                          这里先说清楚"该找谁"，用户才不会以为按钮坏了。
-                          「立即执行」不置灰 —— 跑一次不算修改 */}
+                      {
+
+}
                       {task.locked ? (
                         <div className="mt-1 text-[11.5px] leading-relaxed text-ink-faint">
                           为了你更优质的体验，内置搭子的自动化任务不支持手动修改，你可以通过与搭子协商进行调整
@@ -567,8 +567,8 @@ function TaskFormModal({
 }) {
   const [draft, setDraft] = useState<ScheduledTaskDraft | null>(initial)
 
-  // 每次打开都用**弹窗自己的**那份初始值播种：直接跟着外部 props 走的话，
-  // 用户在列表里点了另一个任务，弹窗会在他还没看清时就被换掉
+  
+  
   useEffect(() => {
     if (open) setDraft(initial)
   }, [open, initial])
@@ -577,20 +577,20 @@ function TaskFormModal({
 
   const patch = (changes: Partial<ScheduledTaskDraft>) => setDraft({ ...draft, ...changes })
 
-  /**
-   * 「浏览…」挑一个文件回填到目标框里。
-   *
-   * 主进程给的是**绝对路径**（用户取消返回 null，什么都不做）。手动粘贴路径**照旧保留**：
-   * 这是同一件事的两条路，不是替代关系 —— 会复制路径的用户不该被强制走对话框。
-   */
+  
+
+
+
+
+
   const browseFile = async () => {
     const picked = await window.agentBridge.pickFile()
     if (!picked) return
     patch({ condition_target: picked })
   }
   const needsTarget = draft.condition !== 'none'
-  // 间隔型的起始时间是**必填**：留空会让"从什么时候开始"变得无法回答
-  // （后端把空串当"从现在起算"，对界面来说那就是"用户没填完"）
+  
+  
   const needsStartAt = draft.trigger === 'interval'
   const valid =
     draft.name.trim().length > 0 &&
@@ -658,11 +658,11 @@ function TaskFormModal({
           </Field>
 
           {draft.trigger === 'interval' ? (
-            <Field label="间隔（分钟）" hint="最少 1 分钟，建议 30 分钟以上">
+            <Field label="间隔（分钟）" hint="最少 1 分钟，建议 30 分钟以上；上限 30 天">
               <Input
                 type="number"
                 min={1}
-                max={10080}
+                max={43200}
                 value={draft.interval_minutes}
                 onChange={(event) =>
                   patch({ interval_minutes: Number(event.target.value) || 1 })
@@ -747,7 +747,7 @@ function TaskFormModal({
                   onChange={(event) => patch({ condition_target: event.target.value })}
                 />
               </div>
-              {/* 只有"文件"才给浏览按钮：网页地址没法从本地文件系统里挑 */}
+              {}
               {draft.condition === 'file_changed' ? (
                 <Button variant="secondary" onClick={() => void browseFile()}>
                   浏览…

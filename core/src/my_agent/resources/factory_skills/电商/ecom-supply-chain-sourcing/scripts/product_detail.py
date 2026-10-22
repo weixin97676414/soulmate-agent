@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""
-1688 商品详情 & 价格分析 — product_detail.py
-用法: python3 product_detail.py <商品ID或链接>
 
-依赖：python3, requests（标准库 + pip install requests）
-网络：仅访问 *.1688.com 域名
-凭证：无需，可选配置 ALI_COOKIE 环境变量增强访问能力
-"""
+
+
+
+
+
+
+
 
 import sys
 import json
@@ -14,7 +14,7 @@ import re
 import os
 import requests
 
-# 可选 Cookie（从环境变量读取，非必需）
+
 _OPTIONAL_COOKIE = os.environ.get("ALI_COOKIE", "")
 
 HEADERS = {
@@ -27,10 +27,10 @@ if _OPTIONAL_COOKIE:
     HEADERS["Cookie"] = _OPTIONAL_COOKIE
 
 def get_product_detail(product_id: str) -> dict:
-    """
-    获取 1688 商品详细信息，包含价格阶梯、MOQ、认证资质等。
-    """
-    # 1688 offer detail 接口
+
+
+
+    
     url = "https://greenwholesale.1688.com/service/offerdetail/v1/detail.json"
     params = {"offerId": product_id}
 
@@ -42,7 +42,7 @@ def get_product_detail(product_id: str) -> dict:
     except Exception:
         pass
 
-    # 兜底: 淘宝/1688 open API 风格
+    
     try:
         url2 = f"https://m.1688.com/offer/{product_id}.html"
         resp2 = requests.get(url2, headers=HEADERS, timeout=15)
@@ -54,16 +54,16 @@ def get_product_detail(product_id: str) -> dict:
 
 
 def _parse_detail(data: dict) -> dict:
-    """解析商品详情 JSON"""
+
     if not data:
         return {"error": "空响应", "success": False}
 
-    # 提取核心字段
+    
     basic = data.get("detail", {}) or data.get("data", {}) or data
     price = data.get("price", {}) or basic.get("price", {})
     seller = data.get("sellerInfo", {}) or data.get("company", {}) or {}
 
-    # 价格阶梯
+    
     price_list = []
     for entry in (price.get("priceRange", []) or price.get("skuCalPrice", []) or []):
         if isinstance(entry, dict):
@@ -73,7 +73,7 @@ def _parse_detail(data: dict) -> dict:
                 "折扣": entry.get("discount", ""),
             })
 
-    # 认证资质
+    
     certs = []
     for cert in (data.get("certList", []) or data.get("authenticateInfo", []) or []):
         certs.append(_clean_html(str(cert)))
@@ -104,8 +104,8 @@ def _parse_detail(data: dict) -> dict:
 
 
 def _parse_html_detail(html: str, product_id: str) -> dict:
-    """从 HTML 中解析商品详情（兜底方案）"""
-    # 尝试提取 JSON 数据
+
+    
     patterns = [
         r'window\.__INIT_STATE__\s*=\s*(\{.*?\});',
         r'"price":"([\d.]+)"',
@@ -128,7 +128,7 @@ def _parse_html_detail(html: str, product_id: str) -> dict:
 
 
 def _extract_skus(data: dict) -> list:
-    """提取 SKU 规格信息"""
+
     skus = []
     for sku_list in (data.get("skuList", []) or data.get("skus", []) or [data.get("sku", {})]):
         if isinstance(sku_list, dict):
@@ -137,7 +137,7 @@ def _extract_skus(data: dict) -> list:
                 "库存": sku_list.get("amount", sku_list.get("stock", "")),
                 "价格": sku_list.get("price", sku_list.get("unitPrice", "")),
             })
-    return skus[:10]  # 最多10条
+    return skus[:10]  
 
 
 def _parse_amount(val) -> str:
@@ -160,7 +160,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     pid = sys.argv[1]
-    # 从链接中提取 ID
+    
     m = re.search(r"(?:offer/|id=)(\d+)", pid)
     if m:
         pid = m.group(1)

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-HealthFit 建档草稿管理工具
-功能：保存、恢复、清理建档进度
-"""
+
+
+
+
 
 import json
 import logging
 from datetime import datetime
 from pathlib import Path
 
-# 配置日志
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -30,7 +30,7 @@ PROFILE_FILE = JSON_DIR / "profile.json"
 
 
 def save_draft(data: dict, section: int, question: str):
-    """保存建档进度到草稿文件"""
+
     JSON_DIR.mkdir(parents=True, exist_ok=True)
     
     draft = {
@@ -51,7 +51,7 @@ def save_draft(data: dict, section: int, question: str):
 
 
 def load_draft() -> dict | None:
-    """加载草稿文件"""
+
     if not DRAFT_FILE.exists():
         return None
     
@@ -65,16 +65,16 @@ def load_draft() -> dict | None:
 
 
 def recover_draft() -> bool:
-    """
-    恢复草稿到正式档案
-    将草稿数据复制到 profile.json
-    """
+
+
+
+
     draft = load_draft()
     if not draft:
         print("❌ 没有草稿可恢复")
         return False
     
-    # 将草稿数据转换为 profile 格式
+    
     partial = draft.get("partial_data", {})
     
     profile = {
@@ -85,7 +85,7 @@ def recover_draft() -> bool:
         "age": partial.get("age", 0),
         "height_cm": partial.get("height_cm", 0),
         "weight_kg": partial.get("weight_kg", 0),
-        # 其他字段待后续补充
+        
     }
     
     with open(PROFILE_FILE, "w", encoding="utf-8") as f:
@@ -96,7 +96,7 @@ def recover_draft() -> bool:
 
 
 def clear_draft():
-    """删除草稿文件"""
+
     if DRAFT_FILE.exists():
         DRAFT_FILE.unlink()
         print("✅ 草稿已清除")
@@ -105,12 +105,12 @@ def clear_draft():
 
 
 def get_draft_status() -> dict:
-    """获取草稿状态信息"""
+
     draft = load_draft()
     if not draft:
         return {"exists": False}
     
-    # 计算存档时间
+    
     last_updated = datetime.fromisoformat(draft["last_updated"])
     age_hours = (datetime.now() - last_updated).total_seconds() / 3600
     

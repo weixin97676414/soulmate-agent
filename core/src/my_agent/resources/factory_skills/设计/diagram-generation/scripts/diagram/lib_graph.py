@@ -1,26 +1,26 @@
 # -*- coding: utf-8 -*-
-"""
-统一图模型加载 / 样式查表 / 自动布局引擎。
 
-所有产物生成器（Mermaid、drawio、Excalidraw、SVG）都调用本模块的 layout()，
-保证同一份 graph.json 在四种格式里**布局一致**——这是「统一图模型」设计的价值所在。
 
-仅依赖标准库。
-"""
+
+
+
+
+
+
 
 import json
 import os
 import re
 
-# ---------------------------------------------------------------- 样式系统
+
 
 TEXT_COLOR = "#1F2933"
 GROUP_STROKE = "#999999"
 CANVAS_BG = "#FFFFFF"
 FONT = "Microsoft YaHei"
 
-# type -> (shape, fill, stroke, width, height, radius)
-# 与 references/style-system.md 的表保持一致，改表须同步改文档
+
+
 STYLE = {
     "actor":     ("ellipse",  "#F5F5F5", "#666666", 120, 60, 0),
     "gateway":   ("rect",     "#DCE9F7", "#3F6FA8", 160, 60, 12),
@@ -45,7 +45,7 @@ DEFAULT_STYLE = STYLE["component"]
 VALID_TYPES = set(STYLE)
 GRAPH_TYPES = {"architecture", "flowchart", "er", "sequence", "state", "c4"}
 
-# edge type -> (dashed, arrow_end, width)
+
 EDGE_STYLE = {
     "sync":    (False, True,  1.5),
     "async":   (True,  True,  1.5),
@@ -57,11 +57,11 @@ EDGE_STYLE = {
 }
 DEFAULT_EDGE = EDGE_STYLE["sync"]
 
-PAD_X, PAD_Y = 60, 84          # 节点间距
-GROUP_PAD = 26                 # 分组内边距
-GROUP_HEAD = 26                # 分组标题栏高度
-MARGIN = 44                    # 画布边距
-MAX_LABEL = 12                 # 单行标签字数上限
+PAD_X, PAD_Y = 60, 84          
+GROUP_PAD = 26                 
+GROUP_HEAD = 26                
+MARGIN = 44                    
+MAX_LABEL = 12                 
 
 
 def style_of(node):
@@ -73,7 +73,7 @@ def edge_style(edge):
 
 
 def text_width(text, size):
-    """按中文全角 / 西文半角估算文本宽度（px）。"""
+
     w = 0.0
     for ch in text:
         w += size if ord(ch) > 0x2E80 else size * 0.55
@@ -81,7 +81,7 @@ def text_width(text, size):
 
 
 def wrap_text(text, size, max_px):
-    """按像素宽度折行，返回行列表。"""
+
     if text_width(text, size) <= max_px:
         return [text]
     lines, cur = [], ""
@@ -97,7 +97,7 @@ def wrap_text(text, size, max_px):
 
 
 def node_size(node):
-    """节点尺寸：类型默认尺寸，标签过长时自动加宽。"""
+
     _, _, _, w, h, _ = style_of(node)
     label = (node.get("label") or "").strip()
     need = text_width(label, 12) + 28
@@ -106,7 +106,7 @@ def node_size(node):
     return w, h
 
 
-# ---------------------------------------------------------------- 加载
+
 
 def load(path):
     with open(path, "r", encoding="utf-8") as f:
@@ -124,10 +124,10 @@ def index_of(g):
             {x["id"]: x for x in g["groups"]})
 
 
-# ---------------------------------------------------------------- 分层
+
 
 def assign_layers(g):
-    """返回 {node_id: layer}。显式 layer 优先，否则按最长路径（DAG）。"""
+
     nodes, edges, _ = g["nodes"], g["edges"], g["groups"]
     ids = [n["id"] for n in nodes]
     given = {n["id"]: n.get("layer") for n in nodes if isinstance(n.get("layer"), int)}
@@ -157,13 +157,13 @@ def assign_layers(g):
             indeg[t] -= 1
             if indeg[t] == 0:
                 queue.append(t)
-    for i in ids:                                   # 环内未覆盖的节点兜底
+    for i in ids:                                   
         layer.setdefault(i, given.get(i, 0))
     return layer
 
 
 def barycenter_pass(order, layer, edges, reverse=False):
-    """重心法减少连线交叉。order: {layer_no: [node_id]}"""
+
     keys = sorted(order)
     seq = keys[1:] if not reverse else list(reversed(keys))[:-1]
     pos = {}
@@ -187,16 +187,16 @@ def barycenter_pass(order, layer, edges, reverse=False):
     return order
 
 
-# ---------------------------------------------------------------- 布局
+
 
 def layout(g):
-    """
-    计算所有图元坐标。返回 dict：
-      nodes  -> {id: {x,y,w,h,shape,fill,stroke,radius,lines}}
-      groups -> {id: {x,y,w,h,label}}
-      edges  -> [{id, points:[(x,y)...], label, dashed, arrow, width, lx, ly}]
-      width/height -> 画布尺寸
-    """
+
+
+
+
+
+
+
     nodes, edges, groups = g["nodes"], g["edges"], g["groups"]
     gtype = (g.get("meta") or {}).get("graph_type")
     direction = (g.get("meta") or {}).get("direction") or "TB"
@@ -259,7 +259,7 @@ def layout(g):
 
 
 def _group_boxes(g, out_nodes, sizes, direction):
-    """分组框：包围成员节点，分组之间不重叠时用成员外接矩形。"""
+
     res = {}
     gmap = {x["id"]: x for x in g["groups"]}
     members = {}
@@ -283,7 +283,7 @@ def _group_boxes(g, out_nodes, sizes, direction):
 
 
 def _route_edges(g, out_nodes, direction):
-    """正交折线路由：TB 时竖直优先，LR 时水平优先。"""
+
     res = []
     for e in g["edges"]:
         s, t = out_nodes.get(e.get("source")), out_nodes.get(e.get("target"))
@@ -315,7 +315,7 @@ def _route_edges(g, out_nodes, direction):
 
 
 def _layout_sequence(g):
-    """时序图：参与者横排顶部，消息按 seq 纵向依次展开。"""
+
     actors = [n for n in g["nodes"]]
     msgs = sorted([e for e in g["edges"]], key=lambda e: e.get("seq", 999))
     out_nodes, x = {}, MARGIN
@@ -340,7 +340,7 @@ def _layout_sequence(g):
         y = TOP + i * STEP
         xs, xt = actor_x[s], actor_x[t]
         dashed, arrow, width = edge_style(e)
-        if s == t:                                   # 自调用
+        if s == t:                                   
             pts = [(xs, y), (xs + 46, y), (xs + 46, y + 26), (xs, y + 26)]
             out_edges.append({"id": e["id"], "points": pts,
                               "label": e.get("label") or "", "dashed": dashed,
@@ -359,7 +359,7 @@ def _layout_sequence(g):
 
 
 def _layout_er(g):
-    """ER 图：实体按两列网格排布，关系连线走正交折线。"""
+
     ents = [n for n in g["nodes"] if (n.get("type") or "entity") != "attribute"]
     per_col = max(1, (len(ents) + 1) // 2)
     out_nodes = {}

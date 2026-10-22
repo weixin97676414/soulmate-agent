@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-智能老师 - 试卷生成脚本
 
-目标：
-1. 至少为九大学科生成可用的基础/提高/挑战三层练习。
-2. 输入或依赖异常时给中文可操作提示，避免直接抛出英文堆栈。
-3. 按 --output 真实写入文件；优先生成 docx，依赖缺失时降级为 Markdown。
-"""
+
+
+
+
+
+
+
 
 import argparse
 import json
@@ -27,7 +27,7 @@ EXAMPLE_TOPICS = {}
 
 
 class PaperGenerationError(Exception):
-    """面向用户的试卷生成错误。"""
+    pass
 
 
 class FriendlyArgumentParser(argparse.ArgumentParser):

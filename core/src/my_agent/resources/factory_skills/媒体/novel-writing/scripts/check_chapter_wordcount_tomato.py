@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""兼容入口：等同 check_chapter_wordcount.py --platform tomato"""
+
 
 import subprocess
 import sys

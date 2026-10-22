@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""
-Stock news aggregator for Chinese A-shares.
-Fetches news from EastMoney and Xueqiu (free, no API key required).
 
-Usage:
-    python stock_news.py 600519 贵州茅台
-    python stock_news.py --market
-"""
+
+
+
+
+
+
+
 
 import argparse
 import json
@@ -18,12 +18,12 @@ import concurrent.futures as _cf
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# EastMoney news
-# ---------------------------------------------------------------------------
+
+
+
 
 def get_news_eastmoney(symbol):
-    """Fetch stock news from EastMoney via AkShare."""
+
     import akshare as ak
 
     symbol = str(symbol).zfill(6)
@@ -51,12 +51,12 @@ def get_news_eastmoney(symbol):
     return []
 
 
-# ---------------------------------------------------------------------------
-# Xueqiu (Snowball) news
-# ---------------------------------------------------------------------------
+
+
+
 
 def get_news_xueqiu(symbol):
-    """Fetch stock news from Xueqiu (Snowball Finance)."""
+
     import urllib.request
     import http.cookiejar
 
@@ -68,7 +68,7 @@ def get_news_xueqiu(symbol):
 
         ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 
-        # Get cookies first
+        
         cj = http.cookiejar.CookieJar()
         opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
         cookie_req = urllib.request.Request("https://xueqiu.com/", headers={"User-Agent": ua})
@@ -96,12 +96,12 @@ def get_news_xueqiu(symbol):
         return []
 
 
-# ---------------------------------------------------------------------------
-# Deduplication
-# ---------------------------------------------------------------------------
+
+
+
 
 def _dedup_news(news_list):
-    """Deduplicate news by title prefix."""
+
     seen = set()
     result = []
     for n in news_list:
@@ -115,21 +115,21 @@ def _dedup_news(news_list):
     return result
 
 
-# ---------------------------------------------------------------------------
-# Aggregated search
-# ---------------------------------------------------------------------------
+
+
+
 
 def search_stock_news(stock_code, stock_name=None):
-    """Aggregate news from all free sources for a stock."""
+
     all_news = []
 
-    # EastMoney
+    
     try:
         all_news.extend(get_news_eastmoney(stock_code))
     except Exception as e:
         logger.debug("EastMoney aggregation failed: %s", e)
 
-    # Xueqiu
+    
     try:
         all_news.extend(get_news_xueqiu(stock_code))
     except Exception as e:
@@ -139,12 +139,12 @@ def search_stock_news(stock_code, stock_name=None):
 
 
 def search_market_news():
-    """Search for general A-share market news using AkShare."""
+
     import akshare as ak
 
     results = []
     try:
-        # Use AkShare's news interface for market-wide news
+        
         df = ak.stock_news_em(symbol="000001")
         if df is not None and not df.empty:
             for _, row in df.head(8).iterrows():
@@ -159,9 +159,9 @@ def search_market_news():
     return results
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
+
+
+
 
 def main():
     parser = argparse.ArgumentParser(

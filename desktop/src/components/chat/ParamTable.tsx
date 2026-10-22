@@ -15,12 +15,12 @@ interface JsonSchema {
   required?: string[]
 }
 
-/**
- * 把 description 压成一句短标签。
- *
- * 技能作者写的是给模型看的完整说明（往往很长），直接铺在确认弹窗里
- * 会把界面撑爆，所以只取第一句并截断。
- */
+
+
+
+
+
+
 function shortLabel(description: string | undefined, fallback: string): string {
   if (!description) return fallback.replace(/_/g, ' ')
   const firstClause = description.split(/[，。；;,.（(]/)[0]?.trim() ?? ''
@@ -52,7 +52,7 @@ function ValueView({ value }: { value: unknown }) {
         </span>
       )
     }
-    // 长文本（比如报告正文）折叠展示，避免弹窗被撑到屏幕外
+    
     if (value.length > 200) {
       return (
         <pre className="selectable max-h-[160px] overflow-auto rounded-[6px] border border-line bg-panel p-2 text-[11.5px] leading-relaxed whitespace-pre-wrap text-ink-soft">
@@ -87,7 +87,7 @@ function ValueView({ value }: { value: unknown }) {
       </div>
     )
   }
-  // 对象：折叠成一段 JSON，需要时用户展开看
+  
   return (
     <pre className="selectable max-h-[160px] overflow-auto rounded-[6px] border border-line bg-panel p-2 text-[11.5px] leading-relaxed whitespace-pre-wrap text-ink-soft">
       {JSON.stringify(value, null, 2)}
@@ -95,13 +95,13 @@ function ValueView({ value }: { value: unknown }) {
   )
 }
 
-/**
- * 确认弹窗里的参数展示。
- *
- * 直接用 ``JSON.stringify`` 铺给用户看有两个问题：键名是英文的
- * ``file_path``、``max_rows``，而值可能是一大坨。这里借助技能自己的
- * JSON Schema 把字段说明取出来当标签，并按值类型分别渲染。
- */
+
+
+
+
+
+
+
 export function ParamTable({
   skillName,
   params,

@@ -5,12 +5,12 @@ import { BrandMark } from '@/components/BrandMark'
 import { Button, Spinner } from '@/components/ui'
 import { useAppStore } from '@/stores/appStore'
 
-/**
- * 启动等待页。
- *
- * Python 核心首次启动需要 1~3 秒（导入 pandas 之类的库会更久），
- * 这里给出明确的进度反馈；失败时把后端日志折叠展示，便于自助排查。
- */
+
+
+
+
+
+
 export function BootScreen() {
   const error = useAppStore((state) => state.bootstrapError)
   const status = useAppStore((state) => state.backendStatus)
@@ -20,8 +20,8 @@ export function BootScreen() {
   const [logs, setLogs] = useState<string[]>([])
   const [showLogs, setShowLogs] = useState(false)
 
-  // 通信桥不存在时，「查看后端日志」这个按钮本身也会崩（它走的正是这座桥），
-  // 所以直接不渲染它，而不是让用户点了再看一个看不懂的错。
+  
+  
   const bridgeMissing = !window.agentBridge
 
   const loadLogs = async () => {
@@ -84,8 +84,8 @@ export function BootScreen() {
           </>
         ) : (
           <div className="flex flex-col items-center gap-4 text-center">
-            {/* 品牌加载动画（产品要求）：等待期给一个明确的"正在启动"观感，
-                而不是一块静止的空白。logo 做呼吸脉冲、底部一条循环进度条。 */}
+            {
+}
             <BrandMark size={56} radius={14} className="animate-pulse" />
             <div className="text-[14px] font-medium text-ink">正在启动 Soulmate Agent…</div>
             <div className="flex items-center gap-2 text-[12.5px] text-ink-soft">

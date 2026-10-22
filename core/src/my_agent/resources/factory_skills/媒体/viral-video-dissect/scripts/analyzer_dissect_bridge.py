@@ -1,20 +1,20 @@
-# 抽取层桥接脚本（v2.15 新增）：读外部抽取层工具的 data.json，映射成 video-script-dissect 步骤输入。
-# 仅做格式映射，不改任何领域逻辑；外部抽取层与 dissect 各跑各的，本脚本是它们之间的"翻译层"。
-"""
-用法:
-    python analyzer_dissect_bridge.py <外部抽取层输出目录> --mode p0|p1|p2
 
-    <外部抽取层输出目录> 应含 data.json，可选含 speakers.srt / platform/ 等。
 
-产出:
-    <外部抽取层输出目录>/<视频名>_抽取信号.md
-    按 dissect 步骤 1.5 / 1.8 / 1.85 / 1.9 的输入槽位组织，可直接贴进对应步骤。
 
-注意:
-    - 本脚本只做"格式映射"，不修改 dissect 任何文件，也不造新片。
-    - 外部抽取层的 data.json 字段名以实际版本为准，若结构不符，按注释微调下面的 .get() 路径。
-    - 运行前可先核验结构: jq '.transcript.segments[0:3]' data.json
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import json
 import os
@@ -43,7 +43,7 @@ def fmt_ts(seconds):
     return f"{m:02d}:{s:02d}"
 
 
-# ---------- P0: 说话人分离 ----------
+
 def build_speakers(data):
     lines = []
     speakers = data.get("speakers") or []
@@ -82,7 +82,7 @@ def build_speakers(data):
     return "\n".join(lines)
 
 
-# ---------- P0: OCR 画面文字台账 ----------
+
 def build_ocr(data):
     ocr = data.get("ocr") or data.get("text_regions") or []
     if not ocr:
@@ -99,7 +99,7 @@ def build_ocr(data):
     return "\n".join(lines)
 
 
-# ---------- P1: 字级时间戳 ----------
+
 def build_word_ts(data):
     segs = data.get("transcript", {}).get("segments", [])
     if not segs or not segs[0].get("words"):
@@ -116,7 +116,7 @@ def build_word_ts(data):
     return "\n".join(lines)
 
 
-# ---------- P1: 精华评分 + 多模态对齐 ----------
+
 def build_highlights(data):
     hl = data.get("highlights") or data.get("essence") or []
     if not hl:
@@ -137,7 +137,7 @@ def build_highlights(data):
     return "\n".join(lines)
 
 
-# ---------- P1: 场景切分 / 反转点 ----------
+
 def build_scenes(data):
     scenes = data.get("scenes") or data.get("chapters") or []
     if not scenes:
@@ -157,7 +157,7 @@ def build_scenes(data):
     return "\n".join(lines)
 
 
-# ---------- P2: 剪辑建议 / EDL（仅八维自分析） ----------
+
 def build_editing(data):
     ed = data.get("editing") or data.get("editing_suggest") or {}
     if not ed:
@@ -238,7 +238,7 @@ def main():
 
 
 def _check_isolated_venv():
-    """拒绝在系统 Python 中执行，强制要求隔离 venv。"""
+
     if sys.prefix == sys.base_prefix:
         sys.stderr.write(
             "⛔ 必须在隔离 venv 内运行（拒绝系统 Python）。\n"

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""图片工具：JPEG 压缩（控制 docx 体积）、底部空白裁剪（卡片图用）。
 
-用法:
-  python3 img_tools.py to-jpg in.png out.jpg [quality=84]
-  python3 img_tools.py trim-bottom in.png --bg "#FFF6EE" --margin 60
-"""
+
+
+
+
+
 import sys
 import numpy as np
 from PIL import Image

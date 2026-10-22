@@ -1,8 +1,8 @@
-"""搭子 / 搭子群导入接口的端到端：上传 → 落盘 → 再导一次仍然幂等。
 
-单元测试已经覆盖了"解析与落盘"，这里验的是**接口这一层**：路由能收 zip、
-路径不会与 ``/{assistant_id}`` 打架、失败时给出的是 4xx + 人话而不是 500。
-"""
+
+
+
+
 
 from __future__ import annotations
 
@@ -74,11 +74,11 @@ async def test_import_buddy_then_again(live):
     assistant_id = body["assistant"]["id"]
     assert runtime.assistants.get(assistant_id) is not None
 
-    # 技能既装上了、也配给了这个搭子
+    
     profile = runtime.assistants.get(assistant_id)
     assert profile is not None and "e2e-skill" in profile.enabled_skills
 
-    # 再导一次：不重复建、不重复装
+    
     second = await client.post(
         "/v1/assistants/import",
         files={"package": ("端到端搭子.zip", payload, "application/zip")},
@@ -109,7 +109,7 @@ async def test_import_group(live):
 
 
 async def test_bad_package_returns_400_with_reason(live):
-    """坏包要 400 + 人话，不能是 500 —— 前端把 detail 原样展示给用户。"""
+
     _, client = live
     response = await client.post(
         "/v1/assistants/import",
@@ -120,7 +120,7 @@ async def test_bad_package_returns_400_with_reason(live):
 
 
 async def test_import_routes_do_not_shadow_assistant_id(live):
-    """字面量路由排在 `/{assistant_id}` 之前，别被路径参数吃掉。"""
+
     runtime, client = live
     response = await client.get("/v1/assistants")
     assert response.status_code == 200

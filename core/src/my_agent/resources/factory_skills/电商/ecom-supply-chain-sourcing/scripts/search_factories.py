@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""
-1688 源头工厂搜索 — search_factories.py
-用法: python3 search_factories.py <关键词> [--province 省名]
 
-依赖：python3, requests（标准库 + pip install requests）
-网络：仅访问 *.1688.com 域名
-凭证：无需，可选配置 ALI_COOKIE 环境变量增强访问能力
-"""
+
+
+
+
+
+
+
 
 import sys
 import json
@@ -15,7 +15,7 @@ import os
 import requests
 from typing import Optional
 
-# 可选 Cookie（从环境变量读取，非必需）
+
 _OPTIONAL_COOKIE = os.environ.get("ALI_COOKIE", "")
 
 HEADERS = {
@@ -28,10 +28,10 @@ if _OPTIONAL_COOKIE:
     HEADERS["Cookie"] = _OPTIONAL_COOKIE
 
 def search_factories(keyword: str, province: str = "", page: int = 1) -> dict:
-    """
-    搜索 1688 "实力工厂" / "超级工厂" 标签的源头厂家。
-    """
-    # 1688 工厂搜索接口
+
+
+
+    
     params = {
         "keywords": keyword,
         "beginPage": page,
@@ -53,14 +53,14 @@ def search_factories(keyword: str, province: str = "", page: int = 1) -> dict:
 
     text = resp.text
 
-    # 尝试解析 JSON
+    
     try:
         raw = resp.json()
         return _parse_factory_response(raw, keyword)
     except Exception:
         pass
 
-    # HTML 内嵌 JSON 兜底
+    
     try:
         m = re.search(r'window\.__INIT_STATE__\s*=\s*(\{.*?\})\s*;', text, re.DOTALL)
         if m:
@@ -73,7 +73,7 @@ def search_factories(keyword: str, province: str = "", page: int = 1) -> dict:
 
 
 def _parse_factory_response(data: dict, keyword: str) -> dict:
-    """解析工厂数据"""
+
     items = []
 
     def dig(obj):
@@ -84,7 +84,7 @@ def _parse_factory_response(data: dict, keyword: str) -> dict:
             for item in obj:
                 dig(item)
 
-    # 提取所有 offer/company 相关列表
+    
     all_lists = []
     def collect_lists(obj, path=""):
         if isinstance(obj, list) and all(isinstance(x, dict) for x in obj):
@@ -99,7 +99,7 @@ def _parse_factory_response(data: dict, keyword: str) -> dict:
         for item in lst[:10]:
             if not isinstance(item, dict):
                 continue
-            # 筛选工厂（标签识别）
+            
             title = _clean_html(item.get("title","") or item.get("subject",""))
             company = _clean_html(item.get("companyName","") or item.get("company",""))
             tags = " ".join(str(t) for t in item.get("tags",[]) or item.get("keyWords",[]) or [])

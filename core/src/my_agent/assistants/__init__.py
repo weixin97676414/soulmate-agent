@@ -1,4 +1,4 @@
-"""助手（Agent 预设）。"""
+
 
 from .presets import (
     BUILTIN_ASSISTANTS,

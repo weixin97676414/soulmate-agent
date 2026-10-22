@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-财务危险信号检查器 - 基于《股市真规则》第八章
 
 
-使用许可:
-- 允许个人学习、研究、非商业用途使用
-- 允许修改后个人使用
-- 禁止直接复制核心算法用于商业产品或竞争性服务
 
-免责声明: 本脚本提供的分析结果仅供参考，不构成投资建议。
 
-参考: 《股市真规则》第八章 揭开财务伪装
-原作: 帕特·多尔西 (Pat Dorsey)
-"""
+
+
+
+
+
+
+
+
+
+
 
 import argparse
 import json
@@ -21,7 +21,7 @@ import sys
 from typing import Dict, List, Tuple
 
 
-# 六个主要危险信号
+
 RED_FLAGS = {
     "cash_flow_decline": {
         "id": 1,
@@ -97,7 +97,7 @@ RED_FLAGS = {
     }
 }
 
-# 七个其他需要关注的缺陷
+
 OTHER_DEFICIENCIES = {
     "investment_income": {
         "name": "投资收益支撑利润",
@@ -141,9 +141,9 @@ def check_cash_flow_divergence(
     net_income_growth: float,
     operating_cf_growth: float
 ) -> Dict:
-    """
-    检查现金流与净利润背离
-    """
+
+
+
     if net_income_growth > 0.1 and operating_cf_growth < 0:
         return {
             "flagged": True,
@@ -166,10 +166,10 @@ def check_receivables_vs_revenue(
     revenue_growth: float,
     bad_debt_provision_growth: float = None
 ) -> Dict:
-    """
-    检查应收账款与收入关系
-    """
-    if receivables_growth > revenue_growth * 1.2:  # 应收增长超过收入增长20%以上
+
+
+
+    if receivables_growth > revenue_growth * 1.2:  
         if bad_debt_provision_growth and bad_debt_provision_growth < receivables_growth:
             provision_warning = "，且坏账准备未同步增长"
         else:
@@ -188,10 +188,10 @@ def check_inventory_buildup(
     inventory_growth: float,
     revenue_growth: float
 ) -> Dict:
-    """
-    检查存货积压
-    """
-    if inventory_growth > revenue_growth * 1.3:  # 存货增长超过收入增长30%以上
+
+
+
+    if inventory_growth > revenue_growth * 1.3:  
         return {
             "flagged": True,
             "severity": "中危",
@@ -206,9 +206,9 @@ def check_nonrecurring_frequency(
     total_adjustments: float,
     net_income: float
 ) -> Dict:
-    """
-    检查非经常性费用频率
-    """
+
+
+
     if nonrecurring_count_3y >= 2:
         ratio = total_adjustments / abs(net_income) if net_income != 0 else 0
         return {
@@ -225,9 +225,9 @@ def check_acquisition_frequency(
     total_acquisition_cost: float,
     market_cap: float
 ) -> Dict:
-    """
-    检查收购频率
-    """
+
+
+
     if acquisition_count_3y >= 2 or total_acquisition_cost > market_cap * 0.3:
         return {
             "flagged": True,
@@ -239,19 +239,19 @@ def check_acquisition_frequency(
 
 
 def analyze_financial_red_flags(
-    # 基本财务数据
+    
     revenue_current: float,
     revenue_prior: float,
     net_income_current: float,
     net_income_prior: float,
     operating_cf_current: float,
     operating_cf_prior: float,
-    # 资产负债表数据
+    
     receivables_current: float,
     receivables_prior: float,
     inventory_current: float,
     inventory_prior: float,
-    # 其他数据
+    
     nonrecurring_count_3y: int = 0,
     total_nonrecurring_amount: float = 0,
     acquisition_count_3y: int = 0,
@@ -259,25 +259,25 @@ def analyze_financial_red_flags(
     market_cap: float = 1,
     cfo_departure: bool = False,
     auditor_change: bool = False,
-    # 检查选项
+    
     check_pension: bool = False,
     check_options_tax: bool = False,
     check_capitalization: bool = False
 ) -> Dict:
-    """
-    全面分析财务危险信号
-    """
+
+
+
     flags_triggered = []
     warnings = []
     
-    # 计算增长率
+    
     revenue_growth = (revenue_current - revenue_prior) / revenue_prior if revenue_prior > 0 else 0
     net_income_growth = (net_income_current - net_income_prior) / abs(net_income_prior) if net_income_prior != 0 else 0
     operating_cf_growth = (operating_cf_current - operating_cf_prior) / abs(operating_cf_prior) if operating_cf_prior != 0 else 0
     receivables_growth = (receivables_current - receivables_prior) / receivables_prior if receivables_prior > 0 else 0
     inventory_growth = (inventory_current - inventory_prior) / inventory_prior if inventory_prior > 0 else 0
     
-    # 检查1: 现金流衰退
+    
     cf_check = check_cash_flow_divergence(net_income_growth, operating_cf_growth)
     if cf_check["flagged"]:
         flags_triggered.append({
@@ -285,7 +285,7 @@ def analyze_financial_red_flags(
             **cf_check
         })
     
-    # 检查2: 应收账款异常
+    
     ar_check = check_receivables_vs_revenue(receivables_growth, revenue_growth)
     if ar_check["flagged"]:
         flags_triggered.append({
@@ -293,7 +293,7 @@ def analyze_financial_red_flags(
             **ar_check
         })
     
-    # 检查3: 存货积压
+    
     inv_check = check_inventory_buildup(inventory_growth, revenue_growth)
     if inv_check["flagged"]:
         flags_triggered.append({
@@ -301,7 +301,7 @@ def analyze_financial_red_flags(
             **inv_check
         })
     
-    # 检查4: 非经常性费用
+    
     nr_check = check_nonrecurring_frequency(nonrecurring_count_3y, total_nonrecurring_amount, net_income_current)
     if nr_check["flagged"]:
         flags_triggered.append({
@@ -309,7 +309,7 @@ def analyze_financial_red_flags(
             **nr_check
         })
     
-    # 检查5: 连续收购
+    
     acq_check = check_acquisition_frequency(acquisition_count_3y, total_acquisition_cost, market_cap)
     if acq_check["flagged"]:
         flags_triggered.append({
@@ -317,7 +317,7 @@ def analyze_financial_red_flags(
             **acq_check
         })
     
-    # 检查6: CFO/审计师离职
+    
     if cfo_departure:
         flags_triggered.append({
             "signal": "CFO离职",
@@ -334,7 +334,7 @@ def analyze_financial_red_flags(
             "explanation": "可能存在审计分歧"
         })
     
-    # 其他检查
+    
     if check_options_tax:
         warnings.append({
             "signal": "期权税收收益",
@@ -356,7 +356,7 @@ def analyze_financial_red_flags(
             "explanation": "检查是否将费用资本化以夸大利润"
         })
     
-    # 综合评级
+    
     high_risk_count = sum(1 for f in flags_triggered if f["severity"] == "高危")
     medium_risk_count = sum(1 for f in flags_triggered if f["severity"] == "中危")
     
@@ -392,9 +392,9 @@ def analyze_financial_red_flags(
 
 
 def format_red_flag_report(company_name: str, analysis: Dict) -> str:
-    """
-    格式化危险信号报告
-    """
+
+
+
     report = f"""
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🚨 财务危险信号检查报告
@@ -436,7 +436,7 @@ def format_red_flag_report(company_name: str, analysis: Dict) -> str:
   {warning['explanation']}
 """
     
-    # 增长数据
+    
     report += f"""
 📈 关键增长率对比
 ────────────────────────────────────────────────────
@@ -519,25 +519,25 @@ def main():
     
     parser.add_argument('--company', type=str, required=True, help='公司名称')
     
-    # 收入数据
+    
     parser.add_argument('--revenue-current', type=float, help='当期收入（亿元）')
     parser.add_argument('--revenue-prior', type=float, help='上期收入（亿元）')
     
-    # 利润数据
+    
     parser.add_argument('--net-income-current', type=float, help='当期净利润（亿元）')
     parser.add_argument('--net-income-prior', type=float, help='上期净利润（亿元）')
     
-    # 现金流数据
+    
     parser.add_argument('--operating-cf-current', type=float, help='当期经营现金流（亿元）')
     parser.add_argument('--operating-cf-prior', type=float, help='上期经营现金流（亿元）')
     
-    # 应收/存货数据
+    
     parser.add_argument('--receivables-current', type=float, help='当期应收账款（亿元）')
     parser.add_argument('--receivables-prior', type=float, help='上期应收账款（亿元）')
     parser.add_argument('--inventory-current', type=float, help='当期存货（亿元）')
     parser.add_argument('--inventory-prior', type=float, help='上期存货（亿元）')
     
-    # 其他信号
+    
     parser.add_argument('--nonrecurring-count', type=int, default=0, help='3年非经常性费用次数')
     parser.add_argument('--nonrecurring-amount', type=float, default=0, help='累计非经常性金额（亿元）')
     parser.add_argument('--acquisition-count', type=int, default=0, help='3年收购次数')
@@ -550,7 +550,7 @@ def main():
     
     args = parser.parse_args()
     
-    # 检查是否提供了完整数据
+    
     required = [args.revenue_current, args.revenue_prior, args.net_income_current,
                 args.net_income_prior, args.operating_cf_current, args.operating_cf_prior,
                 args.receivables_current, args.receivables_prior]
@@ -581,7 +581,7 @@ def main():
         args.inventory_current = inventory_current
         args.inventory_prior = inventory_prior
     
-    # 执行分析
+    
     analysis = analyze_financial_red_flags(
         revenue_current=args.revenue_current,
         revenue_prior=args.revenue_prior,
@@ -602,11 +602,11 @@ def main():
         auditor_change=args.auditor_change
     )
     
-    # 生成报告
+    
     report = format_red_flag_report(args.company, analysis)
     print(report)
     
-    # JSON输出
+    
     if args.json:
         print("\nJSON_OUTPUT:")
         print(json.dumps(analysis, ensure_ascii=False, indent=2))

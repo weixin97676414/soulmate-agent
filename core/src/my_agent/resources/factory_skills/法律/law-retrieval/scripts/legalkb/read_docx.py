@@ -1,18 +1,18 @@
-"""读取 Word (.docx) 文件文本内容"""
+
 import sys
 from pathlib import Path
 from docx import Document
 
 
 def read_docx(file_path: str) -> str:
-    """读取 DocX 文件内容
 
-    Args:
-        file_path: .docx 文件路径
 
-    Returns:
-        纯文本内容，保留段落结构
-    """
+
+
+
+
+
+
     path = Path(file_path)
     if not path.exists():
         print(f"[ERROR] 文件不存在: {file_path}")

@@ -2,7 +2,7 @@ import sys
 import json
 
 def match_resume_jd(resume_json, jd_text):
-    """计算简历和JD的匹配度（严格版）"""
+
     prompt = f"""
 请严格按照以下规则分析简历和岗位JD，计算匹配度并生成分析报告，必须客观公正，禁止过度美化：
 

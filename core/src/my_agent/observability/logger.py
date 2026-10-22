@@ -1,8 +1,8 @@
-"""结构化日志。
 
-对应《智能体框架开发文档》11.2 节。输出 JSON 行，便于检索；
-所有消息在落盘前统一脱敏。
-"""
+
+
+
+
 
 from __future__ import annotations
 
@@ -42,18 +42,18 @@ class JsonFormatter(logging.Formatter):
 
 
 class ConsoleFormatter(logging.Formatter):
-    """开发模式下的可读输出。
 
-    ## 为什么这里也要脱敏
 
-    控制台 handler 走的是 stderr。它没有 JsonFormatter 那样的结构化处理，
-    一度被当成"反正只是屏幕上的东西"而漏掉了 ``redact`` —— 但 Electron 会把
-    子进程的 stderr 收进自己的日志、开发模式下还会直接打到终端上。
-    **屏幕/终端缓冲/被复制走的日志，和落盘文件一样会泄漏**，
-    只是省去了攻击者读文件的那一步。
 
-    ``JsonFormatter`` 早就做了，这里补上才能保证"任何出口都过一遍 redact"。
-    """
+
+
+
+
+
+
+
+
+
 
     COLORS = {
         "DEBUG": "\033[36m",
@@ -73,8 +73,8 @@ class ConsoleFormatter(logging.Formatter):
         ts = datetime.fromtimestamp(record.created).strftime("%H:%M:%S")
         msg = redact(record.getMessage(), enabled=self._redact_enabled)
         line = f"{color}{ts} [{record.levelname[0]}]{self.RESET} {record.name} | {msg}"
-        # 异常的 traceback 里同样可能带上密钥（例如 httpx 把带 Authorization 的
-        # 请求上下文打出来），不能只脱敏 msg
+        
+        
         if record.exc_info:
             line += "\n" + redact(
                 self.formatException(record.exc_info), enabled=self._redact_enabled
@@ -89,7 +89,7 @@ def setup_logging(
     console: bool = True,
     redact_enabled: bool = True,
 ) -> None:
-    """初始化根 logger。重复调用是幂等的。"""
+
     global CONFIGURED
     if CONFIGURED:
         return
@@ -115,7 +115,7 @@ def setup_logging(
         file_handler.setFormatter(JsonFormatter(redact_enabled=redact_enabled))
         root.addHandler(file_handler)
 
-    # 第三方库降噪
+    
     for noisy in ("httpx", "httpcore", "uvicorn.access", "mcp"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
 

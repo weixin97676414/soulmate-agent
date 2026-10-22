@@ -1,9 +1,9 @@
-"""审计日志仓储。
 
-对应《智能体框架开发文档》10.5 节：高危操作必须能回答
-「谁、何时、做了什么、是否被批准」。参数在**写入前**统一脱敏，
-避免密钥或个人信息落进审计表。
-"""
+
+
+
+
+
 
 from __future__ import annotations
 
@@ -72,11 +72,11 @@ class AuditRepository:
         since: float | None = None,
         until: float | None = None,
     ) -> list[dict[str, Any]]:
-        """按条件查留痕。
 
-        ``since`` / ``until`` 是 epoch 秒（含端点）。时间范围是**必须能筛的**：
-        用户问的是"九点半那会儿出了什么事"，只能翻列表的话，一次失败就得从头翻到尾。
-        """
+
+
+
+
         clauses: list[str] = []
         params: list[Any] = []
         if session_id:
@@ -121,8 +121,8 @@ class AuditRepository:
         by_status = await self._db.fetch_all(
             "SELECT status, COUNT(*) AS n FROM audit_log GROUP BY status"
         )
-        # 实体操作的 skill_name 是空串（见 SCHEMA_V10）：它们不是技能调用，
-        # 混进「最常调用的技能」榜里会让那张榜失去意义
+        
+        
         by_skill = await self._db.fetch_all(
             """
             SELECT skill_name, COUNT(*) AS n

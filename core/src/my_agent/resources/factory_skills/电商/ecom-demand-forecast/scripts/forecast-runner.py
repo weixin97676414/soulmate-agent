@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""
-forecast-runner.py - 销量预测核心脚本
-支持单SKU预测、批量预测、准确率评估、报告生成
 
-依赖: pandas, numpy, scikit-learn
-可选: prophet (pip install prophet)
 
-用法:
-  python3 forecast-runner.py single --sku SKU-001 --input sales.csv --days 30
-  python3 forecast-runner.py batch --input sales.csv --output forecast_result.csv --days 30
-  python3 forecast-runner.py evaluate --input sales.csv --actual actual.csv
-  python3 forecast-runner.py report --forecast forecast_result.csv --inventory inventory.csv
-"""
+
+
+
+
+
+
+
+
+
+
+
 
 import argparse
 import sys
@@ -26,17 +26,17 @@ except ImportError:
     sys.exit(1)
 
 
-# ─── 预测模型 ───────────────────────────────────────────────────────────────
+
 
 def moving_average(series: pd.Series, window: int = 14) -> float:
-    """移动平均法"""
+
     if len(series) < window:
         window = len(series)
     return series.tail(window).mean()
 
 
 def exponential_smoothing(series: pd.Series, alpha: float = 0.3) -> float:
-    """指数平滑法"""
+
     result = series.iloc[0]
     for val in series.iloc[1:]:
         result = alpha * val + (1 - alpha) * result
@@ -44,7 +44,7 @@ def exponential_smoothing(series: pd.Series, alpha: float = 0.3) -> float:
 
 
 def holt_winters_forecast(series: pd.Series, forecast_days: int, season_period: int = 7):
-    """Holt-Winters 季节性预测（简化版）"""
+
     try:
         from statsmodels.tsa.holtwinters import ExponentialSmoothing
         model = ExponentialSmoothing(
@@ -53,13 +53,13 @@ def holt_winters_forecast(series: pd.Series, forecast_days: int, season_period: 
         forecast = model.forecast(forecast_days)
         return forecast.clip(lower=0)
     except ImportError:
-        # fallback to simple moving average
+        
         avg = moving_average(series)
         return pd.Series([avg] * forecast_days)
 
 
 def prophet_forecast(series: pd.Series, forecast_days: int, holidays_df=None):
-    """Prophet 预测（需要 prophet 包）"""
+
     try:
         from prophet import Prophet
         df = pd.DataFrame({
@@ -78,18 +78,18 @@ def prophet_forecast(series: pd.Series, forecast_days: int, holidays_df=None):
 
 
 def auto_select_model(series: pd.Series) -> str:
-    """根据数据特征自动选择预测模型"""
+
     n = len(series)
     if n < 30:
         return 'moving_average'
 
-    # 检测季节性（简单方法：周内变异系数）
+    
     if n >= 14:
         weekly_cv = series.groupby(series.index.dayofweek).mean().std() / series.mean()
         if weekly_cv > 0.2:
             return 'holt_winters'
 
-    # 检测趋势
+    
     x = np.arange(n)
     slope = np.polyfit(x, series.values, 1)[0]
     trend_ratio = abs(slope * n) / series.mean()
@@ -99,10 +99,10 @@ def auto_select_model(series: pd.Series) -> str:
     return 'moving_average'
 
 
-# ─── 预测执行 ───────────────────────────────────────────────────────────────
+
 
 def forecast_sku(sku_data: pd.Series, forecast_days: int, model: str = 'auto') -> dict:
-    """对单个 SKU 执行预测，返回预测结果字典"""
+
     if model == 'auto':
         model = auto_select_model(sku_data)
 
@@ -141,7 +141,7 @@ def forecast_sku(sku_data: pd.Series, forecast_days: int, model: str = 'auto') -
 def calculate_replenishment(forecast: dict, current_stock: float,
                              in_transit: float, lead_time_days: int,
                              safety_days: int) -> dict:
-    """计算补货建议"""
+
     daily_avg = forecast['daily_avg_forecast']
     reorder_point = daily_avg * (lead_time_days + safety_days)
     available_stock = current_stock + in_transit
@@ -165,17 +165,17 @@ def calculate_replenishment(forecast: dict, current_stock: float,
     }
 
 
-# ─── 数据加载 ───────────────────────────────────────────────────────────────
+
 
 def load_sales_data(filepath: str) -> pd.DataFrame:
-    """加载销售数据 CSV/Excel，期望列：date, sku, quantity"""
+
     path = Path(filepath)
     if path.suffix in ['.xlsx', '.xls']:
         df = pd.read_excel(filepath)
     else:
         df = pd.read_csv(filepath)
 
-    # 标准化列名（兼容中英文）
+    
     col_map = {}
     for col in df.columns:
         lower = col.lower().strip()
@@ -199,7 +199,7 @@ def load_sales_data(filepath: str) -> pd.DataFrame:
     return df
 
 
-# ─── 子命令 ─────────────────────────────────────────────────────────────────
+
 
 def cmd_single(args):
     df = load_sales_data(args.input)
@@ -257,11 +257,11 @@ def cmd_batch(args):
 
 
 def cmd_evaluate(args):
-    """评估历史预测准确率（对比预测值 vs 实际值）"""
+
     forecast_df = pd.read_csv(args.forecast)
     actual_df = load_sales_data(args.actual)
 
-    # 简单 MAPE 计算
+    
     merged = forecast_df.merge(
         actual_df.groupby('sku')['quantity'].sum().reset_index().rename(columns={'quantity': 'actual'}),
         on='sku'
@@ -275,7 +275,7 @@ def cmd_evaluate(args):
 
 
 def cmd_report(args):
-    """生成文字版预测报告"""
+
     forecast_df = pd.read_csv(args.forecast)
 
     urgent = forecast_df[forecast_df.get('priority', '') == '🔴 紧急'] if 'priority' in forecast_df.columns else pd.DataFrame()
@@ -297,13 +297,13 @@ def cmd_report(args):
     print()
 
 
-# ─── 主入口 ─────────────────────────────────────────────────────────────────
+
 
 def main():
     parser = argparse.ArgumentParser(description='销量预测工具')
     sub = parser.add_subparsers(dest='command')
 
-    # single
+    
     p_single = sub.add_parser('single', help='单个 SKU 预测')
     p_single.add_argument('--sku', required=True)
     p_single.add_argument('--input', required=True, help='历史销售数据 CSV/Excel')
@@ -313,18 +313,18 @@ def main():
     p_single.add_argument('--lead-time', type=int, default=14, help='供应商交货周期（天）')
     p_single.add_argument('--safety-days', type=int, default=7, help='安全库存天数')
 
-    # batch
+    
     p_batch = sub.add_parser('batch', help='批量 SKU 预测')
     p_batch.add_argument('--input', required=True, help='历史销售数据 CSV/Excel')
     p_batch.add_argument('--output', default='forecast_result.csv')
     p_batch.add_argument('--days', type=int, default=30)
 
-    # evaluate
+    
     p_eval = sub.add_parser('evaluate', help='评估预测准确率')
     p_eval.add_argument('--forecast', required=True, help='预测结果 CSV')
     p_eval.add_argument('--actual', required=True, help='实际销售数据 CSV')
 
-    # report
+    
     p_report = sub.add_parser('report', help='生成预测报告')
     p_report.add_argument('--forecast', required=True, help='预测结果 CSV')
 

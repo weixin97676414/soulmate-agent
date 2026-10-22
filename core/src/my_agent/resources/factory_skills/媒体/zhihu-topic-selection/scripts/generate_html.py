@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""
-HTML可视化报告生成器 - HTML Visualization Report Generator
 
-功能:
-  Date Filter - 选择具体日期或日期范围
-  Keyword Search - 实时搜索标题
-  Heat Filter - 按最小热度值筛选
-  Ranking Display - Top 3 特殊颜色标识
-  Data Stats - 实时显示筛选结果数量
-  Questions - "等你来答"问题展示
 
-用法:
-  python3 generate_html.py
-  python3 generate_html.py --open
-"""
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import sys
 import os
@@ -31,7 +31,7 @@ OUTPUT_FILE = os.path.join(DATA_DIR, 'index.html')
 
 
 def get_available_dates():
-    """获取数据库中有数据的日期列表"""
+
     import sqlite3
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -48,17 +48,17 @@ def get_available_dates():
 
 
 def generate_html():
-    """生成完整的HTML报告"""
+
     init_database()
 
-    # 获取数据
+    
     today = today_str()
     dates = get_available_dates()
     articles = query_articles(limit=500)
     questions = query_questions(limit=200)
     logs = query_logs(20)
 
-    # JSON序列化
+    
     dates_json = json.dumps(dates, ensure_ascii=False)
     articles_json = json.dumps(articles, ensure_ascii=False)
     questions_json = json.dumps(questions, ensure_ascii=False)

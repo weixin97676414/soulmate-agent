@@ -3,13 +3,13 @@ import { useState } from 'react'
 import { Button, Field, Input, Modal, Spinner } from '@/components/ui'
 import { useAccountStore } from '@/stores/accountStore'
 
-/**
- * 忘记密码（文档 §5.11）。
- *
- * 不需要密码、也不需要 device_secret —— 靠"账号 + 本机设备指纹"就能重置，
- * 前提是这个账号确实在这台机器上绑过。不匹配时后端会给一个人工重置的指引
- * （邮箱 + 材料要求），这里**原样展示**，不改写、不加工。
- */
+
+
+
+
+
+
+
 export function RecoverModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const recover = useAccountStore((state) => state.recover)
   const [account, setAccount] = useState('')

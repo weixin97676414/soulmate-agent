@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-护城河(Moat)强度分析器 - 基于《股市真规则》晨星公司标准
 
 
-使用许可:
-- 允许个人学习、研究、非商业用途使用
-- 允许修改后个人使用
-- 禁止直接复制核心算法用于商业产品或竞争性服务
 
-免责声明: 本脚本提供的分析结果仅供参考，不构成投资建议。
 
-参考: 《股市真规则》第三章 竞争优势
-原作: 帕特·多尔西 (Pat Dorsey)
-"""
+
+
+
+
+
+
+
+
+
+
 
 import argparse
 import json
@@ -21,7 +21,7 @@ import sys
 from typing import Dict, List, Tuple
 
 
-# 护城河四步检验框架
+
 MOAT_FRAMEWORK = {
     "step1_profitability": {
         "name": "Step 1: 评估历史盈利能力",
@@ -137,15 +137,15 @@ def evaluate_profitability(
     roa: float,
     consistency_years: int = 5
 ) -> Dict:
-    """
-    评估盈利能力 - Step 1
-    """
+
+
+
     metrics = MOAT_FRAMEWORK["step1_profitability"]["metrics"]
     
     results = {}
     total_score = 0
     
-    # FCF Margin
+    
     if fcf_margin >= metrics["fcf_margin"]["excellent"]:
         fcf_score = 3
         fcf_comment = "优秀 (>5%)"
@@ -168,7 +168,7 @@ def evaluate_profitability(
     }
     total_score += fcf_score * metrics["fcf_margin"]["weight"]
     
-    # Net Margin
+    
     if net_margin >= metrics["net_margin"]["excellent"]:
         nm_score = 3
         nm_comment = "优秀 (>15%)"
@@ -191,7 +191,7 @@ def evaluate_profitability(
     }
     total_score += nm_score * metrics["net_margin"]["weight"]
     
-    # ROE
+    
     if roe >= metrics["roe"]["excellent"]:
         roe_score = 3
         roe_comment = "优秀 (>15%)"
@@ -214,7 +214,7 @@ def evaluate_profitability(
     }
     total_score += roe_score * metrics["roe"]["weight"]
     
-    # ROA
+    
     if roa >= metrics["roa"]["excellent"]:
         roa_score = 3
         roa_comment = "优秀 (>7%)"
@@ -237,7 +237,7 @@ def evaluate_profitability(
     }
     total_score += roa_score * metrics["roa"]["weight"]
     
-    # 一致性调整
+    
     consistency_bonus = 0
     if consistency_years >= 10:
         consistency_bonus = 0.5
@@ -266,9 +266,9 @@ def evaluate_profitability(
 
 
 def evaluate_moat_sources(sources: List[str]) -> Dict:
-    """
-    评估护城河来源 - Step 2
-    """
+
+
+
     source_defs = MOAT_FRAMEWORK["step2_moat_source"]["sources"]
     
     identified = []
@@ -290,10 +290,10 @@ def evaluate_moat_sources(sources: List[str]) -> Dict:
                 "width": s["moat_width"]
             })
             
-            # 计算宽度分数
+            
             w_score = width_scores.get(s["moat_width"], 1)
             
-            # 根据持久性调整
+            
             if s["durability"] == "持久":
                 w_score *= 1.2
             elif s["durability"] == "短暂":
@@ -319,9 +319,9 @@ def evaluate_moat_sources(sources: List[str]) -> Dict:
 
 
 def evaluate_moat_width(duration_estimate: str) -> Dict:
-    """
-    评估护城河宽度 - Step 3
-    """
+
+
+
     widths = MOAT_FRAMEWORK["step3_moat_width"]["widths"]
     
     duration_map = {
@@ -348,9 +348,9 @@ def calculate_moat_strength(
     moat_width: str,
     source_count: int
 ) -> Dict:
-    """
-    综合评估护城河强度
-    """
+
+
+
     width_multiplier = {
         "wide": 1.2,
         "narrow": 0.8,
@@ -362,23 +362,23 @@ def calculate_moat_strength(
     base_score = profitability_score * width_multiplier.get(moat_width, 0.5)
     final_score = base_score + source_bonus
     
-    # 确定护城河等级
+    
     if final_score >= 2.5:
         moat_rating = "强护城河"
-        dcf_discount = 0.09  # 9%折现率
-        safety_margin = 0.20  # 20%安全边际
+        dcf_discount = 0.09  
+        safety_margin = 0.20  
     elif final_score >= 1.8:
         moat_rating = "中等护城河"
-        dcf_discount = 0.105  # 10.5%折现率
-        safety_margin = 0.35  # 35%安全边际
+        dcf_discount = 0.105  
+        safety_margin = 0.35  
     elif final_score >= 1.0:
         moat_rating = "弱护城河"
-        dcf_discount = 0.12  # 12%折现率
-        safety_margin = 0.50  # 50%安全边际
+        dcf_discount = 0.12  
+        safety_margin = 0.50  
     else:
         moat_rating = "无护城河"
-        dcf_discount = 0.14  # 14%折现率
-        safety_margin = 0.60  # 60%安全边际
+        dcf_discount = 0.14  
+        safety_margin = 0.60  
     
     return {
         "profitability_score": profitability_score,
@@ -399,9 +399,9 @@ def format_moat_report(
     final_assessment: Dict,
     industry_notes: str = ""
 ) -> str:
-    """
-    格式化护城河分析报告
-    """
+
+
+
     report = f"""
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🏰 护城河(Moat)强度分析报告
@@ -411,7 +411,7 @@ def format_moat_report(
 
 """
     
-    # Step 1: 盈利能力
+    
     report += f"""
 📊 Step 1: 历史盈利能力评估
 ────────────────────────────────────────────────────
@@ -430,7 +430,7 @@ def format_moat_report(
 结论: {"✓ 通过" if profitability['final_score'] >= 1.5 else "✗ 未通过"} (ROE>10%且FCF为正)
 """
     
-    # Step 2: 护城河来源
+    
     report += f"""
 📊 Step 2: 护城河来源识别
 ────────────────────────────────────────────────────
@@ -442,7 +442,7 @@ def format_moat_report(
         report += f"    宽度: {source['width']}\n"
         report += f"    案例: {', '.join(source['examples'][:3])}\n\n"
     
-    # Step 3: 护城河宽度
+    
     report += f"""
 📊 Step 3: 护城河宽度评估
 ────────────────────────────────────────────────────
@@ -452,7 +452,7 @@ def format_moat_report(
 类似公司: {', '.join(moat_width.get('examples', [])[:3])}
 """
     
-    # 行业分析
+    
     if industry_notes:
         report += f"""
 📊 Step 4: 行业竞争结构
@@ -460,7 +460,7 @@ def format_moat_report(
 {industry_notes}
 """
     
-    # 最终评估
+    
     report += f"""
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 💎 最终评估结果
@@ -543,13 +543,13 @@ def main():
     
     args = parser.parse_args()
     
-    # 如果提供了完整参数，直接计算
+    
     if all([args.fcf_margin, args.net_margin, args.roe, args.roa]):
         profitability = evaluate_profitability(
             args.fcf_margin, args.net_margin, args.roe, args.roa, args.years
         )
     else:
-        # 交互式输入
+        
         print(f"\n🏰 护城河分析: {args.company}")
         print("请提供财务指标（小数形式，如0.15表示15%）:\n")
         
@@ -588,27 +588,27 @@ def main():
         
         args.industry = input("行业竞争分析备注（可选）: ") or ""
     
-    # 分析护城河来源
+    
     if args.sources:
         sources_list = [s.strip() for s in args.sources.split(",")]
         moat_sources = evaluate_moat_sources(sources_list)
     else:
         moat_sources = {"identified_sources": [], "width_assessment": "none", "count": 0}
     
-    # 分析护城河宽度
+    
     if args.width:
         moat_width = evaluate_moat_width(args.width)
     else:
         moat_width = evaluate_moat_width(moat_sources.get("width_assessment", "none"))
     
-    # 综合评估
+    
     final_assessment = calculate_moat_strength(
         profitability["final_score"],
         moat_width.get("width", "none"),
         moat_sources["count"]
     )
     
-    # 生成报告
+    
     report = format_moat_report(
         args.company,
         profitability,
@@ -619,7 +619,7 @@ def main():
     )
     print(report)
     
-    # JSON输出
+    
     if args.json:
         output = {
             "company": args.company,

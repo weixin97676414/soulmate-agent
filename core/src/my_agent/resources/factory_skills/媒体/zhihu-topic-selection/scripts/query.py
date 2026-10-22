@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""
-数据查询工具 - Data Query Tool
 
-用法:
-  python3 query.py today              # 查看今天的热榜
-  python3 query.py date 2026-03-15    # 查看指定日期
-  python3 query.py stats 7            # 查看最近7天统计
-  python3 query.py logs               # 查看抓取日志
-  python3 query.py questions          # 查看今日问题列表
-  python3 query.py questions recommend  # 只看推荐问题
-  python3 query.py questions invited    # 只看邀请回答
-  python3 query.py all                # 查看全部
-"""
+
+
+
+
+
+
+
+
+
+
+
+
 
 import sys
 import os
@@ -39,7 +39,7 @@ def print_separator(title=None):
 
 
 def format_heat(h):
-    """格式化热度值"""
+
     if h is None:
         return '-'
     if h >= 10000000:
@@ -50,7 +50,7 @@ def format_heat(h):
 
 
 def format_count(n):
-    """格式化计数"""
+
     if n is None:
         return '-'
     if n >= 10000:
@@ -61,7 +61,7 @@ def format_count(n):
 
 
 def print_articles(articles):
-    """打印文章列表"""
+
     for item in articles:
         rank = item.get('rank', '-')
         heat = format_heat(item.get('heat'))
@@ -74,7 +74,7 @@ def print_articles(articles):
 
 
 def print_questions_list(questions, verbose=False):
-    """打印问题列表，含浏览数、回答数、关注数、提问时间、推荐理由"""
+
     for item in questions:
         title = (item.get('title', '') or '')[:60]
         answers = format_count(item.get('answer_count', 0))
@@ -84,13 +84,13 @@ def print_questions_list(questions, verbose=False):
         question_time = item.get('question_time', '') or ''
         reason = (item.get('recommend_reason', '') or '')[:40]
 
-        # 格式化提问时间
+        
         if question_time and len(question_time) >= 10:
             time_str = question_time[:10]
         else:
             time_str = '-'
 
-        # 摘要行
+        
         print(f"  [{source}] {title}")
         meta_parts = [f"👁 {views}"]
         if answers: meta_parts.append(f"💬 {answers}答")
@@ -98,16 +98,16 @@ def print_questions_list(questions, verbose=False):
         if time_str: meta_parts.append(f"🕐 {time_str}")
         print(f"       {'  '.join(meta_parts)}")
 
-        # 推荐理由
+        
         if reason and verbose:
             print(f"       💡 推荐: {reason}")
 
-        # URL (少量时显示)
+        
         if len(questions) <= 5:
             url = (item.get('url', '') or '')[:70]
             print(f"       🔗 {url}")
 
-        # 标签
+        
         tags = (item.get('tags', '') or '')
         if tags and verbose:
             print(f"       🏷 {tags}")
@@ -116,7 +116,7 @@ def print_questions_list(questions, verbose=False):
 
 
 def print_logs(logs):
-    """打印日志列表"""
+
     for log in logs:
         source = log.get('source', '-')
         mode = log.get('mode', '-')
@@ -127,7 +127,7 @@ def print_logs(logs):
         started = log.get('started_at', 0)
         duration = log.get('duration_ms', 0)
 
-        # 格式化时间
+        
         from datetime import datetime, timezone, timedelta
         TZ = timezone(timedelta(hours=8))
         ts = datetime.fromtimestamp(started, TZ).strftime('%m-%d %H:%M') if started else '-'
@@ -140,7 +140,7 @@ def print_logs(logs):
 
 
 def query_questions_by_source(fetch_date=None, source=None, keyword=None, limit=200):
-    """按来源过滤查询问题"""
+
     conn = get_db()
     cursor = conn.cursor()
 
@@ -214,7 +214,7 @@ def main():
 
     elif cmd in ('questions', 'question', 'q'):
         source_filter = None
-        # 检查是否有来源过滤参数
+        
         for i, arg in enumerate(sys.argv):
             if arg in ('recommend', 'recommended', 'invited', 'invite', 'waiting'):
                 source_filter = 'invited' if arg in ('invited', 'invite') else arg
@@ -231,20 +231,20 @@ def main():
         print_questions_list(questions, verbose=verbose)
 
     elif cmd == 'all':
-        # 今日热榜
+        
         articles = query_articles(fetch_date=today_str())
         print_separator(f"今日热榜 ({today_str()})")
         print_articles(articles)
-        # 今日问题
+        
         questions = query_questions(fetch_date=today_str())
         print_separator(f"今日问题 ({today_str()})")
         print_questions_list(questions, verbose=verbose)
-        # 日志
+        
         logs = query_logs(10)
         print_separator("最近10条抓取日志")
         print_logs(logs)
 
-        # 按来源统计
+        
         print_separator("问题来源分布")
         sources = {}
         for q in questions:

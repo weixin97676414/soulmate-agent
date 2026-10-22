@@ -9,26 +9,26 @@ import { Button, Field, Input, Select, Switch } from '@/components/ui'
 import { useAppStore } from '@/stores/appStore'
 import type { AppSettings } from '@/types'
 
-/**
- * 「点关闭按钮时」的三个选项。
- *
- * 顺序有讲究：`ask` 放第一个，它也是默认值 —— 对零基础用户来说，
- * "先问一次再决定"永远比"替我做主"更安全。
- *
- * 皮肤、壁纸与"我的资料"已移至独立的「外观」页签（见 AppearanceSettings）。
- */
+
+
+
+
+
+
+
+
 const CLOSE_ACTION_OPTIONS: Array<{ value: CloseAction; label: string }> = [
   { value: 'ask', label: '每次询问' },
   { value: 'tray', label: '最小化到托盘' },
   { value: 'quit', label: '直接退出' },
 ]
 
-/**
- * 嵌入（把文字变成可检索的向量）用哪条路。
- *
- * `builtin` 放第一个且是默认值：普通用户装完就该有能用的中文记忆，
- * 不该先去申请一个 API Key 才配得上"有记忆"这个功能。
- */
+
+
+
+
+
+
 const EMBEDDING_BACKENDS: Array<{
   value: 'builtin' | 'api' | 'ollama'
   label: string
@@ -37,8 +37,8 @@ const EMBEDDING_BACKENDS: Array<{
   {
     value: 'builtin',
     label: '内置中文模型',
-    // ⚠️ 起这个模型**不再随安装包分发**（改按需下载）：旧文案写的
-    // "随安装包一起装好、开箱即用"已经不成立了，留着就是让用户以为装完就有。
+    
+    
     hint: '需要先在「长期记忆」那里下载一次（约 600 MB），之后不用联网、不花钱。输出 1024 维向量。',
   },
   {
@@ -82,10 +82,10 @@ export function PreferenceSettings() {
   const closeAction = useAppStore((state) => state.closeAction)
   const setCloseAction = useAppStore((state) => state.setCloseAction)
 
-  // 皮肤、壁纸与"我的资料"已移至独立的「外观」页签（产品要求单独成栏 DIY 界面）。
+  
 
-  // Ollama 的模型列表是**读出来**的（本机有哪些模型，取决于用户装了什么），
-  // 所以放在这里按需拉取，不随设置一起存。
+  
+  
   const [ollamaModels, setOllamaModels] = useState<string[]>([])
   const [ollamaLoading, setOllamaLoading] = useState(false)
   const [ollamaError, setOllamaError] = useState('')
@@ -101,7 +101,7 @@ export function PreferenceSettings() {
       })
       const names = result.models ?? []
       setOllamaModels(names)
-      // 读到了 0 条不是"成功"：多半是 Ollama 没启动，不说清楚用户会以为列表本来就是空的
+      
       if (names.length === 0) {
         setOllamaError('没读到模型。请确认 Ollama 已经启动，并且地址填写正确。')
       }
@@ -111,7 +111,7 @@ export function PreferenceSettings() {
       setOllamaLoading(false)
     }
   }
-  // 嵌入模型的下拉要列出已配置的模型（复用模型配置是为了让 Key 走既有的密钥托管）
+  
   const models = useAppStore((state) => state.models)
 
   const [draft, setDraft] = useState<AppSettings | null>(settings)
@@ -139,18 +139,18 @@ export function PreferenceSettings() {
   const patchMemory = (changes: Partial<AppSettings['memory']>) =>
     patch({ memory: { ...draft.memory, ...changes } })
 
-  /**
-   * 当前生效的嵌入后端，**要兼容旧配置**。
-   *
-   * 旧版本只有一个 `use_api_embedding` 开关。不认它的话，用户升级后会发现自己
-   * 选过的"走接口"悄悄变回内置 —— 两边都能跑、只是结果不同，属于最难被察觉
-   * 的那类"改了没生效"。
-   */
+  
+
+
+
+
+
+
   const embeddingBackend: 'builtin' | 'api' | 'ollama' = (() => {
     if (!draft) return 'builtin'
     const raw = draft.memory.embedding_backend
     if (raw === 'api' || raw === 'ollama') return raw
-    // 旧配置：只有开关，没有新字段
+    
     if (draft.memory.use_api_embedding) return 'api'
     return 'builtin'
   })()
@@ -168,9 +168,9 @@ export function PreferenceSettings() {
     }
   }
 
-  // ---- 自动保存（产品要求：整个应用不再手动点保存）---------------------- //
-  // draft 变化后 800ms 落盘。跳过首装载入：用 ref 标记"已经用服务器返回值
-  // 播种过"，否则挂载时会空跑一次 save。
+  
+  
+  
   const seededRef = useRef(false)
   const saveTimerRef = useRef<number | null>(null)
   useEffect(() => {
@@ -186,7 +186,7 @@ export function PreferenceSettings() {
     return () => {
       if (saveTimerRef.current !== null) window.clearTimeout(saveTimerRef.current)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [draft])
 
   const addDirectory = async () => {
@@ -206,7 +206,7 @@ export function PreferenceSettings() {
             改动会自动保存，无需手动点保存。
           </p>
         </div>
-        {/* 自动保存的状态指示（替代原来的「保存」按钮） */}
+        {}
         <span
           className={clsx(
             'shrink-0 pt-1 text-[11.5px] whitespace-nowrap',
@@ -222,11 +222,11 @@ export function PreferenceSettings() {
           title="权限确认"
           description="有副作用的技能（写入、删除、发送等）在执行前如何处理。"
         >
-          {/* 措辞必须对得上真实行为：「每次确认」才是出厂默认（后端
-              ``SecuritySettings.confirm_mode = "interactive"``，见 config/schemas.py，
-              另有测试 test_security.py::test_新装默认是每次确认 钉着）。
-              以前给「自动批准」标的是"（出厂默认）"，与真实默认**正好相反** ——
-              用户会据此以为"它默认就会自动执行"，那是完全另一套风险假设。 */}
+          {
+
+
+
+}
           <Field label="确认模式">
             <Select
               value={draft.security.confirm_mode}
@@ -242,18 +242,18 @@ export function PreferenceSettings() {
             </Select>
           </Field>
 
-          {/*
-            ⚠️ 这块位置前后放过两样东西，都按产品要求**剔除**了：
-            1. 「确认超时（秒）」—— 移除：确认弹窗现在**永不超时**，
-               一直等到用户点「允许 / 拒绝」，或被停止 / 关会话 / 重启而作废；
-            2. 「确认弹窗」那段行为说明 —— 移除（产品要求）。
+          {
 
-            为什么不留着标成"已失效"：一个改了没效果的输入框比没有它更糟 ——
-            用户会以为"我设成 5 秒了，它怎么还在等"，然后开始怀疑整个设置页。
-            判断标准是"它有没有在替用户做判断"：这两块都只是复述行为；
-            而下面那条自动批准的警告说的是"高危操作仍会被拒绝"，会直接影响
-            用户的安全决策，所以**留着**。
-          */}
+
+
+
+
+
+
+
+
+
+}
 
           {draft.security.confirm_mode === 'auto_approve' ? (
             <div className="mt-2 rounded-[8px] border border-warning/30 bg-warning-soft px-3 py-2 text-[12px] text-warning">
@@ -300,10 +300,10 @@ export function PreferenceSettings() {
           </div>
         </Section>
 
-        {/* 「给技能的密钥」：搭子请求用户提供、只存本机的凭据。
-            ⚠️ 与上面那个"文件访问白名单"是**两件事**，别搞混：
-            白名单管的是"技能能读写哪些目录"，这个管的是"用户交出去的凭据怎么保管"。
-            放在这一页是因为它同属"安全"这一组，而且用户找不到它时会以为没地方删。 */}
+        {
+
+
+}
         <SkillSecretsCard />
 
         <Section
@@ -332,8 +332,8 @@ export function PreferenceSettings() {
                 value={draft.usage.daily_budget ?? ''}
                 onChange={(event) => {
                   const raw = event.target.value.trim()
-                  // 空字符串 -> null（不提示），而不是 0（"预算为零"）。
-                  // 后者会让每一次发送都触发超支提示，用户只能被迫关掉功能。
+                  
+                  
                   patchUsage({ daily_budget: raw === '' ? null : Number(raw) || 0 })
                 }}
               />
@@ -365,12 +365,12 @@ export function PreferenceSettings() {
             启用长期记忆（kb_add / kb_search 技能）
           </label>
 
-          {/*
-            本地嵌入模型（**不再随安装包分发**，改按需下载）。
-            放在这里是为了承接产品约定 —— "跳过的用户在记忆设置这儿补装"，
-            并且顺手给一个「验证一下」：那个按钮**只做一次自检**（真加载模型跑一遍），
-            不是"打开某个设置页"（产品要求这么定）。
-          */}
+          {
+
+
+
+
+}
           <ModelDownloadCard modelKey="embedding" className="mt-3" />
 
           {draft.memory.long_term_enabled ? (
@@ -546,13 +546,13 @@ export function PreferenceSettings() {
           </label>
         </Section>
 
-        {/*
-          ⚠️ 这里原先是一个「语音」分区（从语音输入区收窄成的一段说明）。
-          产品要求**整块剔除**：语音设置本来就全在输入栏上那个
-          「语音设置」面板里（分「全局」/「当前主体」两区，后者在群聊页对应当前群），
-          在设置页再复述一遍只会让人以为"这里也能改"。
-          面板本身没动 —— 唤醒词、命令词照旧在那里改。
-        */}
+        {
+
+
+
+
+
+}
 
         <Section
           title="搭子团队"
@@ -574,10 +574,10 @@ export function PreferenceSettings() {
 
         <Section title="智能体行为" description="影响模型的推理循环与上下文管理。">
           <div className="grid grid-cols-2 gap-3">
-            {/* 这个输入框原先写着"最大循环轮数 / 推荐 10～15 / max=50" ——
-                它是"没执行几个就提示已达到最大执行轮数"的另一半原因：
-                后端的默认值早就改成 500 了，**界面上限却还卡在 50**，
-                用户想调大都调不了。用户的原话是"我们一直都是不设对话轮数上限"。 */}
+            {
+
+
+}
             <Field
               label="单次任务最大执行步数"
               hint="模型↔工具的往返次数上限。默认 500（对正常任务等于不限制）；留一个极端兜底，避免真死循环时把 token 无限烧下去"
@@ -614,8 +614,8 @@ export function PreferenceSettings() {
                 min={0}
                 value={draft.agent.max_context_tokens}
                 onChange={(event) =>
-                  // **0 是合法值**（表示不设上限），不能被 `|| 32000` 吞掉变成默认值 ——
-                  // 那会让用户永远没法把它改回"跟随模型"
+                  
+                  
                   patchAgent({ max_context_tokens: Number(event.target.value) || 0 })
                 }
               />
@@ -651,11 +651,11 @@ export function PreferenceSettings() {
               />
             </Field>
 
-            {/*
-              下面三个默认留空 = **不发送这个字段**。留空是有意义的默认值，
-              所以 placeholder 写"不发送"而不是给一个数字 —— 给了数字用户就会
-              以为那是当前生效的值。
-            */}
+            {
+
+
+
+}
             <Field
               label="top_p（核采样）"
               hint="留空不发送。与温度二选一，两个同时调会互相干扰"
@@ -716,14 +716,14 @@ export function PreferenceSettings() {
             </Field>
           </div>
 
-          {/* 这里曾有「自定义系统提示词」输入框。提示词现在只由搭子自己的五个人格
-              文档组装（设置 → 搭子 → 编辑 → 人格与记忆），这个字段已不再被任何地方
-              读取 —— 留在界面上只会骗人，所以整块删掉。字段本身
-              （AgentSettings.system_prompt / 会话 / 搭子三处）保留，零迁移风险。 */}
-          {/* 窄窗口下这行会挤：标签、三颗按钮、一句长提示抢一条线。
-              标签必须**先**保住自己（shrink-0 + nowrap），让该换行的换到下一行 ——
-              不这么做的话被压扁的是标签，症状是"点关闭按钮 / 时"折成两行
-              实测反馈现象）。行上加 flex-wrap 是给长提示句留的出口。 */}
+          {
+
+
+}
+          {
+
+
+}
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className="shrink-0 whitespace-nowrap text-[12.5px] text-ink-soft">
               点关闭按钮时

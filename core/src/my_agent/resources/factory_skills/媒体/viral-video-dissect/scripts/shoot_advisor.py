@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
-"""
-活人感原创短视频 · 拍摄方案半自动生成器
-归属：video-script-dissect 技能（归属② 活人感拍摄建议确认门）
-用法：
-  python shoot_advisor.py --topic "主题" --scene "计划场景" --audience "观众" [--script "已有脚本"]
-  python shoot_advisor.py --brief brief.json
-输出：6 段活人感拍摄方案框架（段1/4/6 自动生成，段2/3/5 由 AI 结合本视频补写）
-纯标准库，无第三方依赖。
-"""
+
+
+
+
+
+
+
+
+
 import argparse
 import json
 import sys
 
 
-# 场景预制感风险词典
+
 HIGH_RISK = ["坐", "固定", "室内", "棚", "口播", "书桌", "客厅", "工位", "绿幕", "背景墙", "沙发", "念稿"]
 LOW_RISK = ["走", "外", "现场", "夜市", "工地", "停车场", "机房", "门店", "夜", "街", "菜市场", "厂区", "仓库", "展位", "咖啡馆"]
 

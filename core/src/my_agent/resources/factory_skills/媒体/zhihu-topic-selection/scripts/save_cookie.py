@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""
-保存手动复制的 Cookie 字符串到配置文件。
-Save manually copied Cookie header string to config file.
 
-用法:
-  python scripts/save_cookie.py "z_c0=xxx; _xsrf=yyy; d_c0=zzz; ..."
-  python scripts/save_cookie.py --file cookie.txt
-  python scripts/save_cookie.py --paste     # 从剪贴板读取
 
-输入的 Cookie 字符串格式:
-  从浏览器 DevTools → Network → Request Headers → Cookie 行复制
-  格式: key1=value1; key2=value2; ...
-"""
+
+
+
+
+
+
+
+
+
+
+
 
 import sys
 import os
@@ -26,12 +26,12 @@ CONFIG_FILE = os.path.join(PROJECT_DIR, 'config', 'fallback-sources.json')
 
 
 def parse_cookie_string(raw):
-    """解析 Cookie 字符串 'k1=v1; k2=v2' → {k1: v1, k2: v2}"""
+
     if not raw or not raw.strip():
         raise ValueError('Cookie 字符串为空')
 
     cookies = {}
-    # 去掉多余的换行和空白
+    
     raw = raw.strip().rstrip(';').strip()
 
     for part in raw.split(';'):
@@ -50,7 +50,7 @@ def parse_cookie_string(raw):
 
 
 def validate_cookies(cookies):
-    """检查必要的 Cookie 字段"""
+
     required = ['z_c0', '_xsrf', 'd_c0']
     missing = [k for k in required if k not in cookies]
 
@@ -70,22 +70,22 @@ def validate_cookies(cookies):
 
 
 def save_cookies(cookies):
-    """保存到配置文件"""
+
     config = {}
 
-    # 读取现有配置（保留 fallback 等字段）
+    
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             config = json.load(f)
 
-    # 更新 Cookie
+    
     config['cookie'] = cookies
 
-    # 设置认证优先级
+    
     config['auth'] = config.get('auth', {})
     config['auth']['priority'] = ['file_cookie', 'browser_profile', 'fallback_source']
 
-    # 确保目录存在
+    
     os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
 
     with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
@@ -95,7 +95,7 @@ def save_cookies(cookies):
 
 
 def verify_cookies(cookies):
-    """快速验证 Cookie 是否有效（请求 /api/v4/me）"""
+
     import urllib.request
     import ssl
 
@@ -128,7 +128,7 @@ def verify_cookies(cookies):
 
 
 def get_cookie_input():
-    """获取 Cookie 输入"""
+
     if len(sys.argv) >= 2:
         arg = sys.argv[1]
         if arg == '--file':
@@ -151,7 +151,7 @@ def get_cookie_input():
         else:
             return arg
 
-    # 从标准输入读取
+    
     print('请粘贴 Cookie 字符串（从 DevTools Network 面板复制），按 Enter 结束：')
     return input().strip()
 
@@ -170,7 +170,7 @@ def main():
         print('❌ 未收到 Cookie 输入')
         sys.exit(1)
 
-    # 打印前 80 个字符预览（不暴露完整 Cookie）
+    
     preview = raw[:80] + ('...' if len(raw) > 80 else '')
     print(f'📋 收到 Cookie: {preview}')
     print()
@@ -188,19 +188,19 @@ def main():
         print(f'   {k}: {preview}')
     print()
 
-    # 校验
+    
     if not validate_cookies(cookies):
         print('Cookie 可能不完整，是否继续保存？(y/n) ', end='')
         if input().strip().lower() != 'y':
             print('已取消')
             sys.exit(1)
 
-    # 保存
+    
     save_cookies(cookies)
     print(f'✅ 已保存到 {CONFIG_FILE}')
     print()
 
-    # 验证
+    
     print('正在验证...')
     verify_cookies(cookies)
     print()

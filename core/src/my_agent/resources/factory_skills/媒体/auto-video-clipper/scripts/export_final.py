@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-AI视频剪辑 - 最终导出脚本
-功能：成品导出、格式转换、压缩优化
-"""
+
+
+
+
 
 import os
 import json
@@ -13,15 +13,15 @@ from datetime import datetime
 from typing import Dict, Optional
 
 DEFAULT_CONFIG = {
-    "preset": "high",  # high/medium/low/compress
+    "preset": "high",  
     "format": "mp4",
-    "resolution": "",  # 空表示保持原分辨率
-    "fps": 0,  # 0表示保持原帧率
+    "resolution": "",  
+    "fps": 0,  
     "bitrate": "",
     "crf": 23,
     "storage_path": "",
     "naming": "{date}_{theme}_{duration}",
-    "auto_upload": False,  # 是否自动上传到云端
+    "auto_upload": False,  
     "sync_to_cloud": False
 }
 
@@ -55,7 +55,7 @@ class VideoExporter:
         self.ffprobe_path = "ffprobe"
         
     def get_video_info(self, video_file: str) -> Dict:
-        """获取视频信息"""
+
         cmd = [self.ffprobe_path, "-v", "quiet", "-print_format", "json", 
                "-show_format", "-show_streams", video_file]
         
@@ -66,7 +66,7 @@ class VideoExporter:
             return {}
     
     def calculate_duration(self, video_file: str) -> str:
-        """计算视频时长"""
+
         info = self.get_video_info(video_file)
         
         if "format" in info:
@@ -80,12 +80,12 @@ class VideoExporter:
         return "unknown"
     
     def get_output_path(self, video_file: str, theme: str = "video") -> str:
-        """生成输出文件路径"""
+
         storage_path = self.config["storage_path"] or os.path.dirname(video_file)
         
         os.makedirs(storage_path, exist_ok=True)
         
-        # 解析命名模板
+        
         naming = self.config["naming"]
         date_str = datetime.now().strftime("%Y%m%d")
         duration_str = self.calculate_duration(video_file)
@@ -94,19 +94,19 @@ class VideoExporter:
         filename = filename.replace("{theme}", theme)
         filename = filename.replace("{duration}", duration_str)
         
-        # 清理文件名
+        
         filename = "".join(c for c in filename if c.isalnum() or c in "._-")
         
         output_file = os.path.join(storage_path, f"{filename}.{self.config['format']}")
         
-        # 避免覆盖
+        
         if os.path.exists(output_file):
             output_file = os.path.join(storage_path, f"{filename}_{datetime.now().strftime('%H%M%S')}.{self.config['format']}")
         
         return output_file
     
     def export(self, video_file: str, theme: str = "video", config: Dict = None) -> str:
-        """执行导出"""
+
         if config:
             self.config.update(config)
         
@@ -116,33 +116,33 @@ class VideoExporter:
         print(f"[导出] 格式: {self.config['format']}")
         print(f"[导出] ============================================")
         
-        # 获取视频信息
+        
         info = self.get_video_info(video_file)
         
-        # 获取输出路径
+        
         output_file = self.get_output_path(video_file, theme)
         
-        # 获取预设配置
+        
         preset = PRESET_CONFIG.get(self.config["preset"], PRESET_CONFIG["medium"])
         
-        # 构建FFmpeg命令
+        
         cmd = [self.ffmpeg_path, "-i", video_file]
         
-        # 视频编码参数
+        
         video_filters = []
         
-        # 分辨率
+        
         if self.config["resolution"]:
             video_filters.append(f"scale={self.config['resolution']}")
         
-        # 帧率
+        
         if self.config["fps"] > 0:
             video_filters.append(f"fps={self.config['fps']}")
         
         if video_filters:
             cmd.extend(["-vf", ",".join(video_filters)])
         
-        # 编码器设置
+        
         cmd.extend([
             "-c:v", "libx264",
             "-preset", preset["preset"],
@@ -152,13 +152,13 @@ class VideoExporter:
         if self.config["bitrate"]:
             cmd.extend(["-b:v", self.config["bitrate"]])
         
-        # 音频设置
+        
         cmd.extend([
             "-c:a", "aac",
             "-b:a", "128k"
         ])
         
-        # 输出文件
+        
         cmd.extend(["-y", output_file])
         
         print(f"[导出] 正在导出...")
@@ -168,10 +168,10 @@ class VideoExporter:
             
             if result.returncode != 0:
                 print(f"[导出] FFmpeg错误: {result.stderr}")
-                # 尝试简化导出
+                
                 return self._simple_export(video_file, output_file)
             
-            # 验证输出文件
+            
             if os.path.exists(output_file):
                 file_size = os.path.getsize(output_file) / (1024 * 1024)
                 print(f"[导出] ============================================")
@@ -180,7 +180,7 @@ class VideoExporter:
                 print(f"[导出] 大小: {file_size:.2f} MB")
                 print(f"[导出] ============================================")
                 
-                # 清理临时文件
+                
                 self._cleanup_temp_files(video_file)
                 
                 return output_file
@@ -195,7 +195,7 @@ class VideoExporter:
             raise
     
     def _simple_export(self, video_file: str, output_file: str) -> str:
-        """简化导出方案"""
+
         print("[导出] 使用简化方案导出...")
         
         cmd = [
@@ -212,7 +212,7 @@ class VideoExporter:
         return output_file if os.path.exists(output_file) else video_file
     
     def _cleanup_temp_files(self, original_file: str):
-        """清理临时文件"""
+
         temp_extensions = ["_temp.", "_temp_voice.", "_temp_bgm.", "_with_subs."]
         temp_dir = os.path.dirname(original_file)
         
@@ -227,7 +227,7 @@ class VideoExporter:
                     pass
     
     def convert_format(self, video_file: str, target_format: str, output_dir: str = None) -> str:
-        """格式转换"""
+
         if output_dir is None:
             output_dir = os.path.dirname(video_file)
         
@@ -250,7 +250,7 @@ class VideoExporter:
         return output_file if os.path.exists(output_file) else video_file
     
     def compress_for_mobile(self, video_file: str, output_dir: str = None) -> str:
-        """移动端压缩"""
+
         if output_dir is None:
             output_dir = os.path.dirname(video_file)
         

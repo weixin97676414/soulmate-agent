@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-科研文献监测配置脚本
-交互式设置用户配置
-"""
+
+
+
+
 
 import json
 import os
@@ -43,13 +43,13 @@ AVAILABLE_SOURCES = [
 
 
 def ensure_directories():
-    """确保必要的目录存在"""
+
     os.makedirs(CONFIG_DIR, exist_ok=True)
     os.makedirs(PAPERS_DIR, exist_ok=True)
 
 
 def input_with_default(prompt, default=""):
-    """带默认值的输入"""
+
     if default:
         user_input = input(f"{prompt} [{default}]: ").strip()
         return user_input if user_input else default
@@ -57,7 +57,7 @@ def input_with_default(prompt, default=""):
 
 
 def configure_user_profile():
-    """配置用户信息"""
+
     print("\n=== 用户基本信息 ===")
     name = input_with_default("您的姓名")
     institution = input_with_default("所属机构（大学/研究所/公司）")
@@ -71,7 +71,7 @@ def configure_user_profile():
 
 
 def configure_keywords():
-    """配置关注关键词"""
+
     print("\n=== 关注关键词设置 ===")
     print("请输入您关注的研究关键词，用于筛选相关论文")
     print("示例：large language model, computer vision, drug discovery")
@@ -91,7 +91,7 @@ def configure_keywords():
 
 
 def configure_sources():
-    """配置监测信源"""
+
     print("\n=== 学术信源选择 ===")
     print("可选信源：")
     for i, (key, desc) in enumerate(AVAILABLE_SOURCES, 1):
@@ -119,7 +119,7 @@ def configure_sources():
 
 
 def save_config(config):
-    """保存配置到文件"""
+
     ensure_directories()
     
     with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
@@ -129,7 +129,7 @@ def save_config(config):
 
 
 def display_config(config):
-    """显示当前配置"""
+
     print("\n=== 当前配置预览 ===")
     print(f"用户: {config['user_profile']['name']} ({config['user_profile']['institution']})")
     print(f"研究领域: {config['user_profile']['research_field']}")
@@ -138,12 +138,12 @@ def display_config(config):
 
 
 def main():
-    """主函数"""
+
     print("=" * 50)
     print("科研文献智能监测 - 配置向导")
     print("=" * 50)
     
-    # 检查是否已有配置
+    
     existing_config = None
     if os.path.exists(CONFIG_FILE):
         print(f"\n发现已有配置文件")
@@ -156,31 +156,31 @@ def main():
             display_config(existing_config)
             return
     
-    # 开始配置
+    
     config = DEFAULT_CONFIG.copy()
     if existing_config:
         config.update(existing_config)
     
-    # 用户配置
+    
     config['user_profile'] = configure_user_profile()
     
-    # 关键词配置
+    
     config['keywords'] = configure_keywords()
     
-    # 信源配置
+    
     config['sources'] = configure_sources()
     
-    # 保存配置
+    
     save_config(config)
     
-    # 初始化索引文件
+    
     index_file = config['storage']['index_file']
     if not os.path.exists(index_file):
         with open(index_file, 'w', encoding='utf-8') as f:
             json.dump({"papers": []}, f, ensure_ascii=False, indent=2)
         print(f"✓ 文献索引已初始化: {index_file}")
     
-    # 显示配置
+    
     display_config(config)
     
     print("\n" + "=" * 50)

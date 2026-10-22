@@ -1,10 +1,10 @@
-"""MCP Streamable HTTP 的认证头传递。
 
-用户实测报错（#11）：``streamable_http_client() got an unexpected keyword
-argument 'headers'``。原因是 mcp 2.2 的 ``streamable_http_client`` 只接受
-``http_client``（只有 ``sse_client`` 才接受 ``headers``）。这里把"认证头必须
-经由 http_client 传入、且不能再传 headers"钉住，防止回归。
-"""
+
+
+
+
+
+
 
 from contextlib import AsyncExitStack
 
@@ -19,7 +19,7 @@ async def test_streamable_http_headers_go_through_http_client(monkeypatch):
         async def aclose(self) -> None:
             captured["closed"] = True
 
-    def fake_factory(*, headers=None, **kwargs):  # noqa: ARG001
+    def fake_factory(*, headers=None, **kwargs):  
         captured["headers"] = headers
         return FakeHttpClient()
 
@@ -27,11 +27,11 @@ async def test_streamable_http_headers_go_through_http_client(monkeypatch):
         async def __aenter__(self):
             return ("read", "write", "session-id")
 
-        async def __aexit__(self, *args):  # noqa: ARG002
+        async def __aexit__(self, *args):  
             return False
 
     def fake_streamable(url, **kwargs):
-        # 关键断言：调用方**不能**再传 headers（那正是报错的来源）
+        
         assert "headers" not in kwargs, "不能再向 streamable_http_client 传 headers"
         captured["url"] = url
         captured["http_client"] = kwargs.get("http_client")
@@ -52,7 +52,7 @@ async def test_streamable_http_headers_go_through_http_client(monkeypatch):
     )
 
     async with AsyncExitStack() as stack:
-        read, write = await transports._open_streamable_http(config, stack)  # noqa: SLF001
+        read, write = await transports._open_streamable_http(config, stack)  
 
     assert (read, write) == ("read", "write")
     assert captured["headers"] == {"Authorization": "Bearer secret"}

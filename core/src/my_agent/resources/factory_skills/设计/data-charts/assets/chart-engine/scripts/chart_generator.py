@@ -1,12 +1,12 @@
-"""图表生成器（纯编排层）。基于 DataFrame 生成独立的 ECharts 交互式 HTML 文件。
 
-架构契约（P1 重构后）：
-- 本类只做编排：参数校验 → 轴/身份列准备 → 构建 RenderContext → 调渲染器 →
-  落盘 HTML / 计算 plot_stats。不承载统计实现（plot_stats.py）、
-  文案（texts.py）、算法（stats_kernels.py）、模板细节（template.py）。
-- 渲染所需状态全部显式放入 RenderContext 传递，不读写生成器实例属性
-  （output_dir/_theme/_dir_ready 是生成器自身合法状态，除外）。
-"""
+
+
+
+
+
+
+
+
 
 import pandas as pd
 import numpy as np
@@ -58,10 +58,10 @@ class ChartType(Enum):
     THEME_RIVER = 'theme_river'
 
 
-# 这些图型语义上要求「一个 x 对应一个 y」：同一 x 出现多行即为未聚合，
-# plot_stats 的 max/min/mean 会退化成行级统计（而非该 x 的合计/均值）。
-# 散点/气泡/箱线/直方图/关系图等本就以行为单位，故不在集合内。
-# calendar 虽是时间图，但同一天多行会互相覆盖，同样需要先按天聚合。
+
+
+
+
 _AGG_REQUIRED_TYPES = frozenset({
     'line', 'bar', 'area', 'stacked_bar', 'combo', 'pareto', 'pictorial_bar', 'theme_river',
     'pie', 'treemap', 'funnel', 'sunburst', 'wordcloud', 'venn', 'map', 'waterfall', 'radar',
@@ -70,7 +70,7 @@ _AGG_REQUIRED_TYPES = frozenset({
 
 
 class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
-    """32 种图表的编排入口；HTML 落盘方法来自 HTMLTemplateMixin。"""
+
 
     def __init__(self, output_dir: str = './charts_output', theme: str = 'default'):
         if theme not in THEMES:
@@ -119,36 +119,36 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
         geo_path: Optional[str] = None,
         extra_advisories: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
-        """生成单个图表，返回统一结构 {'chart': {'success', 'html_path'/'error', ...}}。
 
-        lang: 'zh' / 'en' 强制指定图表文本语言；None 时按数据自动检测。
-        title: None 时使用 lang 对应的默认标题。
-        label_col: 身份列（如姓名），其值进数据点 name 和 tooltip（scatter/bubble/boxplot）。
-            None 时按列名启发式自动探测（命中时记入返回值的 assumptions 字段）。
-        color_by: 着色列（scatter/bubble）。数值列 → visualMap 连续着色；类别列 → 拆 series 分色。
-        subtitle: 副标题（时间范围/筛选条件/数据来源等上下文），渲染在标题下方。
-        sort: bar 类别排序。'value'=按第一个数值 Y 列降序；'none'=保持原序（默认）。
-        y_scale: 折线图 y 轴允许非零基线（仅 line 生效；area 恒为零基线）。
-        label: bar 单系列数值标签。'auto'=类别>20 只标关键值（默认）；'all'=全标；'key'=只标 top3+极值。
-        dry_run: True 时只算 plot_stats/data_preview 并校验渲染配置，不写 HTML（html_path 为 null）。
-        target: gauge/liquid 的业务目标值（P1-7）。缺失时 plot_stats 的 achievement 为 null 并挂 advisory。
-        x_name: X 轴显示名（--x-name）。None 时轴名回退到列名。
-        y_names: Y 轴显示名（--y-name，可多个，按 y_axis 顺序对应）。None 时回退到列名。
-        series_names: 系列显示名（--series-name/--series-names，按可见系列顺序对应）。
-            None 时回退到列名（A 类图）或默认文本（B 类图）。覆盖时跳过 silent 内部系列
-            （如 waterfall 的透明底座），避免索引错位。
-        geo: 内置地图名（--geo，map/lines 用）。None 时默认 'china'（中国省级）。
-        geo_path: 自备 GeoJSON 文件路径（--geo-path，map/lines 用，任意区域地图）。
-            优先级高于 geo；map_name 取文件名 stem，地名仅精确匹配（无简称别名）。
-        extra_advisories: 由解析层传入的建议性提醒（合计行排除、数值列降级等），
-            与渲染层自身的 advisories 合并输出。
-        失败时不抛异常，返回 success=False + error 结构，便于智能体程序化处理。
-        """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         try:
-            # P1-2：聚合口径对账三元组。source_rows 是 transform 之前的原始行数，
-            # plotted_rows 是实际喂给渲染的行数——两者之差即 transform 的聚合倍率，
-            # unique_entities 是去重实体数。SKILL.md 早已警示"各行 value 之和等于
-            # 原始行数而非实体数 = 忘了去重"，但此前输出里没有任何字段能验证它。
+            
+            
+            
+            
             source_rows = int(len(df))
             if df.empty:
                 raise ChartError("数据为空", ErrorCode.DATA_EMPTY)
@@ -194,9 +194,9 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
             texts, lang_resolved = get_texts(lang, df)
             if title is None:
                 title = texts['default_title']
-            # annotation 必选：未显式提供时生成默认说明，保证每张图都有「图表说明」区块
-            # P1-5：来源必须可判别。此前静默填模板，导致 SKILL.md 硬约束 7
-            # 「MUST 附解读交付」在输出层无法验证是否真的履行。
+            
+            
+            
             if annotation is None or not str(annotation).strip():
                 annotation = texts['default_annotation'].format(n=len(df))
                 annotation_source = 'default'
@@ -213,7 +213,7 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
 
             gen = getattr(self, f'_{ct.value}', None)
             if gen is None:
-                # 只可能因新增 ChartType 枚举尚未实现渲染器
+                
                 raise ChartError(
                     f"暂不支持该图表类型: {chart_type}",
                     ErrorCode.CHART_TYPE_UNSUPPORTED,
@@ -222,7 +222,7 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
 
             x_axis, y_axis = self._prepare_axes(df, chart_type, x_axis, y_axis)
 
-            # label_col / color_by 校验与自动探测
+            
             assumptions = []
             for param, col in (('label_col', label_col), ('color_by', color_by)):
                 if col is not None and col not in df.columns:
@@ -235,16 +235,16 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
                             'suggestion': '从 available 列中选择一个已存在的列',
                         },
                     )
-            # 身份列不做自动探测：哪列是身份是语义判断，agent 显式传 --label-col 才生效。
-            # 不传则散点/气泡/箱线的数据点无身份标识（tooltip 只显示坐标值），不退化成猜。
+            
+            
             if chart_type in ('graph', 'sankey'):
-                # 关系列同样不猜：graph/sankey 的 source/target 由 --x-axis/--y-axis 显式指定，
-                # 渲染器从 ctx.x/ctx.y 取；未指定时报结构化错误（见 renderers）。
+                
+                
                 pass
 
-            # map/lines 图表：解析地图来源（--geo 内置图名 / --geo-path 自备文件），
-            # 把 registerMap 所需三件套塞入 ctx，供渲染器与 template 共用。
-            # 非地图图表不触发解析，避免无谓的文件读取与报错。
+            
+            
+            
             geo_fields: Dict[str, Any] = {}
             if chart_type in ('map', 'lines'):
                 gs = resolve_geo(geo, geo_path)
@@ -265,13 +265,13 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
                 **geo_fields,
             )
             advisories = []
-            # P0：粒度口径自检。同一 x 出现多行时，下面这些图型的 max/min/mean 是
-            # 行级统计，不等于该 x 的整体——实测「月×地区」明细画 line，plot_stats
-            # 报「6月 max 156」实为华东一地（华南同期仅 52.6），照抄即错误结论。
-            # 判据用「x 基数 < 行数」而非 plotted_rows == source_rows：散点等以行为
-            # 单位的图不该被误判，明细表也确实可能存在重复 x。
-            # advisories 是建议性提醒（success 仍为 true、渲染不受影响），供 agent
-            # 按语境判断是否换图，刻意不叫 suggestion 以免被当作可机械重试的错误
+            
+            
+            
+            
+            
+            
+            
             if x_axis and x_axis in df.columns and chart_type in _AGG_REQUIRED_TYPES:
                 n_rows, n_x = int(len(df)), int(df[x_axis].nunique(dropna=False))
                 if n_rows > n_x:
@@ -283,7 +283,7 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
                         f'若要按「{x_axis}」维度下结论，请先 --transform-code 聚合'
                         f"（如 result = df.groupby('{x_axis}')['<数值列>'].sum().reset_index()）"
                     )
-            # 饼图类别数守卫：>8 类时人眼难以比较角度
+            
             if ct is ChartType.PIE:
                 n_cat = int(df[x_axis].nunique())
                 if n_cat > 8:
@@ -291,7 +291,7 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
                         f'饼图类别数为 {n_cat}（>8），人眼难以比较角度；'
                         '建议改用 bar --sort value 做精确对比，或用 transform 聚合小类'
                     )
-            # P1-7：gauge/liquid 的"达成率"没有业务目标值时不可计算
+            
             if ct in (ChartType.GAUGE, ChartType.LIQUID) and not target:
                 advisories.append(
                     f'{chart_type} 未提供 --target：achievement（达成率）已置 null。'
@@ -310,10 +310,10 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
                 html_path = self._save_html(ctx, option, width, height, chart_type, data_points, annotation)
                 if getattr(self, '_title_truncated', False):
                     advisories.append('标题超过 30 字符，文件名已截断为 30 字符；完整标题见 title 字段')
-            # A3: 绘图数据内联回显——让调用方在生成当轮即可校对聚合口径，无需打开 HTML
+            
             preview, data_rows = self._data_preview(df, x_axis, y_axis)
-            # P1-2 对账三元组：unique_entities 优先取身份列（实体主键），
-            # 其次取 x 轴去重数——正好对应 SKILL.md 的"按行 vs 按去重实体"校验
+            
+            
             entity_col = label_col if (label_col and label_col in df.columns) else x_axis
             chart_result = {
                 'success': True,
@@ -362,8 +362,8 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
         annotation_source: str = 'default', target: Optional[float] = None,
         extra_advisories: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
-        # 表格无轴/系列概念：x/y 仅用于筛选显示列（x 在前），都不传则显示全部列。
-        # 聚合/透视由 transform_code 完成（与图表管线口径一致），表格只负责呈现。
+        
+        
         if isinstance(y_axis, str):
             y_axis = [y_axis]
         shown = ([x_axis] if x_axis is not None else []) + [c for c in (y_axis or []) if c != x_axis]
@@ -411,16 +411,16 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
     def _apply_custom_names(option: Dict[str, Any], x_name: Optional[str],
                             y_names: Optional[List[str]],
                             series_names: Optional[List[str]]) -> Dict[str, Any]:
-        """独立轴名/系列名覆盖（--x-name/--y-name/--series-name/--series-names）。
 
-        在渲染器生成 option 之后统一后处理，避免在 32 个渲染器里各自接线：
-        - 轴名：匹配 graphic 元素 id（axisName-x / axisName-y{i}），替换 style.text。
-          只改存在轴名 graphic 的图表；无轴名 graphic 的图（如 heatmap/gauge）
-          本就无轴名可改，此处自然跳过。
-        - 系列名：按「可见系列」顺序映射 series_names。跳过 silent 内部系列
-          （waterfall 的透明底座 name 以 __ 开头且 silent=True），避免索引错位。
-        均只在对应参数非 None 时生效，未提供时保持渲染器原样（列名/默认文本）。
-        """
+
+
+
+
+
+
+
+
+
         if x_name or y_names:
             for g in option.get('graphic', []):
                 gid = g.get('id', '')
@@ -447,11 +447,11 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
     @staticmethod
     def _attach_advisories(chart_result: Dict[str, Any], extra_advisories: Optional[List[str]],
                            annotation_source: str = 'user') -> None:
-        """合并解析层 advisory 与渲染层 advisory，并标注 annotation 来源（P2-13 / P1-5）。
 
-        advisories 恒为"建议性提醒"：success 仍为 true、渲染不受影响，是否换图/
-        补材料由 agent 按语境判断（刻意不叫 suggestion，避免与错误恢复混淆）。
-        """
+
+
+
+
         merged = list(extra_advisories or [])
         if annotation_source == 'default':
             merged.append(
@@ -475,12 +475,12 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
         geo_path: Optional[str] = None,
         extra_advisories: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
-        """批量生成多个图表，返回 {'charts': [{'success', 'html_path'/'error', ...}]}。
 
-        每项结构与 generate_chart 的 {'chart': {...}} 内部一致，便于智能体统一解析。
-        target: 全局目标值；单图配置里的 target 优先。
-        geo/geo_path: 全局地图来源（map/lines 用）；单图配置里的 geo/geo_path 优先。
-        """
+
+
+
+
+
         results = []
         for cfg in chart_configs:
             r = self.generate_chart(
@@ -514,19 +514,19 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
             results.append(chart_result)
         return {'charts': results}
 
-    # ---- 轴自动检测 ----
+    
 
     def _prepare_axes(self, df, chart_type, x_axis, y_axis) -> Tuple[str, List[str]]:
-        # 直方图无类别轴，只有一个分布数值列：用户显式传入的数值 x 就是分布列，
-        # 锁定为 y，防止下方 y 自动补全换成其他数值列
-        # （如 df=[学号,总成绩] + --x-axis 总成绩 时 y 被自动补成学号，画出错误分布）
+        
+        
+        
         if (chart_type == 'histogram'
                 and x_axis is not None and x_axis in df.columns
                 and pd.api.types.is_numeric_dtype(df[x_axis])):
             y_axis = [x_axis]
 
-        # 层级图（mindmap/orgchart）：x=父节点列，y[0]=子节点列（均为分类列）。
-        # 必须显式指定，不猜关系列、不退到「前两个分类列」——哪两列构成层级是语义判断。
+        
+        
         if chart_type in ('mindmap', 'orgchart'):
             if y_axis is None or x_axis is None:
                 raise ChartError(
@@ -538,8 +538,8 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
                     },
                 )
 
-        # 关系图（graph/sankey/lines）：source(x) + target(y[0]) 两列必需，value(y[1]) 可选。
-        # 必须显式指定，不猜关系列——哪列是 source/target 是语义判断。
+        
+        
         if chart_type in ('graph', 'sankey', 'lines'):
             if x_axis is None or not y_axis:
                 raise ChartError(
@@ -587,13 +587,13 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
         return x_axis, y_axis
 
     def _data_preview(self, df: pd.DataFrame, x_axis: Optional[str], y_axis: Optional[List[str]], limit: int = 10) -> Tuple[List[Dict[str, Any]], int]:
-        """生成最终绘图数据的紧凑预览（stdout 的 data_preview / data_rows 字段）。
 
-        取 transform 之后、渲染所用的同一份 DataFrame 中 [x_axis] + y_axis 列的前 limit 行：
-        NaN/NaT → None；数值统一转 JSON 可序列化的 int/float；其余转 str。
-        x_axis/y_axis 均为 None 时（spreadsheet 全列模式）取全部列。
-        供调用方在生成当轮校对聚合口径（按行 vs 按去重实体），无需打开 HTML 文件。
-        """
+
+
+
+
+
+
         cols = list(dict.fromkeys(
             ([x_axis] if x_axis is not None else []) + list(y_axis or []))) or list(df.columns)
         records: List[Dict[str, Any]] = []
@@ -621,17 +621,17 @@ class ChartGenerator(ChartRenderersMixin, HTMLTemplateMixin):
         return records, len(df)
 
     def _estimate_data_points(self, df: pd.DataFrame, chart_type: str, x_axis: str, y_axis: List[str]) -> int:
-        """估算图表 X 轴类别数量，用于决定 HTML 容器是否需要横向滚动兜底。
 
-        只有 X 轴为类别轴且数据点可能过多的图表（bar/line/area 等）才返回非零值；
-        heatmap 是网格布局，每个单元格远窄于柱状图柱子，不需要横向滚动；
-        scatter（数值轴）/boxplot（列名轴）/pie/treemap 等也不需要，返回 0。
-        """
+
+
+
+
+
         try:
             if chart_type in ('bar', 'line', 'area', 'stacked_bar', 'combo', 'pareto', 'pictorial_bar'):
-                # P2-12：语义是 X 轴类别数，不是 DataFrame 行数。长格式数据
-                # （12 个月 × 5 系列 = 60 行）此前被算成 60 个数据点，
-                # 会把容器撑到 60×最小像素宽，横向滚动兜底被无谓触发。
+                
+                
+                
                 if x_axis is not None and x_axis in df.columns:
                     return int(df[x_axis].nunique())
                 return len(df)

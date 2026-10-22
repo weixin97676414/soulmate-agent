@@ -1,14 +1,14 @@
-// fold_audit.js — 创作者中心折叠巡检（只读滚动抓取 + 基线比对）
-// 用法：ego-browser nodejs < scripts/fold_audit.js
-// 可选参数文件 /tmp/zhihu_fold_params.json：
-//   { "update": true }          把本次最新状态写回基线（带防残缺护栏：抓取条数 < 基线条数则拒绝写回）
-//   { "baseline": "/abs/path" } 覆盖默认基线路径（换机器时用）
-// 输出：
-//   TOTAL_ITEMS / ANSWERS / FOLDED 总数
-//   FOLD_STAT <FOLD|OK  > <date> <title>        全量状态
-//   NEW_FOLDED <title>   相对基线新被折叠的（重点！）
-//   RECOVERED <title>    基线被折叠但现已恢复的（申诉成功 / 解除）
-// 注意：只读操作（滚动自己的创作者中心），限速内置；换机器需改下方 BASELINE 常量。
+
+
+
+
+
+
+
+
+
+
+
 (async () => {
   const fs = require('fs')
   const path = require('path')
@@ -22,7 +22,7 @@
   await openOrReuseTab('https://www.zhihu.com/creator/manage/creation/all', { wait: true, timeout: 25 })
   await wait(6)
 
-  // 滚动加载 + 快照累积去重（虚拟滚动，无翻页按钮）
+  
   const seen = {}
   let stableRounds = 0
   for (let step = 0; step < 60; step++) {
@@ -61,7 +61,7 @@
   cliLog('TOTAL_ITEMS=' + Object.keys(seen).length + ' ANSWERS=' + answers.length + ' FOLDED=' + answers.filter(x => x.folded).length)
   for (const a of answers) cliLog('FOLD_STAT ' + (a.folded ? 'FOLD' : 'OK  ') + ' ' + (a.date || '?') + ' ' + a.title.slice(0, 55))
 
-  // 基线比对
+  
   let baseline = null
   try { baseline = JSON.parse(fs.readFileSync(baselinePath, 'utf8')) } catch (e) {}
   if (baseline && baseline.length) {
@@ -79,7 +79,7 @@
     cliLog('NO_BASELINE (path=' + baselinePath + ')，本次仅输出全量状态')
   }
 
-  // 写回基线（带护栏：抓取条数不得少于基线，防滚动不完整污染基线）
+  
   if (params.update) {
     if (baseline && baseline.length && answers.length < baseline.length) {
       cliLog('UPDATE_SKIPPED: answers(' + answers.length + ') < baseline(' + baseline.length + ')，疑似滚动不完整，拒绝覆盖基线')

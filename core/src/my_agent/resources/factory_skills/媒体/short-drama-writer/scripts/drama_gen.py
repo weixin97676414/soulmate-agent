@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""短剧剧本生成器 - Python 3.6 compatible"""
+
 
 from __future__ import print_function
 import sys
@@ -109,11 +109,11 @@ GENRES = {
 
 
 def gen_plot(genre_key, episodes=10):
-    """生成剧情大纲"""
+
     episodes = int(episodes)
     genre_key_lower = genre_key.lower()
 
-    # 模糊匹配
+    
     matched = None
     for key in GENRES:
         if key in genre_key or genre_key in key:
@@ -147,17 +147,17 @@ def gen_plot(genre_key, episodes=10):
     print("")
 
     template = genre["episodes_template"]
-    # 如果集数不等于模板长度，进行调整
+    
     if episodes <= len(template):
         selected = template[:episodes]
     else:
-        # 扩展：在中间部分插入更多剧集
+        
         selected = list(template)
         extra = episodes - len(template)
         insert_names = ["支线", "深化", "波折", "暗流", "转折", "伏笔", "对峙", "挣扎"]
         for i in range(extra):
             name = insert_names[i % len(insert_names)]
-            pos = len(selected) - 2  # 插在倒数第二个前面
+            pos = len(selected) - 2  
             selected.insert(pos, (name, "[补充剧情——支线展开/感情深化/新角色引入]"))
 
     for i, (ep_name, ep_desc) in enumerate(selected, 1):
@@ -185,7 +185,7 @@ def gen_plot(genre_key, episodes=10):
 
 
 def gen_scene(description):
-    """生成单场戏剧本"""
+
     print("=" * 60)
     print("🎬 单场戏剧本 | 场景: {}".format(description))
     print("=" * 60)
@@ -277,7 +277,7 @@ def gen_scene(description):
 
 
 def gen_character(char_type):
-    """角色设定生成"""
+
     archetypes = {
         "霸道总裁": {
             "name_options": ["陆少卿", "顾霆琛", "沈夜寒", "裴司宴", "傅景珩"],
@@ -308,7 +308,7 @@ def gen_character(char_type):
         },
     }
 
-    # 模糊匹配
+    
     matched = None
     for key in archetypes:
         if key in char_type or char_type in key:
@@ -316,7 +316,7 @@ def gen_character(char_type):
             break
 
     if matched is None:
-        # 使用通用模板
+        
         print("=" * 60)
         print("👤 角色设定 | 类型: {}".format(char_type))
         print("=" * 60)
@@ -418,7 +418,7 @@ def gen_character(char_type):
 
 
 def gen_twist():
-    """反转桥段生成器"""
+
     twists = [
         {
             "name": "身份反转",

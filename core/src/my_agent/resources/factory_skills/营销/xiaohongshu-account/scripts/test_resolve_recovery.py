@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-"""xhs_resolve.py 恢复路径的合成测试（不联网，用 FakePage 模拟）。
 
-覆盖四条关键路径：
-1. 搜索页 goto 连续超时 -> 返回 search_timeout，不抛异常
-2. goto 超时一次后刷新成功 -> 正常返回候选
-3. 搜索页无用户卡片 -> 返回 search_empty
-4. 笔记页反查作者 -> 返回 note_author
 
-运行：python test_resolve_recovery.py
-"""
+
+
+
+
+
+
+
+
 from __future__ import annotations
 
 import sys
@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from xhs_resolve import Target, _author_from_note, _search_user  # noqa: E402
+from xhs_resolve import Target, _author_from_note, _search_user  
 
 
 class FakeAnchor:
@@ -48,10 +48,10 @@ class FakeRoute:
 
 
 class FakePage:
-    """最小可用的 Playwright Page 替身。"""
+
 
     def __init__(self, script: list[str], anchors: dict[str, list] | None = None):
-        # script: 每次 goto 的行为，"timeout" 或 "ok"
+        
         self.script = list(script)
         self.anchors = anchors or {}
         self.goto_calls = 0
@@ -81,7 +81,7 @@ class FakePage:
         return None
 
     def wait_for_selector(self, selector, timeout=None):
-        # 有锚点就模拟渲染成功，没有就抛超时
+        
         if self.query_selector_all(selector):
             return True
         raise TimeoutError("selector not found")
@@ -93,8 +93,8 @@ class FakePage:
         return "<html></html>"
 
 
-# xhs_browser 依赖真实 Playwright，测试里打个桩
-import types  # noqa: E402
+
+import types  
 
 fake_xhs_browser = types.ModuleType("xhs_browser")
 fake_xhs_browser.human_scroll = lambda page, times=1, **kw: None
@@ -139,7 +139,7 @@ def t2_retry_after_refresh():
 
 
 def t3_search_empty():
-    page = FakePage(["ok", "ok"])  # 页面能开，但永远没有用户卡片
+    page = FakePage(["ok", "ok"])  
     target = _search_user(page, "不存在的昵称xyz", timeout_ms=100, retries=1)
     check("无结果返回 search_empty", target.resolved_by == "search_empty",
           f"got {target.resolved_by}")
@@ -176,7 +176,7 @@ if __name__ == "__main__":
         print(f"--- {fn.__name__}")
         try:
             fn()
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:  
             FAIL += 1
             print(f"  FAIL  用例自身异常: {err}")
     print(f"\n结果：{PASS} 通过 / {FAIL} 失败")
