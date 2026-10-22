@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>舆情监控报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+:root {
+  --primary: #4F46E5; --primary-light: #818CF8; --primary-bg: #EEF2FF;
+  --success: #10B981; --success-bg: #D1FAE5;
+  --warning: #F59E0B; --warning-bg: #FEF3C7;
+  --danger: #EF4444; --danger-bg: #FEE2E2;
+  --mixed: #8B5CF6; --mixed-bg: #EDE9FE;
+  --neutral-color: #6B7280; --neutral-bg: #F3F4F6;
+  --bg: #F0F2F8; --card-bg: #FFFFFF;
+  --text: #1E293B; --text-sec: #64748B;
+  --border: #E2E8F0;
+  --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 24px -4px rgba(0,0,0,0.10), 0 4px 8px -4px rgba(0,0,0,0.06);
+  --radius: 14px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+/* ── Header ── */
+.header {
+  background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 45%, #4f46e5 75%, #7c3aed 100%);
+  color: white; padding: 48px 0 72px; position: relative; overflow: hidden;
+}
+.header::before {
+  content:''; position:absolute; top:-80px; right:-80px; width:360px; height:360px;
+  border-radius:50%; background:rgba(255,255,255,0.04);
+}
+.header::after {
+  content:''; position:absolute; bottom:-60px; left:10%; width:260px; height:260px;
+  border-radius:50%; background:rgba(255,255,255,0.03);
+}
+.header-inner { max-width:1200px; margin:0 auto; padding:0 28px; position:relative; z-index:1; }
+.header-top { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px; }
+.header h1 { font-size:26px; font-weight:700; margin-bottom:6px; }
+.header .subtitle { opacity:0.75; font-size:13px; line-height:1.9; }
+.keyword-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  background:rgba(255,255,255,0.15); backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.25);
+  padding:8px 20px; border-radius:24px; font-size:17px; font-weight:600; margin-top:14px;
+}
+.time-range-badge {
+  background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2);
+  padding:6px 16px; border-radius:20px; font-size:13px; white-space:nowrap;
+}
+
+/* ── Metric Cards (overlap header) ── */
+.metrics-row {
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+  gap:14px; margin: -44px 28px 0; position:relative; z-index:10;
+  max-width:1200px; margin-left:auto; margin-right:auto;
+  padding:0 28px;
+}
+.metric-card {
+  background:var(--card-bg); border-radius:var(--radius); padding:20px 16px;
+  box-shadow:var(--shadow-lg); text-align:center;
+  border-top:4px solid var(--border);
+  transition:transform .2s, box-shadow .2s;
+}
+.metric-card:hover { transform:translateY(-3px); box-shadow:0 16px 32px -6px rgba(0,0,0,0.13); }
+.metric-card .mv { font-size:34px; font-weight:800; letter-spacing:-1px; line-height:1; margin-bottom:6px; }
+.metric-card .ml { font-size:12px; color:var(--text-sec); }
+.mc-total  { border-top-color:var(--primary); }  .mc-total  .mv { color:var(--primary); }
+.mc-pos    { border-top-color:var(--success); }  .mc-pos    .mv { color:var(--success); }
+.mc-neg    { border-top-color:var(--danger);  }  .mc-neg    .mv { color:var(--danger);  }
+.mc-neu    { border-top-color:var(--neutral-color); } .mc-neu .mv { color:var(--neutral-color); }
+.mc-score  { border-top-color:var(--warning); }  .mc-score  .mv { color:var(--warning); }
+.mc-hot    { border-top-color:#06B6D4; }          .mc-hot    .mv { color:#06B6D4; }
+
+/* ── Layout ── */
+.container { max-width:1200px; margin:0 auto; padding:28px; }
+
+/* ── Section ── */
+.section { background:var(--card-bg); border-radius:var(--radius); padding:26px; margin-bottom:20px; box-shadow:var(--shadow); }
+.section-title {
+  font-size:17px; font-weight:700; margin-bottom:18px;
+  display:flex; align-items:center; gap:10px; color:var(--text);
+}
+.section-title::before { content:''; width:4px; height:20px; background:var(--primary); border-radius:3px; flex-shrink:0; }
+
+/* ── Risk Banner ── */
+.risk-banner { border-radius:var(--radius); padding:18px 24px; margin-bottom:20px; display:flex; align-items:center; gap:16px; }
+.risk-banner.low    { background:var(--success-bg); border-left:4px solid var(--success); }
+.risk-banner.medium { background:var(--warning-bg); border-left:4px solid var(--warning); }
+.risk-banner.high   { background:var(--danger-bg);  border-left:4px solid var(--danger);  }
+.risk-icon { font-size:30px; }
+.risk-level { font-size:17px; font-weight:700; }
+.risk-desc  { font-size:13px; color:var(--text-sec); margin-top:2px; }
+
+/* ── Charts ── */
+.chart-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+.chart-box { background:var(--card-bg); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow); }
+.chart-title { font-size:15px; font-weight:600; margin-bottom:14px; display:flex; align-items:center; gap:8px; color:var(--text); }
+.chart-title::before { content:''; width:4px; height:16px; background:var(--primary); border-radius:2px; flex-shrink:0; }
+.chart-container { width:100%; height:300px; }
+
+/* ── Overview ── */
+.overview-text { font-size:14px; line-height:1.9; color:var(--text-sec); padding:14px 18px; background:var(--primary-bg); border-radius:10px; border-left:3px solid var(--primary); }
+
+/* ── Tables ── */
+.data-table { width:100%; border-collapse:collapse; font-size:13px; }
+.data-table th { background:var(--primary-bg); color:var(--primary); font-weight:600; padding:10px 14px; text-align:left; font-size:13px; }
+.data-table td { padding:10px 14px; border-bottom:1px solid var(--border); vertical-align:top; }
+.data-table tr:last-child td { border-bottom:none; }
+.data-table tr:hover td { background:#F8FAFF; }
+.data-table a { color:var(--primary); text-decoration:none; }
+.data-table a:hover { text-decoration:underline; }
+
+/* ── Tags ── */
+.tag { display:inline-block; padding:2px 10px; border-radius:10px; font-size:12px; font-weight:600; }
+.tag.positive { background:var(--success-bg); color:#065F46; }
+.tag.negative { background:var(--danger-bg);  color:#991B1B; }
+.tag.neutral  { background:var(--neutral-bg); color:#374151; }
+.tag.mixed    { background:var(--mixed-bg);   color:#5B21B6; }
+
+/* ── Sentiment badges (inline) ── */
+.sbadge { display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600; }
+.sbadge-pos  { background:var(--success-bg); color:#065F46; }
+.sbadge-neg  { background:var(--danger-bg);  color:#991B1B; }
+.sbadge-neu  { background:var(--neutral-bg); color:#374151; }
+.sbadge-mix  { background:var(--mixed-bg);   color:#5B21B6; }
+.rbadge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; }
+.rbadge-high   { background:var(--danger-bg);  color:#991B1B; }
+.rbadge-medium { background:var(--warning-bg); color:#92400E; }
+.rbadge-low    { background:#DBEAFE; color:#1E40AF; }
+
+/* ── Hot Topics ── */
+.heat-bar-wrap { width:80px; background:#F0F2F5; border-radius:4px; height:6px; overflow:hidden; }
+.heat-bar-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,#818CF8,#4F46E5); }
+
+/* ── Tabs ── */
+.tabs { display:flex; gap:0; margin-bottom:16px; border-bottom:2px solid var(--border); }
+.tab-btn { padding:9px 20px; background:none; border:none; font-size:13px; font-weight:600; color:var(--text-sec); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all .2s; }
+.tab-btn:hover { color:var(--primary); }
+.tab-btn.active { color:var(--primary); border-bottom-color:var(--primary); }
+.tab-content { display:none; animation:fadeIn .2s ease; }
+.tab-content.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+
+/* ── KOL Cards ── */
+.kol-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:14px; }
+.kol-card { background:var(--bg); border-radius:10px; padding:16px; border:1px solid var(--border); transition:box-shadow .2s; }
+.kol-card:hover { box-shadow:var(--shadow-lg); }
+.kol-name { font-weight:700; font-size:14px; }
+.kol-platform { font-size:12px; color:var(--text-sec); }
+.kol-summary { font-size:13px; color:var(--text-sec); margin-top:8px; line-height:1.6; }
+.influence-bar { height:5px; background:var(--border); border-radius:3px; margin-top:10px; overflow:hidden; }
+.influence-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--primary),var(--primary-light)); transition:width .8s ease; }
+
+/* ── Item Cards ── */
+.item-card { border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:12px; transition:box-shadow .2s, border-color .2s; }
+.item-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.09); border-color:#c7d2fe; }
+.item-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+.item-title { font-size:14px; margin-bottom:6px; line-height:1.6; }
+.item-title a { color:var(--text); text-decoration:none; }
+.item-title a:hover { color:var(--primary); }
+.item-summary { font-size:13px; color:var(--text-sec); line-height:1.7; }
+.item-tags { margin-top:8px; display:flex; flex-wrap:wrap; gap:4px; }
+.item-tag { background:var(--neutral-bg); color:var(--neutral-color); padding:2px 8px; border-radius:4px; font-size:11px; }
+.item-date { margin-left:auto; font-size:11px; color:#94A3B8; white-space:nowrap; }
+.source-badge { background:var(--mixed-bg); color:var(--mixed); padding:2px 10px; border-radius:20px; font-size:12px; }
+
+/* ── Suggestions ── */
+.sug-list { list-style:none; padding:0; }
+.sug-list li { padding:10px 14px; margin-bottom:8px; background:#F0FDF4; border-radius:8px; border-left:3px solid var(--success); font-size:13px; line-height:1.6; }
+.factor-list li { background:var(--warning-bg); border-left-color:var(--warning); }
+
+/* ── Platform bar rows ── */
+.plat-row { display:flex; align-items:center; margin-bottom:12px; }
+.plat-name { width:88px; font-size:13px; font-weight:500; flex-shrink:0; }
+.plat-bar-wrap { flex:1; margin:0 12px; }
+.plat-bar { height:18px; border-radius:9px; overflow:hidden; background:#F0F2F5; display:flex; }
+.pb-pos { background:#10B981; }
+.pb-neg { background:#EF4444; }
+.pb-neu { background:#9CA3AF; }
+.plat-count { width:40px; text-align:right; font-size:12px; color:var(--text-sec); }
+
+/* ── Footer ── */
+.footer { text-align:center; padding:32px; font-size:12px; color:var(--text-sec); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .chart-row { grid-template-columns:1fr; }
+  .metrics-row { grid-template-columns:repeat(2,1fr); padding:0 16px; margin-top:-36px; }
+  .container { padding:16px; }
+  .header { padding:36px 0 56px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div>
+        <h1 id="reportTitle">舆情监控报告</h1>
+        <div class="subtitle" id="reportSubtitle"></div>
+        <div class="keyword-badge">📊 <span id="reportKeyword"></span></div>
+      </div>
+      <div class="time-range-badge" id="timeRangeBadge"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Metric Cards -->
+<div class="metrics-row" id="metricsRow"></div>
+
+<div class="container" style="margin-top:24px;">
+
+  <!-- Risk Banner -->
+  <div id="riskBanner"></div>
+
+  <!-- Overview -->
+  <div class="section">
+    <div class="section-title">舆情概览</div>
+    <div class="overview-text" id="overviewText"></div>
+  </div>
+
+  <!-- Charts Row 1: Pie + Platform -->
+  <div class="chart-row">
+    <div class="chart-box">
+      <div class="chart-title">情感分布</div>
+      <div class="chart-container" id="sentimentPie"></div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">平台分布</div>
+      <div class="chart-container" id="platformBar"></div>
+    </div>
+  </div>
+
+  <!-- Charts Row 2: Timeline + Keywords -->
+  <div class="chart-row">
+    <div class="chart-box">
+      <div class="chart-title">舆情趋势</div>
+      <div class="chart-container" id="timelineChart"></div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">关键词热度</div>
+      <div class="chart-container" id="keywordsChart"></div>
+    </div>
+  </div>
+
+  <!-- Hot Topics Table -->
+  <div class="section" id="hotTopicsSection" style="display:none">
+    <div class="section-title">热门话题</div>
+    <table class="data-table">
+      <thead><tr><th style="width:42%">标题</th><th>来源</th><th>热度</th><th>情感</th><th>风险</th></tr></thead>
+      <tbody id="hotTopicsTbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Articles Tabs -->
+  <div class="section">
+    <div class="section-title">代表性文章</div>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="positive">🟢 正面</button>
+      <button class="tab-btn" data-tab="negative">🔴 负面</button>
+      <button class="tab-btn" data-tab="neutral">🟡 中性</button>
+      <button class="tab-btn" data-tab="mixed">🟣 混合</button>
+    </div>
+    <div class="tab-content active" id="tab-positive"></div>
+    <div class="tab-content" id="tab-negative"></div>
+    <div class="tab-content" id="tab-neutral"></div>
+    <div class="tab-content" id="tab-mixed"></div>
+  </div>
+
+  <!-- KOL Section -->
+  <div class="section" id="kolSection" style="display:none">
+    <div class="section-title">关键意见领袖 (KOL)</div>
+    <div class="kol-grid" id="kolGrid"></div>
+  </div>
+
+  <!-- Risk Analysis -->
+  <div class="section" id="riskDetailSection" style="display:none">
+    <div class="section-title">风险分析与建议</div>
+    <div id="riskDetails"></div>
+  </div>
+
+  <!-- Trend & Findings -->
+  <div class="section" id="trendSection" style="display:none">
+    <div class="section-title">核心发现与建议</div>
+    <div id="trendContent"></div>
+  </div>
+
+</div>
+
+<div class="footer">舆情监控报告 · 由 BoxAI Sentiment Monitor 自动生成 · 数据来源于公开网络，仅供参考</div>
+
+<script>
+const DATA = __REPORT_DATA__;
+
+// ── Helpers ──
+const qs = id => document.getElementById(id);
+function sentBadge(s) {
+  const m = {positive:['sbadge-pos','正面'],negative:['sbadge-neg','负面'],neutral:['sbadge-neu','中性'],mixed:['sbadge-mix','混合']};
+  const [cls,txt] = m[s] || m.neutral;
+  return `<span class="sbadge ${cls}">${txt}</span>`;
+}
+function riskBadge(r) {
+  if (!r || r==='none') return '';
+  const m = {high:['rbadge-high','⚠️ 高风险'],medium:['rbadge-medium','🔶 中风险'],low:['rbadge-low','ℹ️ 低风险']};
+  const [cls,txt] = m[r] || m.low;
+  return `<span class="rbadge ${cls}">${txt}</span>`;
+}
+function tagCls(s) { return {positive:'positive',negative:'negative',neutral:'neutral',mixed:'mixed'}[s]||'neutral'; }
+
+// ── Count-up animation ──
+function countUp(el, target, duration=1000) {
+  const isFloat = String(target).includes('.');
+  const num = parseFloat(target) || 0;
+  const start = performance.now();
+  function update(now) {
+    const t = Math.min((now-start)/duration, 1);
+    const ease = 1 - Math.pow(1-t, 3);
+    const val = num * ease;
+    el.textContent = isFloat ? val.toFixed(2) : Math.round(val).toLocaleString();
+    if (t < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+// ── Header ──
+const meta = DATA.report_meta || DATA; // support both schemas
+const keyword  = meta.keyword || DATA.keyword || '未知';
+const timeRange = meta.time_range || DATA.time_range || '';
+const genAt    = (meta.generated_at || DATA.generated_at || '').toString().slice(0,19);
+const platforms_covered = meta.platforms_covered || DATA.platforms_covered || [];
+
+qs('reportTitle').textContent = `「${keyword}」舆情监控报告`;
+qs('reportKeyword').textContent = keyword;
+qs('reportSubtitle').innerHTML = `生成时间：${genAt}<br>覆盖平台：${platforms_covered.join('、') || '全平台'}`;
+qs('timeRangeBadge').textContent = timeRange ? `📅 ${timeRange}` : '';
+
+// ── Summary ──
+const smeta = meta.sentiment_summary || DATA.summary || {};
+const total = meta.total_items || smeta.total_articles || DATA.total || 0;
+const pos   = smeta.positive || smeta.positive_count || 0;
+const neg   = smeta.negative || smeta.negative_count || 0;
+const neu   = smeta.neutral  || smeta.neutral_count  || 0;
+const mixed = smeta.mixed    || 0;
+const score = smeta.sentiment_score != null ? smeta.sentiment_score : null;
+const hotIdx= smeta.hot_index || null;
+
+// ── Metric Cards ──
+const metricsData = [
+  { cls:'mc-total', label:'舆情总条数', value: total },
+  { cls:'mc-pos',   label:'🟢 正面',    value: pos   },
+  { cls:'mc-neg',   label:'🔴 负面',    value: neg   },
+  { cls:'mc-neu',   label:'🟡 中性',    value: neu   },
+];
+if (score !== null) metricsData.push({ cls:'mc-score', label:'情感得分', value: score });
+if (hotIdx !== null) metricsData.push({ cls:'mc-hot', label:'舆情热度', value: hotIdx });
+
+qs('metricsRow').innerHTML = metricsData.map(m =>
+  `<div class="metric-card ${m.cls}"><div class="mv" data-target="${m.value}">0</div><div class="ml">${m.label}</div></div>`
+).join('');
+document.querySelectorAll('.metric-card .mv').forEach(el => {
+  setTimeout(() => countUp(el, el.dataset.target, 900), 200);
+});
+
+// ── Risk Banner ──
+const risk = DATA.risk_analysis || {};
+const riskItems = DATA.risk_alerts || [];
+const riskLevel = (risk.level || smeta.risk_level || '').replace(/风险/,'').replace(/低/,'low').replace(/中/,'medium').replace(/高/,'high') || 'low';
+const riskClsMap = { low:'low', medium:'medium', high:'high', '低':'low','中':'medium','高':'high' };
+const bannerCls = riskClsMap[riskLevel] || 'low';
+const bannerIcon = { low:'🟢', medium:'🟡', high:'🔴' }[bannerCls] || '🟢';
+const bannerText = { low:'低风险', medium:'中风险', high:'高风险' }[bannerCls] || '低风险';
+const overallSent = smeta.overall_sentiment || (DATA.trend_analysis||{}).overall_sentiment || '';
+qs('riskBanner').innerHTML = `<div class="risk-banner ${bannerCls}"><div class="risk-icon">${bannerIcon}</div><div><div class="risk-level">${bannerText}</div><div class="risk-desc">当前舆情整体倾向：${overallSent}</div></div></div>`;
+
+// ── Overview ──
+const overviewTxt = smeta.overview || (DATA.trend_analysis||{}).overview || '';
+qs('overviewText').textContent = overviewTxt || '整体舆情已完成分析，详见各模块数据。';
+
+// ── Sentiment Pie ──
+const pieEl = qs('sentimentPie');
+if (typeof echarts !== 'undefined' && pieEl) {
+  const pie = echarts.init(pieEl);
+  const pieData = [];
+  if (pos)   pieData.push({ value:pos,   name:'正面', itemStyle:{color:'#10B981'} });
+  if (neg)   pieData.push({ value:neg,   name:'负面', itemStyle:{color:'#EF4444'} });
+  if (neu)   pieData.push({ value:neu,   name:'中性', itemStyle:{color:'#9CA3AF'} });
+  if (mixed) pieData.push({ value:mixed, name:'混合', itemStyle:{color:'#8B5CF6'} });
+  pie.setOption({
+    tooltip:{ trigger:'item', formatter:'{b}: {c} ({d}%)' },
+    legend:{ bottom:0, textStyle:{fontSize:12} },
+    series:[{ type:'pie', radius:['38%','68%'], center:['50%','47%'],
+      avoidLabelOverlap:true,
+      itemStyle:{ borderRadius:6, borderColor:'#fff', borderWidth:2 },
+      label:{ show:true, formatter:'{b}\n{d}%', fontSize:12 },
+      emphasis:{ label:{ fontSize:14, fontWeight:'bold' } },
+      data: pieData
+    }]
+  });
+  window._charts = window._charts || [];
+  window._charts.push(pie);
+}
+
+// ── Platform Bar ──
+const platItems = DATA.platform_breakdown || DATA.platforms || [];
+const barEl = qs('platformBar');
+if (typeof echarts !== 'undefined' && barEl && platItems.length) {
+  const sorted = [...platItems].sort((a,b)=>(b.count||b.total||0)-(a.count||a.total||0)).slice(0,10);
+  const bar = echarts.init(barEl);
+  bar.setOption({
+    tooltip:{ trigger:'axis', axisPointer:{type:'shadow'} },
+    legend:{ data:['正面','负面','中性'], bottom:0, textStyle:{fontSize:11} },
+    color:['#10B981','#EF4444','#9CA3AF'],
+    grid:{ left:60, right:16, top:16, bottom:44, containLabel:false },
+    xAxis:{ type:'category', data:sorted.map(p=>p.platform||p.name), axisLabel:{fontSize:11,rotate:30,interval:0} },
+    yAxis:{ type:'value', minInterval:1 },
+    series:[
+      { name:'正面', type:'bar', stack:'t', data:sorted.map(p=>p.positive||0) },
+      { name:'负面', type:'bar', stack:'t', data:sorted.map(p=>p.negative||0) },
+      { name:'中性', type:'bar', stack:'t', data:sorted.map(p=>p.neutral||(p.count||0)-(p.positive||0)-(p.negative||0)||0), itemStyle:{borderRadius:[4,4,0,0]} }
+    ]
+  });
+  window._charts.push(bar);
+}
+
+// ── Timeline ──
+const timeline = DATA.timeline || [];
+const tlEl = qs('timelineChart');
+if (typeof echarts !== 'undefined' && tlEl) {
+  const tl = echarts.init(tlEl);
+  if (timeline.length) {
+    tl.setOption({
+      tooltip:{ trigger:'axis' },
+      legend:{ data:['总量','正面','负面','中性'], bottom:0, textStyle:{fontSize:11} },
+      color:['#4F46E5','#10B981','#EF4444','#9CA3AF'],
+      grid:{ left:36, right:16, top:16, bottom:44 },
+      xAxis:{ type:'category', data:timeline.map(t=>t.date), axisLabel:{fontSize:11} },
+      yAxis:{ type:'value', minInterval:1 },
+      series:[
+        { name:'总量',  type:'line', data:timeline.map(t=>t.total||0),    smooth:true, lineStyle:{width:2.5}, symbol:'circle', symbolSize:5,
+          areaStyle:{ color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(79,70,229,0.2)'},{offset:1,color:'rgba(79,70,229,0.0)'}]) } },
+        { name:'正面',  type:'line', data:timeline.map(t=>t.positive||0),  smooth:true, lineStyle:{width:1.5} },
+        { name:'负面',  type:'line', data:timeline.map(t=>t.negative||0),  smooth:true, lineStyle:{width:1.5} },
+        { name:'中性',  type:'line', data:timeline.map(t=>t.neutral||0),   smooth:true, lineStyle:{width:1.5} },
+      ]
+    });
+  } else {
+    tl.setOption({ graphic:[{ type:'text', left:'center', top:'middle', style:{text:'暂无趋势数据',fill:'#94A3B8',fontSize:14} }] });
+  }
+  window._charts.push(tl);
+}
+
+// ── Keywords ──
+const kwData = (DATA.keywords_cloud || []).sort((a,b)=>a.weight-b.weight).slice(-15);
+const kwEl = qs('keywordsChart');
+if (typeof echarts !== 'undefined' && kwEl) {
+  const kw = echarts.init(kwEl);
+  if (kwData.length) {
+    kw.setOption({
+      tooltip:{ trigger:'axis', axisPointer:{type:'shadow'} },
+      grid:{ left:80, right:40, top:10, bottom:10, containLabel:false },
+      xAxis:{ type:'value', show:false },
+      yAxis:{ type:'category', data:kwData.map(k=>k.word), axisLabel:{fontSize:12} },
+      series:[{ type:'bar', data:kwData.map(k=>k.weight), barWidth:14,
+        itemStyle:{ borderRadius:[0,8,8,0], color:new echarts.graphic.LinearGradient(0,0,1,0,[{offset:0,color:'#818CF8'},{offset:1,color:'#4F46E5'}]) },
+        label:{ show:true, position:'right', fontSize:11, color:'#64748B' }
+      }]
+    });
+  } else {
+    kw.setOption({ graphic:[{ type:'text', left:'center', top:'middle', style:{text:'暂无关键词数据',fill:'#94A3B8',fontSize:14} }] });
+  }
+  window._charts.push(kw);
+}
+
+// ── Hot Topics ──
+const topics = DATA.hot_topics || [];
+if (topics.length) {
+  qs('hotTopicsSection').style.display = '';
+  const tbody = qs('hotTopicsTbody');
+  topics.forEach(t => {
+    const sc = tagCls(t.sentiment_en || (t.sentiment==='正面'?'positive':t.sentiment==='负面'?'negative':'neutral'));
+    const maxHeat = Math.max(...topics.map(x=>x.heat||0)) || 1;
+    const heatPct = ((t.heat||0)/maxHeat*100).toFixed(0);
+    tbody.innerHTML += `<tr>
+      <td><a href="${t.url||'#'}" target="_blank">${t.title} <span style="color:#818CF8;font-size:10px;">↗</span></a></td>
+      <td style="white-space:nowrap">${t.source||''}</td>
+      <td><div style="display:flex;align-items:center;gap:6px;"><div class="heat-bar-wrap"><div class="heat-bar-fill" style="width:${heatPct}%"></div></div><span style="font-size:12px;color:#64748B">${t.heat||''}</span></div></td>
+      <td><span class="tag ${sc}">${t.sentiment||''}</span></td>
+      <td>${riskBadge(t.risk_level)}</td>
+    </tr>`;
+  });
+}
+
+// ── Articles Tabs ──
+function renderArticleList(arts) {
+  if (!arts || !arts.length) return '<p style="color:#94A3B8;padding:16px;font-size:13px;">暂无数据</p>';
+  return arts.map(a => `
+    <div class="item-card">
+      <div class="item-header">
+        ${sentBadge(a.sentiment||'neutral')}
+        <span class="source-badge">${a.source||''}</span>
+        ${riskBadge(a.risk_level)}
+        <span class="item-date">${a.date||a.published_at||''}</span>
+      </div>
+      <div class="item-title"><a href="${a.url||a.link||'#'}" target="_blank">${a.title||''} <span style="color:#818CF8;font-size:10px;">↗</span></a></div>
+      <div class="item-summary">${a.summary||''}</div>
+      ${(a.tags||[]).length ? `<div class="item-tags">${(a.tags||[]).map(t=>`<span class="item-tag">${t}</span>`).join('')}</div>` : ''}
+    </div>`).join('');
+}
+
+// Support both old (items[]) and new (sentiment_articles{}) schemas
+const artMap = DATA.sentiment_articles || { positive:[], negative:[], neutral:[], mixed:[] };
+if (!DATA.sentiment_articles && DATA.items) {
+  DATA.items.forEach(item => {
+    const s = item.sentiment || 'neutral';
+    if (!artMap[s]) artMap[s] = [];
+    artMap[s].push({ ...item, date: item.published_at });
+  });
+}
+qs('tab-positive').innerHTML = renderArticleList(artMap.positive);
+qs('tab-negative').innerHTML = renderArticleList(artMap.negative);
+qs('tab-neutral').innerHTML  = renderArticleList(artMap.neutral);
+qs('tab-mixed').innerHTML    = renderArticleList(artMap.mixed);
+
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    this.classList.add('active');
+    qs('tab-' + this.dataset.tab).classList.add('active');
+  });
+});
+
+// ── KOL ──
+const kols = DATA.opinion_leaders || [];
+if (kols.length) {
+  qs('kolSection').style.display = '';
+  kols.forEach(k => {
+    const sc = tagCls(k.stance_en || (k.stance==='正面'?'positive':k.stance==='负面'?'negative':'neutral'));
+    qs('kolGrid').innerHTML += `<div class="kol-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div><span class="kol-name">${k.name}</span> <span class="kol-platform">${k.platform}</span></div>
+        <span class="tag ${sc}">${k.stance}</span>
+      </div>
+      <div class="influence-bar"><div class="influence-fill" style="width:0%" data-target="${k.influence||0}%"></div></div>
+      <div class="kol-summary">${k.summary||''}</div>
+    </div>`;
+  });
+  // animate influence bars
+  setTimeout(() => {
+    document.querySelectorAll('.influence-fill').forEach(el => {
+      el.style.width = el.dataset.target;
+    });
+  }, 400);
+}
+
+// ── Risk Detail ──
+if (risk.factors || risk.suggestions || riskItems.length) {
+  qs('riskDetailSection').style.display = '';
+  let html = '';
+  // risk_alerts array (new schema)
+  riskItems.forEach(r => {
+    const borderMap = {high:'#EF4444',medium:'#F59E0B',low:'#3B82F6'};
+    const bgMap = {high:'#FEF2F2',medium:'#FFFBEB',low:'#EFF6FF'};
+    const iconMap = {high:'🔴',medium:'🟡',low:'🔵'};
+    const lv = r.level||'low';
+    html += `<div style="background:${bgMap[lv]||bgMap.low};border-left:4px solid ${borderMap[lv]||borderMap.low};border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-weight:700;margin-bottom:6px;">${iconMap[lv]||'⚪'} ${r.title||''}</div>
+      <p style="font-size:13px;color:#374151;">${r.description||''}</p>
+      ${r.recommendation?`<p style="margin-top:8px;font-size:12px;color:#64748B;"><strong>建议：</strong>${r.recommendation}</p>`:''}
+    </div>`;
+  });
+  // risk_analysis object (old schema)
+  if (risk.factors && risk.factors.length) {
+    html += '<h4 style="margin:12px 0 8px;font-size:14px;">⚠️ 风险因素</h4><ul class="sug-list factor-list">' + risk.factors.map(f=>`<li>${f}</li>`).join('') + '</ul>';
+  }
+  if (risk.suggestions && risk.suggestions.length) {
+    html += '<h4 style="margin:16px 0 8px;font-size:14px;">💡 应对建议</h4><ul class="sug-list">' + risk.suggestions.map(s=>`<li>${s}</li>`).join('') + '</ul>';
+  }
+  qs('riskDetails').innerHTML = html;
+}
+
+// ── Trend & Findings ──
+const trend = DATA.trend_analysis || {};
+const findings = trend.key_findings || [];
+const recs = trend.recommendations || [];
+const hotTopicsArr = trend.hot_topics || [];
+if (findings.length || recs.length || hotTopicsArr.length) {
+  qs('trendSection').style.display = '';
+  let html = '';
+  if (hotTopicsArr.length) {
+    html += '<div style="margin-bottom:16px;">' + hotTopicsArr.map(t=>`<span style="background:#FEF3C7;color:#92400E;padding:4px 12px;border-radius:20px;font-size:13px;margin-right:8px;margin-bottom:8px;display:inline-block;">🔥 ${t}</span>`).join('') + '</div>';
+  }
+  if (findings.length) {
+    html += `<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;padding:8px 16px;border-radius:8px;font-size:13px;">整体情感：<strong>${trend.overall_sentiment||''}</strong></div>
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;padding:8px 16px;border-radius:8px;font-size:13px;">趋势：<strong>${{improving:'📈 向好',stable:'➡️ 稳定',declining:'📉 下降'}[trend.sentiment_trend]||trend.sentiment_trend||''}</strong></div>
+    </div>`;
+    html += '<h4 style="font-size:14px;margin-bottom:8px;">核心发现</h4><ol style="padding-left:20px;">' + findings.map(f=>`<li style="margin-bottom:6px;font-size:13px;">${f}</li>`).join('') + '</ol>';
+  }
+  if (recs.length) {
+    html += '<h4 style="font-size:14px;margin:14px 0 8px;">应对建议</h4><ul class="sug-list">' + recs.map(r=>`<li>${r}</li>`).join('') + '</ul>';
+  }
+  qs('trendContent').innerHTML = html;
+}
+
+// ── ECharts fallback ──
+if (typeof echarts === 'undefined') {
+  ['sentimentPie','platformBar','timelineChart','keywordsChart'].forEach(id => {
+    const el = qs(id);
+    if (el) el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94A3B8;font-size:13px;">图表加载失败（无网络连接）</div>';
+  });
+}
+
+// ── Resize ──
+window.addEventListener('resize', () => {
+  (window._charts||[]).forEach(c => { try { c.resize(); } catch(e){} });
+});
+</script>
+</body>
+</html>

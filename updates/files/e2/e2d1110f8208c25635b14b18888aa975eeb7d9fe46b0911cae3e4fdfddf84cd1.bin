@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="referrer" content="no-referrer" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>公众号爆款封面 · 方案册</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --card2:#f8f9fc; --line:#e3e6ed;
+    --text:#1d2026; --sub:#5f687a; --accent:#ff6a3d; --accent2:#3b6dff;
+    --ok:#1bb381;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    padding:32px 20px 64px;}
+  .wrap{max-width:1080px;margin:0 auto;}
+  header.top{text-align:center;margin-bottom:28px;}
+  header.top h1{font-size:26px;margin:0 0 6px;letter-spacing:1px;}
+  header.top .kw{display:inline-block;margin-top:6px;padding:4px 12px;border-radius:999px;
+    background:rgba(255,106,61,.15);color:var(--accent);font-size:14px;}
+  header.top .meta{color:var(--sub);font-size:13px;margin-top:8px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    box-shadow:0 6px 18px rgba(23,30,48,.08);display:flex;flex-direction:column;}
+  .card .cover{position:relative;background:#000;aspect-ratio:2.35/1;}
+  .card .cover img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;}
+  .card .tag{position:absolute;top:10px;left:10px;background:rgba(29,32,38,.65);backdrop-filter:blur(4px);
+    color:#fff;font-size:12px;padding:4px 10px;border-radius:8px;}
+  .card .body{padding:14px 16px 18px;}
+  .card .style{font-size:17px;font-weight:700;margin:0 0 4px;}
+  .card .vert{color:var(--accent2);font-size:12px;margin-bottom:10px;}
+  .card .row{display:flex;gap:8px;margin:8px 0;}
+  .card .row .lab{color:var(--sub);font-size:12px;min-width:42px;}
+  .card .row .val{font-size:13px;line-height:1.5;}
+  .card details{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;}
+  .card summary{cursor:pointer;color:var(--accent);font-size:13px;user-select:none;}
+  .card pre{white-space:pre-wrap;word-break:break-word;background:var(--card2);border:1px solid var(--line);
+    border-radius:10px;padding:10px;font-size:12px;color:#3a3f4b;margin:8px 0 0;line-height:1.5;}
+  .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:rgba(55,211,155,.15);
+    color:var(--ok);margin-left:6px;}
+  footer{margin-top:36px;text-align:center;color:var(--sub);font-size:12px;}
+  .empty{text-align:center;color:var(--sub);padding:60px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>公众号爆款封面 · 方案册</h1>
+    <div class="kw" id="kw">—</div>
+    <div class="meta" id="meta">—</div>
+  </header>
+  <div class="grid" id="grid"></div>
+  <footer>由「公众号爆款封面工坊」生成 · 零配置 · 无外部依赖</footer>
+</div>
+<script>
+  var __COVER_DATA__ = {
+    "theme": "",
+    "generatedAt": "",
+    "count": 0,
+    "items": []
+  };
+  (function(){
+    var d = __COVER_DATA__;
+    if(d.theme) document.getElementById('kw').textContent = d.theme;
+    document.getElementById('meta').textContent =
+      '共 ' + (d.count||d.items.length) + ' 套方案 · 生成于 ' + (d.generatedAt||'');
+    var grid = document.getElementById('grid');
+    if(!d.items || !d.items.length){
+      grid.innerHTML = '<div class="empty">暂无方案数据</div>';
+      return;
+    }
+    d.items.forEach(function(it){
+      var card = document.createElement('div');
+      card.className = 'card';
+      var tag = it.variant ? '<span class="tag">'+it.variant+'</span>' : '';
+      var coverImg = it.final || it.base || '';
+      var baseImg = it.base ? '<img src="'+it.base+'" alt="底图"/>' : '';
+      var finalHtml = it.final
+        ? '<div class="row"><span class="lab">成片</span><span class="val"><img src="'+it.final+'" style="width:100%;border-radius:10px;margin-top:6px;object-fit:cover;aspect-ratio:2.35/1" alt="成片"/></span></div>'
+        : '';
+      card.innerHTML =
+        '<div class="cover">'+ (coverImg?('<img src="'+coverImg+'" alt="封面"/>'):'') + tag + '</div>' +
+        '<div class="body">' +
+          '<p class="style">'+ (it.style||'未命名风格') + (it.recommended?'<span class="badge">推荐</span>':'') +'</p>' +
+          '<div class="vert">'+ (it.vertical||'') +'</div>' +
+          (it.subject?'<div class="row"><span class="lab">主体</span><span class="val">'+it.subject+'</span></div>':'') +
+          (it.palette?'<div class="row"><span class="lab">配色</span><span class="val">'+it.palette+'</span></div>':'') +
+          (it.titleText?'<div class="row"><span class="lab">标题</span><span class="val">'+it.titleText+'</span></div>':'') +
+          finalHtml +
+          (it.prompt?'<details><summary>查看生图提示词</summary><pre>'+it.prompt+'</pre></details>':'') +
+          (it.note?'<div class="row" style="margin-top:8px"><span class="lab">说明</span><span class="val" style="color:var(--sub)">'+it.note+'</span></div>':'') +
+        '</div>';
+      grid.appendChild(card);
+    });
+  })();
+</script>
+</body>
+</html>

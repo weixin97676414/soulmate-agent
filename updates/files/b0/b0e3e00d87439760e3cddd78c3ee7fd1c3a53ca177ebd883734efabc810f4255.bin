@@ -1,0 +1,41 @@
+{
+  "_chart_type": "funnel",
+  "_command": "python3 scripts/gen_figure.py -t funnel -d templates/funnel.json -o funnel.png",
+  "studies": [
+    {
+      "name": "Smith 2020",
+      "effect": 0.69,
+      "se": 0.12
+    },
+    {
+      "name": "Lee 2021",
+      "effect": 0.55,
+      "se": 0.2
+    },
+    {
+      "name": "王 2022",
+      "effect": 0.8,
+      "se": 0.09
+    },
+    {
+      "name": "Garcia 2023",
+      "effect": 0.42,
+      "se": 0.31
+    },
+    {
+      "name": "陈 2024",
+      "effect": 0.61,
+      "se": 0.15
+    },
+    {
+      "name": "Kim 2025",
+      "effect": 0.73,
+      "se": 0.11
+    },
+    {
+      "name": " Patel 2025",
+      "effect": 0.58,
+      "se": 0.18
+    }
+  ]
+}

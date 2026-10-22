@@ -1,0 +1,252 @@
+# 抽取层桥接脚本（v2.15 新增）：读外部抽取层工具的 data.json，映射成 video-script-dissect 步骤输入。
+# 仅做格式映射，不改任何领域逻辑；外部抽取层与 dissect 各跑各的，本脚本是它们之间的"翻译层"。
+"""
+用法:
+    python analyzer_dissect_bridge.py <外部抽取层输出目录> --mode p0|p1|p2
+
+    <外部抽取层输出目录> 应含 data.json，可选含 speakers.srt / platform/ 等。
+
+产出:
+    <外部抽取层输出目录>/<视频名>_抽取信号.md
+    按 dissect 步骤 1.5 / 1.8 / 1.85 / 1.9 的输入槽位组织，可直接贴进对应步骤。
+
+注意:
+    - 本脚本只做"格式映射"，不修改 dissect 任何文件，也不造新片。
+    - 外部抽取层的 data.json 字段名以实际版本为准，若结构不符，按注释微调下面的 .get() 路径。
+    - 运行前可先核验结构: jq '.transcript.segments[0:3]' data.json
+"""
+
+import json
+import os
+import re
+import sys
+
+
+def load_json(path):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"[warn] 无法读取 {path}: {e}")
+        return {}
+
+
+def fmt_ts(seconds):
+    try:
+        seconds = float(seconds)
+    except (TypeError, ValueError):
+        return str(seconds)
+    m, s = divmod(int(seconds), 60)
+    if m >= 60:
+        h, m = divmod(m, 60)
+        return f"{h}:{m:02d}:{s:02d}"
+    return f"{m:02d}:{s:02d}"
+
+
+# ---------- P0: 说话人分离 ----------
+def build_speakers(data):
+    lines = []
+    speakers = data.get("speakers") or []
+    if not speakers and "transcript" in data:
+        speakers = [
+            s.get("speaker")
+            for s in data.get("transcript", {}).get("segments", [])
+            if s.get("speaker")
+        ]
+    if not speakers:
+        return None
+    lines.append("### 步骤 1 / 1.8 · 说话人角色图谱（P0 自动 · 外部抽取层 --diarize）\n")
+    lines.append("| 说话人 | 出现时间段 | 关键台词（抽样） | 推测角色 |")
+    lines.append("|--------|-----------|----------------|----------|")
+    seg_speakers = {}
+    for seg in data.get("transcript", {}).get("segments", []):
+        sp = seg.get("speaker") or seg.get("speaker_id")
+        if not sp:
+            continue
+        seg_speakers.setdefault(sp, []).append(seg)
+    if seg_speakers:
+        for sp, segs in seg_speakers.items():
+            t0 = fmt_ts(segs[0].get("start", 0))
+            t1 = fmt_ts(segs[-1].get("end", 0))
+            sample = re.sub(r"\s+", " ", segs[0].get("text", ""))[:30]
+            lines.append(f"| {sp} | {t0}–{t1} | {sample}… | （待填：抛钩/接梗/收金句） |")
+    else:
+        for sp in speakers:
+            lines.append(f"| {sp} | — | — | （待填） |")
+    lines.append("")
+    lines.append("> 二创步骤 6 直接复用：谁抛钩 / 谁接梗 / 谁收金句 → 填「🎭 谁演谁」。")
+    lines.append("")
+    q = data.get("speaker_quality") or data.get("diarize_quality")
+    if q:
+        lines.append(f"> 说话人分离质量分：{q}（≥80 可信 / ≥60 基本可用 / <60 建议手改 speakers.srt）\n")
+    return "\n".join(lines)
+
+
+# ---------- P0: OCR 画面文字台账 ----------
+def build_ocr(data):
+    ocr = data.get("ocr") or data.get("text_regions") or []
+    if not ocr:
+        return None
+    lines = []
+    lines.append("### 步骤 1.8 · 屏幕文字台账（P0 · 外部抽取层 OCR 自动）\n")
+    lines.append("| 时间 | 屏上文字 | 推测作用（D1钩子 / D4节奏） |")
+    lines.append("|------|----------|------------------------------|")
+    for item in ocr:
+        t = fmt_ts(item.get("start") or item.get("timestamp") or item.get("time", 0))
+        txt = item.get("text") or item.get("content") or ""
+        lines.append(f"| {t} | {txt} | （待标：钩子/节奏证据） |")
+    lines.append("")
+    return "\n".join(lines)
+
+
+# ---------- P1: 字级时间戳 ----------
+def build_word_ts(data):
+    segs = data.get("transcript", {}).get("segments", [])
+    if not segs or not segs[0].get("words"):
+        return None
+    lines = []
+    lines.append("### D1/D3 证据 · 字级时间戳抽样（P1 · --model medium --lang zh）\n")
+    lines.append("| 段起点 | 逐字时间（抽样首 5 字） | 用途 |")
+    lines.append("|--------|--------------------------|------|")
+    for seg in segs[:8]:
+        words = seg.get("words", [])[:5]
+        wt = " / ".join(f"{w.get('text','')}@{fmt_ts(w.get('start',0))}" for w in words)
+        lines.append(f"| {fmt_ts(seg.get('start',0))} | {wt} | 定位语气掉点 |")
+    lines.append("")
+    return "\n".join(lines)
+
+
+# ---------- P1: 精华评分 + 多模态对齐 ----------
+def build_highlights(data):
+    hl = data.get("highlights") or data.get("essence") or []
+    if not hl:
+        return None
+    lines = []
+    lines.append("### 步骤 1.85 · 带分高光 / 多模态对齐（P1 · 外部抽取层精华评分）\n")
+    lines.append("| 时间 | 精华分 | 标签 | 声画同帧证据 |")
+    lines.append("|------|--------|------|--------------|")
+    for h in hl:
+        t = fmt_ts(h.get("start") or h.get("timestamp", 0))
+        score = h.get("score", "—")
+        tag = h.get("tag") or h.get("label") or ""
+        align = h.get("align") or h.get("multimodal") or "（待核）"
+        lines.append(f"| {t} | {score} | {tag} | {align} |")
+    lines.append("")
+    lines.append("> 二创选段规则：≥80 分必沿用。")
+    lines.append("")
+    return "\n".join(lines)
+
+
+# ---------- P1: 场景切分 / 反转点 ----------
+def build_scenes(data):
+    scenes = data.get("scenes") or data.get("chapters") or []
+    if not scenes:
+        return None
+    lines = []
+    lines.append("### 成色卡硬指标 · 场景切分 / 反转点位置（P1 · --scenes-only）\n")
+    lines.append("| 场景 | 起 | 止 | 时长占比 | 备注 |")
+    lines.append("|------|----|----|----------|------|")
+    total = data.get("duration") or 0
+    for i, sc in enumerate(scenes, 1):
+        t0 = fmt_ts(sc.get("start", 0))
+        t1 = fmt_ts(sc.get("end", 0))
+        dur = sc.get("end", 0) - sc.get("start", 0)
+        pct = f"{dur/total*100:.0f}%" if total else "—"
+        lines.append(f"| 场景{i} | {t0} | {t1} | {pct} | （反转点是否落在 78–85%？） |")
+    lines.append("")
+    return "\n".join(lines)
+
+
+# ---------- P2: 剪辑建议 / EDL（仅八维自分析） ----------
+def build_editing(data):
+    ed = data.get("editing") or data.get("editing_suggest") or {}
+    if not ed:
+        return None
+    lines = []
+    lines.append("### 步骤 5.8 交付 · 时间码 cut list（P2 · 仅自有视频 · --editing-suggest）\n")
+    cuts = ed.get("redundant") or ed.get("cut_list") or []
+    if cuts:
+        lines.append("**建议剪掉（冗余）**：")
+        lines.append("| 时间码 | 类型 | 原因 |")
+        lines.append("|--------|------|------|")
+        for c in cuts:
+            t = fmt_ts(c.get("start", 0))
+            typ = c.get("type") or ""
+            why = c.get("reason") or ""
+            lines.append(f"| {t} | {typ} | {why} |")
+    highs = ed.get("highlights_keep") or []
+    if highs:
+        lines.append("\n**建议保留（高光）**：")
+        for h in highs:
+            lines.append(f"- {fmt_ts(h.get('start',0))}：{h.get('reason','')}")
+    lines.append("")
+    lines.append("> 说明：dissect 只负责「在哪剪、为什么剪」；EDL/draft.json 由外部抽取层直接产出（见 --export-edl / --jianying）。")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("用法: python analyzer_dissect_bridge.py <外部抽取层输出目录> --mode p0|p1|p2")
+        sys.exit(1)
+    out_dir = sys.argv[1]
+    mode = "p0"
+    for a in sys.argv[2:]:
+        if a.startswith("--mode"):
+            mode = a.split("=")[-1].lstrip("-") or "p0"
+    if mode not in ("p0", "p1", "p2"):
+        mode = "p0"
+
+    data_path = os.path.join(out_dir, "data.json")
+    if not os.path.exists(data_path):
+        print(f"[error] 未找到 {data_path}，请先跑外部抽取层工具生成。")
+        sys.exit(1)
+    data = load_json(data_path)
+
+    blocks = ["# 抽取信号映射 · mode=" + mode + "\n"]
+
+    if mode in ("p0", "p1", "p2"):
+        sp = build_speakers(data)
+        if sp:
+            blocks.append(sp)
+        ocr = build_ocr(data)
+        if ocr:
+            blocks.append(ocr)
+    if mode in ("p1", "p2"):
+        w = build_word_ts(data)
+        if w:
+            blocks.append(w)
+        h = build_highlights(data)
+        if h:
+            blocks.append(h)
+        sc = build_scenes(data)
+        if sc:
+            blocks.append(sc)
+    if mode == "p2":
+        ed = build_editing(data)
+        if ed:
+            blocks.append(ed)
+
+    if len(blocks) <= 1:
+        blocks.append("\n> 未从 data.json 解析到对应模式的字段，请核验外部抽取层输出结构（jq '.transcript.segments[0:3]' data.json）。\n")
+
+    name = os.path.basename(os.path.normpath(out_dir))
+    dest = os.path.join(out_dir, f"{name}_抽取信号.md")
+    with open(dest, "w", encoding="utf-8") as f:
+        f.write("\n".join(blocks))
+    print(f"[ok] 已生成: {dest}")
+
+
+def _check_isolated_venv():
+    """拒绝在系统 Python 中执行，强制要求隔离 venv。"""
+    if sys.prefix == sys.base_prefix:
+        sys.stderr.write(
+            "⛔ 必须在隔离 venv 内运行（拒绝系统 Python）。\n"
+            "请使用：python\n"
+        )
+        raise SystemExit(4)
+
+
+if __name__ == "__main__":
+    _check_isolated_venv()
+    main()

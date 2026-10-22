@@ -1,0 +1,155 @@
+"""从 raw/api/ 的接口原始响应重建 dataset.json（数据损坏 / 通道降级后的恢复通道）。
+
+使用场景（见 SKILL.md §4「数据损坏恢复路径」）：
+  - 主页接口本来抓到了全量笔记，但后续一次失败的运行把 dataset.json 覆盖成
+    只有 SSR 首页几十条（note_id 为空）的版本；
+  - 或者列表抓取成功、详情阶段被风控中断，需要先把列表数据抢救回来。
+
+raw/api/ 里的 user_posted_*.json 是带 note_id 的完整接口响应，
+逐条过 normalize_note() 即可还原，不需要重新登录、不再访问网络。
+
+用法：
+    python xhs_rebuild.py --out "<任务输出目录>" [--media-top N] [--media]
+
+说明：
+  - 只做「离线重建」，不联网；详情/评论可用 xhs_crawl.py 再跑一次补（需重新登录）。
+  - 重建后 meta.rebuilt 会置为 True，meta.detail_all 按实际详情文件数判定，
+    避免下游把「列表数据」误当成「全量详情」来下结论。
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import xhs_common as common  # noqa: E402
+from xhs_common import read_json, write_json  # noqa: E402
+
+log = common.log
+
+
+def _load_payloads(api_dir: Path, prefix: str) -> list[dict]:
+    files = sorted(api_dir.glob(f"{prefix}_*.json"))
+    out = []
+    for f in files:
+        data = read_json(f)
+        if isinstance(data, dict):
+            out.append(data)
+    return out
+
+
+def collect_notes(api_dir: Path) -> list[dict]:
+    """按 note_id 去重，还原主页接口抓到的全部笔记卡片。"""
+    seen: set[str] = set()
+    notes: list[dict] = []
+    for payload in _load_payloads(api_dir, "user_posted"):
+        for n in ((payload.get("data") or {}).get("notes") or []):
+            card = n.get("note_card") or n.get("noteCard") or {}
+            nid = card.get("note_id") or card.get("noteId") or n.get("note_id") or n.get("noteId")
+            if nid and nid not in seen:
+                seen.add(nid)
+                notes.append(n)
+    return notes
+
+
+def collect_profile(api_dir: Path, fallback: dict | None = None) -> dict:
+    for payload in _load_payloads(api_dir, "user_info"):
+        user = (payload.get("data") or {}).get("user")
+        if user:
+            return user
+    return fallback or {}
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="从 raw/api 原始响应重建 dataset.json")
+    ap.add_argument("--out", required=True, help="任务输出目录（含 raw/api/）")
+    ap.add_argument("--media", action="store_true", help="重建后下载封面与关键帧素材")
+    ap.add_argument("--media-top", type=int, default=10, help="下载素材的笔记数（按点赞排序）")
+    args = ap.parse_args()
+
+    out_dir = Path(args.out)
+    api_dir = out_dir / "raw" / "api"
+    if not api_dir.is_dir():
+        log.error("找不到 %s，无法离线重建（该目录存放带 note_id 的接口原始响应）", api_dir)
+        return 1
+
+    from xhs_crawl import normalize_note, normalize_profile
+    from xhs_resolve import Target
+
+    old = read_json(out_dir / "dataset.json") or {}
+    old_meta = old.get("meta") or {}
+    t = old_meta.get("target") or {}
+    target = Target(uid=t.get("uid", ""), nickname=t.get("nickname", ""),
+                    xsec_token=t.get("xsec_token", ""), profile_url=t.get("profile_url", ""),
+                    raw=t.get("raw", ""), resolved_by=t.get("resolved_by", ""))
+
+    raw_notes = collect_notes(api_dir)
+    if not raw_notes:
+        log.error("raw/api 里没有带 note_id 的笔记，重建失败")
+        return 1
+
+    profile = normalize_profile(collect_profile(api_dir, old.get("profile")), target)
+    notes = [normalize_note(n, profile) for n in raw_notes]
+    notes = [n for n in notes if n.get("note_id")]
+
+    write_json(out_dir / "raw" / "profile.json", profile)
+    write_json(out_dir / "raw" / "notes.json", notes)
+
+    # 详情文件数决定 detail_all：空 note_id 的 .json 是登录墙产生的垃圾，不算数
+    valid_ids = {n["note_id"] for n in notes}
+    detail_files = [p for p in (out_dir / "raw" / "notes").glob("*.json") if p.stem in valid_ids]
+    has_comments = any((out_dir / "raw" / "comments" / f"{p.stem}.json").exists()
+                       for p in detail_files)
+
+    dataset = {
+        "meta": {
+            "target": target.to_dict(),
+            "tier": f"{old_meta.get('tier', 'unknown')}+rebuilt",
+            "crawled_at": old_meta.get("crawled_at", ""),
+            "rebuilt_at": common.time.strftime("%Y-%m-%d %H:%M:%S"),
+            "rebuilt": True,
+            "rebuilt_from": str(api_dir),
+            "note_limit": 0,
+            "full_crawl": True,
+            "detail_top": len(detail_files),
+            "detail_all": False,
+            "has_comments": has_comments,
+            "comments_limit": old_meta.get("comments_limit", 100),
+            "skill": "xhs-account-deconstruct",
+        },
+        "profile": profile,
+        "notes": notes,
+    }
+
+    # 把已抓到的详情/评论按 note_id 合并回列表（只认 id 匹配得上的文件）
+    from xhs_crawl import _merge_details
+    _merge_details(out_dir, dataset)
+    notes = dataset["notes"]
+
+    if args.media:
+        try:
+            from xhs_media import download_media
+            dataset["meta"]["media"] = download_media(
+                dataset, out_dir / "media", args.media_top)
+        except Exception as err:  # noqa: BLE001
+            log.warning("素材下载失败（不影响文本分析）：%s", err)
+            dataset["meta"]["media"] = {"error": str(err)[:200]}
+
+    dataset["notes"].sort(key=lambda n: n.get("timestamp") or 0, reverse=True)
+    write_json(out_dir / "dataset.json", dataset)
+
+    log.info("重建完成：%s 条笔记（来自 %s 个接口响应）", len(notes),
+             len(list(api_dir.glob("user_posted_*.json"))))
+    log.info("账号：%s（小红书号 %s）", profile.get("nickname"), profile.get("red_id"))
+    if not detail_files:
+        log.warning("没有可用的详情文件：本次仅含列表指标（点赞/形式/时间），"
+                    "缺少收藏、评论、正文与标签")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

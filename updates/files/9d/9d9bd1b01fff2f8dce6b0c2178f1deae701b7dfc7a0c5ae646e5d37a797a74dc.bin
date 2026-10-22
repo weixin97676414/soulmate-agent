@@ -1,0 +1,56 @@
+{
+  "_chart_type": "cluster_heatmap",
+  "_command": "python3 scripts/gen_figure.py -t cluster_heatmap -d templates/cluster_heatmap.json -o cluster_heatmap.png",
+  "matrix": [
+    [
+      2.1,
+      0.3,
+      1.8,
+      0.1
+    ],
+    [
+      1.9,
+      0.2,
+      2.0,
+      0.3
+    ],
+    [
+      0.2,
+      2.2,
+      0.1,
+      1.9
+    ],
+    [
+      0.3,
+      2.0,
+      0.4,
+      2.1
+    ],
+    [
+      1.8,
+      0.4,
+      1.9,
+      0.2
+    ],
+    [
+      0.1,
+      1.8,
+      0.3,
+      2.0
+    ]
+  ],
+  "row_labels": [
+    "样本1",
+    "样本2",
+    "样本3",
+    "样本4",
+    "样本5",
+    "样本6"
+  ],
+  "col_labels": [
+    "基因A",
+    "基因B",
+    "基因C",
+    "基因D"
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "account": "你的知乎账号ID",
+  "account_status": {
+    "silenced": false,
+    "silenced_from": "",
+    "silenced_until": "",
+    "reason": "",
+    "_note": "账号被限流/禁言时置 silenced=true：run_shift.js 会立即退出（不写回答、不点赞、不互动），日常改用 scripts/browse_only.js 只读浏览；解除后改回 false，先只开 morning 一班。"
+  },
+  "vertical_focus": {
+    "primary": [
+      "趣味历史",
+      "人文心理"
+    ],
+    "_primary_note": "垂直度收敛：只养 2 个领域，其他领域一律不写。改这里=改账号定位。",
+    "keyword_hints": {
+      "趣味历史": [
+        "历史",
+        "史料",
+        "典故",
+        "制度",
+        "礼制",
+        "朝代",
+        "人物评价",
+        "神话",
+        "西游记",
+        "孔子",
+        "三国"
+      ],
+      "人文心理": [
+        "心理机制",
+        "动机",
+        "代际",
+        "情感",
+        "社交",
+        "中年",
+        "认知",
+        "人性",
+        "关系"
+      ]
+    },
+    "_keyword_hints_note": "每篇回答刻意出现 2-3 个本领域关键词（自然融入，不堆砌），帮算法识别并点亮创作垂直度。"
+  },
+  "topic_pool": [
+    "历史",
+    "心理",
+    "神话",
+    "情感",
+    "西游记",
+    "代际",
+    "孔子",
+    "社交",
+    "三国",
+    "中年",
+    "古人",
+    "认知"
+  ],
+  "_topic_pool_note": "两个垂直领域的关键词交替排列，保证每班轮转取到的 3 个词横跨两个领域。",
+  "answer_style": {
+    "min_words": 250,
+    "max_words": 800,
+    "perspective": "理性克制的趣味历史 / 人文心理视角：用史料细节、制度演变或心理机制拆解问题，避开前排情绪化回答"
+  },
+  "deep_answer": {
+    "enabled": true,
+    "frequency": "weekly",
+    "mode": "auto",
+    "_mode_note": "auto = 用户邀请优先 + 每周随机兜底；invite = 仅用户邀请；random = 仅自动随机。",
+    "min_words": 800,
+    "max_words": 1200,
+    "requirements": [
+      "含 1 处具体史料原文 / 数据 / 案例（可核查，不编造）",
+      "含 1 组对比结构（分层对比或表格化表述）",
+      "含 1 段可操作的判断框架或结论"
+    ]
+  },
+  "influence": {
+    "enabled": true,
+    "hook": "开头或中段抛 1 个反直觉观点，拉评论",
+    "actionable": "至少 1 个可操作清单 / 判断框架 / 步骤，拉收藏",
+    "cta": "结尾 1 句轻量引导互动，不硬求赞",
+    "comment_reply": {
+      "enabled": true,
+      "window_hours": 24,
+      "_note": "发布后 24h 内回复全部评论，互动率直接影响影响力分"
+    }
+  },
+  "moments": {
+    "enabled": true,
+    "per_week": 4,
+    "min_words": 50,
+    "max_words": 150,
+    "topics": [
+      "读史笔记",
+      "历史冷知识",
+      "生活中的心理观察",
+      "读书摘录 + 一句点评"
+    ],
+    "_note": "想法 = 知乎动态，提升关注者亲密度（月更维度）性价比最高的动作。已自动化：scripts/post_moment.js（默认 dryRun 只填不发，实发须显式 dryRun:false）。两条间隔≥5分钟。"
+  },
+  "shifts": {
+    "morning": {
+      "enabled": true,
+      "time": "07:50",
+      "answer": true,
+      "interactions": {
+        "like": {
+          "pool": 10,
+          "min": 3,
+          "max": 5
+        },
+        "collect": false,
+        "follow": false,
+        "comment": false
+      }
+    },
+    "noon": {
+      "enabled": true,
+      "time": "12:30",
+      "answer": true,
+      "interactions": {
+        "like": {
+          "pool": 10,
+          "min": 3,
+          "max": 5
+        },
+        "collect": true,
+        "follow": true,
+        "comment": false
+      }
+    },
+    "evening": {
+      "enabled": true,
+      "time": "20:00",
+      "answer": true,
+      "interactions": {
+        "like": {
+          "pool": 10,
+          "min": 3,
+          "max": 5
+        },
+        "collect": true,
+        "follow": true,
+        "comment": false
+      }
+    }
+  },
+  "_note": "复制为 config.json 后按你自己的账号/话题修改。三班各写1回答=3回答/天，超出保守的1回答/天红线，属【自定义高风险】；若账号再被限流，先把三班 answer 改回仅 morning=true、其余 false。"
+}
