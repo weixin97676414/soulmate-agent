@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Electron 在 hardened runtime 下跑 V8/Node 需要 JIT 与未签名可执行内存 -->
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <!-- 语音：麦克风权限（NSMicrophoneUsageDescription 配合） -->
+  <key>com.apple.security.device.audio-input</key>
+  <true/>
+  <!-- 拍照/视频：摄像头权限 -->
+  <key>com.apple.security.device.camera</key>
+  <true/>
+  <!-- 文件：用户通过对话框选择/拖入的文件与目录读写 -->
+  <key>com.apple.security.files.user-selected.read-write</key>
+  <true/>
+  <!-- 下载目录（产物落盘用） -->
+  <key>com.apple.security.files.downloads.read-write</key>
+  <true/>
+</dict>
+</plist>
