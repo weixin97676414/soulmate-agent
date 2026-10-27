@@ -74,7 +74,7 @@ class TeamListParams(BaseModel):
     description=(
         "列出**现有**搭子的 id、名称、简介、已装技能、**它当前的群角色（group_role）**，"
         "以及它的**身份 / 规则 / 语气**三份设定全文；还列出已有的群"
-        "（群的成员带 id，以及该群**审核员 / 优化顾问**确认了没有）。\n"
+        "（群的成员带 id、它是**工作群还是讨论群**，以及该群**优化员 / 审核员**确认了没有）。\n"
         "三个用途：① 新建之前先看有没有能复用的（**建搭子、建群之前必须先调它**，"
         "用户明确要求「有功能相同的就复用现有的」）；"
         "② 判断某个搭子适不适合承担本次任务、还差什么能力（差什么可以用 "
@@ -553,6 +553,18 @@ class TeamDeleteAssistantSkill(BaseSkill):
 
 class GroupCreateParams(BaseModel):
     name: str = Field(..., min_length=1, max_length=48, description="群名称，例如「学习计划讨论组」")
+    group_type: Literal["work", "discussion"] = Field(
+        "discussion",
+        description=(
+            "**群类型，建群前先想清楚选哪种**：\n"
+            "· `work` = **工作群**（流水线）：你分发任务 → 执行者**并行**各干各的 → "
+            "优化员挑改进 → 审核员验收 → 你总结。**除你之外谁也看不到全量对话**"
+            "（每人只拿到自己那一段），适合「一份活拆给几个人干」。必须配齐优化员 + 审核员。\n"
+            "· `discussion` = **讨论群**（圆桌）：所有人共享全部对话、轮流发言，"
+            "适合头脑风暴 / 多人评议。不强制要优化员、审核员。\n"
+            "拿不准就用 `discussion`（默认值，也是老行为）。"
+        ),
+    )
     member_ids: list[str] = Field(
         ...,
         min_length=2,
@@ -566,7 +578,25 @@ class GroupCreateParams(BaseModel):
         ),
     )
     speaking_order: list[str] = Field(
-        default_factory=list, description="发言顺序（成员 id 的子集）；留空按上面给的顺序"
+        default_factory=list,
+        description=(
+            "发言顺序（成员 id 的子集）；留空按上面给的顺序。"
+            "**只对讨论群有意义**（工作群按流水线阶段走，不看这个）"
+        ),
+    )
+    advisor_id: str = Field(
+        "",
+        description=(
+            "**只有工作群用**：优化员的搭子 id（会自动加进成员）。"
+            "建群时给了就一步到位；不给就紧接着调 team_assign_group_roles 补。"
+        ),
+    )
+    reviewer_id: str = Field(
+        "",
+        description=(
+            "**只有工作群用**：审核员的搭子 id（会自动加进成员）。"
+            "建群时给了就一步到位；不给就紧接着调 team_assign_group_roles 补。"
+        ),
     )
 
 
@@ -575,18 +605,20 @@ class GroupCreateParams(BaseModel):
     display_name="建群（拉搭子进群）",
     description=(
         "把几个搭子拉进一个群。成员 id 必须来自 team_list_assistants 的结果。\n"
-        "⚠️ **总管必须指名道姓**：coordinator_id 要填一个真实的搭子 id，而且它必须也在"
-        " member_ids 里 —— 想自己当总管，就得把**你自己**也写进 member_ids（一个群可以"
-        "把你也算作成员）。不能空着，也不能嘴上自称总管却不在群里。\n"
-        "⚠️ **建群只是第一步，建完必须接着做第二步**：调 team_assign_group_roles 把"
-        "「审核员」与「优化顾问」的搭子 id 提交上来 —— 这一步**没有「不需要」这个选项**，"
-        "而且**没提交之前 team_start_discussion 一定会被拒绝**。\n"
-        "第二步怎么选人：有合适的现有搭子就直接复用它的 id；没有就用 team_create_assistant "
-        "建一个带具体规则的（group_role 分别填 reviewer / advisor，规则里写清「这个任务"
-        "怎么算达标」这类具体判据），再把新搭子的 id 提交上去。\n"
-        "⚠️ 团队角色要齐：总管（coordinator，做策划与分工）、执行者（worker）、"
-        "优化顾问（advisor）、审核员（reviewer）。顺序上优化顾问在审核员之前（倒数第二）、"
-        "审核员在最后。\n"
+        "\n"
+        "**第一件要想清楚的事：这是工作群还是讨论群**（`group_type`）——\n"
+        "· `work`（工作群，流水线）：你把任务拆开分派给每个执行者，他们**并行**各干各的，"
+        "**彼此看不到对方做了什么、也看不到群聊历史**；成品出来后优化员只看交付物提改进、"
+        "审核员只看交付物验收，最后由你统一总结交付。适合「一份活拆给几个人干」。\n"
+        "  必须配齐四类角色：总管（恒为你，自动进群）+ 执行者（至少 1 个）+ 优化员 + 审核员。"
+        "优化员 / 审核员可以直接传 `advisor_id` / `reviewer_id` 一步到位，"
+        "没传就紧接着调 team_assign_group_roles 补 —— **没配齐之前 team_start_discussion 会被拒绝**。\n"
+        "· `discussion`（讨论群，圆桌）：所有人共享全部对话、轮流发言，"
+        "适合头脑风暴 / 多人评议。**不强制配优化员 / 审核员，建完直接开讨论。**\n"
+        "拿不准就用 `discussion`（默认值，也是老行为）。\n"
+        "\n"
+        "怎么选人：有合适的现有搭子就直接复用 id；没有就用 team_create_assistant 建一个"
+        "带具体规则的（group_role 填 reviewer / advisor，规则里写清「这个任务怎么算达标」）。\n"
         "返回体里会带上现有搭子清单与下一步指引，方便确认有没有该复用却漏掉的。"
     ),
     params_model=GroupCreateParams,
@@ -605,23 +637,19 @@ class TeamCreateGroupSkill(BaseSkill):
                 coordinator_id=args.coordinator_id,
                 speaking_order=args.speaking_order,
                 actor_id=ctx.assistant_id,
+                group_type=args.group_type,
+                advisor_id=args.advisor_id,
+                reviewer_id=args.reviewer_id,
             )
         except ValueError as exc:
             raise SkillExecutionError(str(exc)) from exc
-        coordinator = created.get("coordinator") or {}
         return {
             "created": created,
+            
+            
             "message": (
-                f"已建群「{created['name']}」（id={created['id']}）。"
-                + (
-                    f"本群总管是「{coordinator.get('name')}」"
-                    "（讨论时按这个分工走，别把自己当总管）。"
-                    if coordinator
-                    else ""
-                )
-                + "**下一步必须调 team_assign_group_roles**，把这个群的审核员与优化顾问的"
-                "搭子 id 提交上来（没有合适的搭子就先建一个再提交）；提交之后才能用 "
-                "team_start_discussion 把话题抛进去。"
+                f"已建{'工作群' if created.get('group_type') == 'work' else '讨论群'}"
+                f"「{created['name']}」（id={created['id']}）。" + (created.get("next_step") or "")
             ),
         }
 
@@ -653,14 +681,17 @@ class GroupRolesParams(BaseModel):
     display_name="提交群角色（审核员 / 优化顾问）",
     description=(
         "把一个群的「审核员」与「优化顾问」的搭子 id 提交给系统确认。\n"
-        "⚠️ **这是建群之后绕不过去的一步**：任务群必须配齐这两个角色，**没有「不需要」"
-        "这个选项**，系统也不会替你补通用角色 —— 你只能指一个真实的搭子出来：\n"
+        "⚠️ **只有工作群需要这一步**：工作群是流水线（分发 → 执行 → 优化 → 审核 → 总结），"
+        "优化员与审核员是流水线上的**固定站点**，缺一个整条流程就断，**没有「不需要」"
+        "这个选项**；讨论群不强制（用户明确：讨论群不强制有优化员与审核员），"
+        "不调它也能直接开讨论。\n"
+        "怎么选人：\n"
         "1. 先 team_list_assistants 看清楚现有搭子的 id、简介与**它当前的角色"
         "（group_role）**：已经是审核员 / 优化顾问的，直接复用；\n"
         "2. 没有合适的就用 team_create_assistant 建一个（group_role 填 reviewer / advisor，"
         "规则里写清这个任务的具体判据）；\n"
         "3. 再用这个技能把两个 id 提交上来。\n"
-        "提交成功后系统会记住，你才能用 team_start_discussion 开讨论。\n"
+        "提交成功后系统会记住；工作群没配齐之前 team_start_discussion 会被拒绝。\n"
         "另外：不在群里的搭子会被自动拉进群（返回体里会说明）；已经是**别的**角色"
         "（例如总管）的搭子不能顶成审核员，会被拒绝 —— 换一个搭子。"
     ),
@@ -834,7 +865,9 @@ class StartDiscussionParams(BaseModel):
     group_id: str = Field(
         ...,
         min_length=1,
-        description="要讨论的群 id。群必须已经建好**并且配齐了审核员与优化顾问**。",
+        description=(
+            "要讨论的群 id。**工作群**必须已经配齐优化员与审核员；**讨论群**建好即可。"
+        ),
     )
 
 
@@ -845,10 +878,12 @@ class StartDiscussionParams(BaseModel):
         "把话题交给一个群，让它们在里面**后台讨论**。调用后**立即返回**：用户可以接着"
         "做别的，讨论结束时结论会自动发回当前这条对话。用户说「你们讨论一下」"
         "「找几个人研究一下」「先议一议再告诉我」时用它。\n"
-        "⚠️ **前置条件（会被拒绝，别抱着试一下的心态调）**：群里必须先配齐「审核员」与"
-        "「优化顾问」—— 顺序是 team_create_group 建群 → team_assign_group_roles 提交这两个"
-        "角色的搭子 id → 才有资格调用本技能。没配齐时本技能会直接报错并把缺什么告诉你。\n"
-        "（本技能不负责建群：没有合适的群就先按上面三步准备好，别把建群和开讨论挤在一步里。）"
+        "⚠️ **前置条件按群类型不同**（会被拒绝，别抱着试一下的心态调）：\n"
+        "· **工作群**：必须先配齐「优化员」与「审核员」—— 顺序是 team_create_group 建群 → "
+        "team_assign_group_roles 提交这两个角色的搭子 id → 才能调本技能；\n"
+        "· **讨论群**：建好就能直接调，不需要配任何角色。\n"
+        "没满足条件时本技能会直接报错并把缺什么告诉你。\n"
+        "（本技能不负责建群：没有合适的群就先准备好，别把建群和开讨论挤在一步里。）"
     ),
     params_model=StartDiscussionParams,
     category="system",

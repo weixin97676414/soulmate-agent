@@ -177,6 +177,9 @@ class Orchestrator:
                     "name": item.name,
                     
                     
+                    "group_type": item.group_type,
+                    
+                    
                     "members": [
                         {"id": member_id, "name": self._display_name(member_id)}
                         for member_id in item.member_assistant_ids
@@ -185,6 +188,7 @@ class Orchestrator:
                     "roles": {
                         "reviewer": self._role_brief(item.reviewer_id),
                         "advisor": self._role_brief(item.advisor_id),
+                        "required": item.group_type == "work",
                     },
                     
                     
@@ -533,6 +537,14 @@ class Orchestrator:
             raise ValueError(f"群「{group_id}」不存在")
         if not thread_id.strip():
             raise ValueError("thread_id 不能为空：给当前正在讨论的那条对话的 id。")
+        
+        
+        
+        
+        
+        
+        if runtime.db_ready:
+            await self._require_thread(group.id, thread_id.strip())
         members = set(group.member_assistant_ids)
         assigned = 0
         for item in items:
@@ -834,6 +846,9 @@ class Orchestrator:
         speaking_order: list[str] | None = None,
         actor_id: str | None = None,
         from_import: bool = False,
+        group_type: str = "discussion",
+        advisor_id: str = "",
+        reviewer_id: str = "",
     ) -> dict[str, Any]:
 
 
@@ -889,12 +904,50 @@ class Orchestrator:
                     "（id 要用 list_assistants 的结果）。"
                 )
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        clean_type = "work" if group_type.strip().lower() == "work" else "discussion"
+        work_advisor = ""
+        work_reviewer = ""
+        if clean_type == "work":
+            for role_label, raw_id in (("优化员", advisor_id), ("审核员", reviewer_id)):
+                chosen = raw_id.strip()
+                if not chosen:
+                    continue
+                if chosen == coordinator:
+                    raise ValueError(
+                        f"「{self._display_name(chosen)}」已经是这个群的总管，"
+                        f"不能再兼{role_label} —— 流水线里这两个站点必须分开。"
+                        "换一个搭子，或者用 team_create_assistant 建一个。"
+                    )
+                if runtime.assistants.get(chosen) is None:
+                    raise ValueError(
+                        f"{role_label}「{chosen}」不存在"
+                        "（id 要用 team_list_assistants 的结果，不要自己编）。"
+                    )
+                if chosen not in members:
+                    members.append(chosen)
+                if role_label == "优化员":
+                    work_advisor = chosen
+                else:
+                    work_reviewer = chosen
+
         group = GroupProfile(
             id=f"{slugify(clean_name, fallback='group')}-{uuid.uuid4().hex[:6]}",
             name=clean_name,
             member_assistant_ids=members,
             speaking_order=[item for item in (speaking_order or []) if item in members],
             coordinator_id=coordinator,
+            group_type=clean_type,
+            advisor_id=work_advisor,
+            reviewer_id=work_reviewer,
         )
         config = runtime.groups.model_copy(deep=True)
         config.upsert(group)
@@ -947,20 +1000,14 @@ class Orchestrator:
             ),
             
             "existing_assistants": self.list_assistants(),
+            "group_type": clean_type,
             
             
-            "next_step": (
-                (
-                    f"这个群的总管是「{self._display_name(coordinator)}」——"
-                    "讨论时按这个分工走，别把自己当总管。"
-                    if coordinator
-                    else "这个群没指定总管，会按发言位次（首位）兜底。"
-                )
-                + "接着调 team_assign_group_roles 提交这个群的「审核员」与「优化顾问」搭子 id"
-                "（没有「不需要」这个选项；有合适的现有搭子就复用，没有就先用 "
-                "team_create_assistant 建一个 group_role 为 reviewer / advisor 的）。"
-                "没提交之前 team_start_discussion 会被拒绝。"
-            ),
+            
+            
+            
+            
+            "next_step": self._group_next_step(group, coordinator),
         }
         if missing:
             result["ignored_members"] = missing
@@ -1144,6 +1191,39 @@ class Orchestrator:
     
     
     
+    def _group_next_step(self, group: GroupProfile, coordinator: str) -> str:
+
+
+
+
+
+
+        head = (
+            f"这个群的总管是「{self._display_name(coordinator)}」——"
+            "讨论时按这个分工走，别把自己当总管。"
+            if coordinator
+            else "这个群没指定总管，会按发言位次（首位）兜底。"
+        )
+        if group.group_type != "work":
+            return (
+                head + "这是**讨论群**：成员共享全部对话，不需要配优化员 / 审核员，"
+                "直接调 team_start_discussion 把话题抛进去即可。"
+            )
+        gap = self._roles_gap(group)
+        if not gap:
+            return (
+                head + "这是**工作群**：优化员与审核员都已就位，"
+                "直接调 team_start_discussion 开跑。"
+            )
+        return (
+            head
+            + "这是**工作群**：流水线要求「优化员 + 审核员」两个角色各就各位，"
+            + f"现在还差：{gap}。"
+            "调 team_assign_group_roles 把这两个搭子 id 提交上来"
+            "（没有「不需要」这个选项；没有合适的就先用 team_create_assistant 建一个 "
+            "group_role 为 reviewer / advisor 的）。没配齐之前 team_start_discussion 会被拒绝。"
+        )
+
     def _roles_gap(self, group: GroupProfile) -> str:
 
 
@@ -1517,14 +1597,17 @@ class Orchestrator:
         
         
         
-        gap = self._roles_gap(group)
-        if gap:
-            raise ValueError(
-                f"「{group.name}」还没配齐「审核员 / 优化顾问」：{gap}。"
-                "先用 team_assign_group_roles 把这两个角色的搭子 id 提交上来"
-                "（这一步没有「不需要」；没有合适的搭子就先用 team_create_assistant 建一个），"
-                "再发起讨论。"
-            )
+        
+        
+        if group.group_type == "work":
+            gap = self._roles_gap(group)
+            if gap:
+                raise ValueError(
+                    f"「{group.name}」是工作群，还没配齐「优化员 / 审核员」：{gap}。"
+                    "先用 team_assign_group_roles 把这两个角色的搭子 id 提交上来"
+                    "（这一步没有「不需要」；没有合适的搭子就先用 team_create_assistant 建一个），"
+                    "再发起讨论。"
+                )
         clean_topic = topic.strip()
         if not clean_topic:
             raise ValueError("得给一个讨论话题，否则搭子们不知道要聊什么。")

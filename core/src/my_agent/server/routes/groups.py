@@ -178,6 +178,13 @@ class GroupCreate(BaseModel):
     speaking_order: list[str] = Field(default_factory=list)
     
     avatar: str = ""
+    
+    
+    group_type: Literal["work", "discussion"] = "discussion"
+    
+    
+    advisor_id: str = ""
+    reviewer_id: str = ""
 
 
 class GroupChatRequest(BaseModel):
@@ -265,13 +272,40 @@ async def create_group(payload: GroupCreate, request: Request) -> dict[str, Any]
         if runtime.assistants.get(assistant_id) is None:
             raise HTTPException(status_code=400, detail=f"搭子「{assistant_id}」不存在")
 
+    
+    members = list(dict.fromkeys(payload.member_assistant_ids))
+    advisor = payload.advisor_id.strip()
+    reviewer = payload.reviewer_id.strip()
+
+    if payload.group_type == "work":
+        
+        
+        if "BuddyManager" not in members and runtime.assistants.get("BuddyManager") is not None:
+            members.append("BuddyManager")
+        for role_label, chosen in (("优化员", advisor), ("审核员", reviewer)):
+            if not chosen:
+                continue
+            if runtime.assistants.get(chosen) is None:
+                raise HTTPException(status_code=400, detail=f"{role_label}「{chosen}」不存在")
+            if chosen == "BuddyManager":
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Buddy Manager 已经是工作群的总管，不能再兼{role_label}。",
+                )
+            if chosen not in members:
+                members.append(chosen)
+
     group = GroupProfile(
         id=f"{_slugify(payload.name)}-{uuid.uuid4().hex[:6]}",
         name=payload.name,
-        member_assistant_ids=payload.member_assistant_ids,
-        speaking_order=payload.speaking_order,
+        member_assistant_ids=members,
+        speaking_order=[item for item in payload.speaking_order if item in members],
         
         avatar=await _normalize_group_avatar(runtime, payload.avatar),
+        group_type=payload.group_type,
+        advisor_id=advisor,
+        reviewer_id=reviewer,
+        coordinator_id="BuddyManager" if payload.group_type == "work" else "",
     )
     config = runtime.groups.model_copy(deep=True)
     config.upsert(group)

@@ -50,6 +50,7 @@ from .group_domain import (
     skill_owners,
     summary_owner,
     vote_passed,
+    work_role_rules,
 )
 
 if TYPE_CHECKING:  
@@ -190,7 +191,12 @@ async def build_group_agent(
     background: bool = False,
     role: str = "",
     can_end_vote: bool = False,
+    context_text: str | None = None,
 ) -> Any:
+
+
+
+
 
 
 
@@ -213,21 +219,37 @@ async def build_group_agent(
     )
     persona = persona_with_instructions(runtime, member.id, list(member.enabled_skills) or None)
     role_text = ROLE_LABELS.get(role, "成员") if role else "成员"
-    rules = (
-        "\n\n## 你正在参加一个多搭子群聊\n"
-        f"群名：「{group.name}」；成员：{names}。\n"
-        f"你在这个群里的角色：**{role_text}**。\n"
-        "规则：\n"
-        "- 用户抛出话题后，大家**轮流发言**讨论，目标是聊到意见统一并给出结论。\n"
-        "- 每次发言简短（1~3 句），像群聊一样自然，不要长篇大论。\n"
-        "- 可以用 @名字 请某位成员补充发言。\n"
-        "- 别人发起结束投票后，你在发言**最后**写 [AGREE] 或 [DISAGREE]（同意/不同意结束）。\n"
-        "- 讨论收尾时，由**会话发起人（发言顺序的首位）**做最终总结交付给用户；\n"
-        "- 你不是这个人时不要抢着总结，也不要在自己的发言里替它交付。\n"
-        "- 审核员验收通过，讨论就结束了 —— 接下来直接由会话发起人给出最终总结。\n"
-        "- 你可以使用自己的工具（技能、MCP）来核实或补充信息。\n"
-        + role_rules(role, can_end_vote=can_end_vote)
-    )
+    if group.group_type == "work":
+        
+        
+        
+        rules = (
+            "\n\n## 你正在参加一个**工作群**（流水线协作）\n"
+            f"群名：「{group.name}」；成员：{names}。\n"
+            f"你在这个群里的角色：**{role_text}**。\n"
+            "规则：\n"
+            "- 这个群**不是**轮流聊天：总管分发 → 执行者各干各的 → 优化 → 审核 → 总结。\n"
+            "- **除总管外，谁也看不到全量对话** —— 你只拿到自己该看的那一段；"
+            "不要假设别人说过什么，也不要要求别人把内容贴给你。\n"
+            "- 不要写 [END_VOTE] / [AGREE] / [DISAGREE]（工作群没有结束投票）。\n"
+            "- 你可以使用自己的工具（技能、MCP）来核实或补充信息。\n" + work_role_rules(role)
+        )
+    else:
+        rules = (
+            "\n\n## 你正在参加一个多搭子群聊\n"
+            f"群名：「{group.name}」；成员：{names}。\n"
+            f"你在这个群里的角色：**{role_text}**。\n"
+            "规则：\n"
+            "- 用户抛出话题后，大家**轮流发言**讨论，目标是聊到意见统一并给出结论。\n"
+            "- 每次发言简短（1~3 句），像群聊一样自然，不要长篇大论。\n"
+            "- 可以用 @名字 请某位成员补充发言。\n"
+            "- 别人发起结束投票后，你在发言**最后**写 [AGREE] 或 [DISAGREE]（同意/不同意结束）。\n"
+            "- 讨论收尾时，由**会话发起人（发言顺序的首位）**做最终总结交付给用户；\n"
+            "- 你不是这个人时不要抢着总结，也不要在自己的发言里替它交付。\n"
+            "- 审核员验收通过，讨论就结束了 —— 接下来直接由会话发起人给出最终总结。\n"
+            "- 你可以使用自己的工具（技能、MCP）来核实或补充信息。\n"
+            + role_rules(role, can_end_vote=can_end_vote)
+        )
     
     
     system = rules.lstrip("\n")
@@ -235,27 +257,33 @@ async def build_group_agent(
         system = f"{system}\n\n{persona}"
 
     memory = MemoryManager()
-    if history:
+    if context_text is not None:
+        
+        
+        if context_text.strip():
+            memory.add_user(context_text.strip())
+    elif history:
+        
+        
+        
+        
         
         
         assigned = runtime._group_context_plan.get((group.id, thread_id, member.id))
+        history_text = await compressed_group_history_text(
+            runtime,
+            group,
+            thread_id,
+            history,
+            llm,
+            token_limit=llm.token_limit,
+            keep_recent=_keep_recent_for_role(role),
+            full=role == "coordinator",
+        )
         if assigned:
-            memory.add_user("总管给这次讨论分配给你的上下文（只读这部分即可）：\n\n" + assigned)
-        else:
-            
-            
-            history_text = await compressed_group_history_text(
-                runtime,
-                group,
-                thread_id,
-                history,
-                llm,
-                token_limit=llm.token_limit,
-                keep_recent=_keep_recent_for_role(role),
-                full=role == "coordinator",
-            )
-            if history_text:
-                memory.add_user("以下是本群到目前为止的对话记录：\n\n" + history_text)
+            memory.add_user("总管给这次讨论分配给你的要点（优先看这部分）：\n\n" + assigned)
+        if history_text:
+            memory.add_user("以下是本群到目前为止的对话记录：\n\n" + history_text)
 
     
     
@@ -409,6 +437,7 @@ async def run_member(
     background: bool = False,
     role: str = "",
     can_end_vote: bool = False,
+    context_text: str | None = None,
 ) -> AsyncIterator[tuple[str, Any]]:
 
 
@@ -433,6 +462,7 @@ async def run_member(
         background=background,
         role=role,
         can_end_vote=can_end_vote,
+        context_text=context_text,
     )
     
     
@@ -883,7 +913,13 @@ async def discussion_source(
 
 
     try:
-        async for chunk in discuss_stream(
+        
+        
+        
+        from .work_discussion import work_stream
+
+        source = work_stream if group.group_type == "work" else discuss_stream
+        async for chunk in source(
             runtime,
             group,
             members,

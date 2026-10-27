@@ -4,6 +4,9 @@
 
 
 
+
+
+
 from __future__ import annotations
 
 import pytest
@@ -18,6 +21,7 @@ def runtime(tmp_path):
 
 
 async def _new_group(runtime, name: str) -> str:
+
     created = await runtime.orchestrator.create_group(
         name=name,
         member_ids=["soulmate", "LoveBuddy"],
@@ -41,6 +45,7 @@ async def test_distribute_context_writes_plan(runtime) -> None:
     )
 
     assert result["assigned"] == 2
+    assert result["thread_id"] == "t1"
     assert runtime._group_context_plan[(group_id, "t1", "soulmate")] == "你只负责登录页"
     assert runtime._group_context_plan[(group_id, "t1", "LoveBuddy")] == "你只负责支付页"
 
@@ -65,3 +70,20 @@ async def test_distribute_context_requires_thread_id(runtime) -> None:
         await runtime.orchestrator.distribute_context(
             group_id=group_id, thread_id="  ", items=[{"member_id": "soulmate", "brief": "x"}]
         )
+
+
+@pytest.mark.asyncio
+async def test_distribute_context_skips_thread_check_without_db(runtime) -> None:
+
+
+
+
+    assert not runtime.db_ready
+    group_id = await _new_group(runtime, "分配测试群4")
+
+    result = await runtime.orchestrator.distribute_context(
+        group_id=group_id,
+        thread_id="完全不存在的对话",
+        items=[{"member_id": "soulmate", "brief": "x"}],
+    )
+    assert result["assigned"] == 1

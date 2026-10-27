@@ -36,6 +36,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any
@@ -277,6 +278,10 @@ def parse_control(text: str) -> tuple[str, str, str]:
 
 
 
+
+
+
+
     clean = (text or "").strip()
     if "[END_VOTE]" in clean:
         index = clean.index("[END_VOTE]")
@@ -285,6 +290,30 @@ def parse_control(text: str) -> tuple[str, str, str]:
         return clean.replace("[AGREE]", "").strip(), "agree", ""
     if "[DISAGREE]" in clean:
         return clean.replace("[DISAGREE]", "").strip(), "disagree", ""
+    
+    
+    
+    
+    
+    if "[NO_OPTIMIZE]" in clean:
+        return clean.replace("[NO_OPTIMIZE]", "").strip(), "no_optimize", ""
+    if "[OPTIMIZE]" in clean:
+        index = clean.index("[OPTIMIZE]")
+        
+        
+        return (
+            clean[:index].strip(),
+            "optimize",
+            clean[index + len("[OPTIMIZE]") :].strip()[:600],
+        )
+    if "[ACCEPT_OPT]" in clean:
+        return clean.replace("[ACCEPT_OPT]", "").strip(), "accept_opt", ""
+    if "[DECLINE_OPT]" in clean:
+        return clean.replace("[DECLINE_OPT]", "").strip(), "decline_opt", ""
+    if "[REDO]" in clean:
+        return clean.replace("[REDO]", "").strip(), "redo", ""
+    if "[FINAL]" in clean:
+        return clean.replace("[FINAL]", "").strip(), "final", ""
     if "[PASS]" in clean:
         return clean.replace("[PASS]", "").strip(), "pass", ""
     if "[REJECT]" in clean:
@@ -293,6 +322,57 @@ def parse_control(text: str) -> tuple[str, str, str]:
         
         return clean[:index].strip(), "reject", clean[index + len("[REJECT]") :].strip()[:200]
     return clean, "", ""
+
+
+def parse_dispatch(text: str) -> dict[str, str] | None:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    clean = text or ""
+    start = clean.find("[DISPATCH]")
+    end = clean.find("[/DISPATCH]")
+    if start < 0 or end <= start:
+        return None
+    block = clean[start + len("[DISPATCH]") : end].strip()
+    
+    block = block.strip("`").strip()
+    if block.lower().startswith("json"):
+        block = block[len("json") :].strip()
+    
+    left, right = block.find("{"), block.rfind("}")
+    if left < 0 or right <= left:
+        return None
+    try:
+        data = json.loads(block[left : right + 1])
+    except (ValueError, TypeError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    result: dict[str, str] = {}
+    for key, value in data.items():
+        member_id = str(key).strip()
+        if not member_id:
+            continue
+        if isinstance(value, str) and value.strip():
+            result[member_id] = value.strip()
+        elif isinstance(value, dict):
+            merged = "；".join(
+                f"{name}：{detail}" for name, detail in value.items() if str(detail).strip()
+            )
+            if merged.strip():
+                result[member_id] = merged.strip()
+    return result or None
 def skill_owners(members: list[Any], skill: str) -> list[str]:
 
 
@@ -442,3 +522,51 @@ def vote_passed(votes: dict[str, bool]) -> bool:
         return False
     agree = sum(1 for value in votes.values() if value)
     return agree > len(votes) / 2
+
+
+def work_role_rules(role: str) -> str:
+
+
+
+
+
+
+    if role == "coordinator":
+        return (
+            "你在这个**工作群**里是**总管（Buddy Manager）**，负责策划与分发：\n"
+            "- 第一件事：把用户的活拆成几条**具体的事**，用 [DISPATCH] 块逐人下达"
+            '（块内是一段 JSON：`{"执行者id": "要他做什么、做到什么程度"}`）；\n'
+            "- 执行者彼此看不到对方的活，**所以每条任务要自带完整背景** ——"
+            "它们看不到群聊历史，只看到你写给它的那一段；\n"
+            "- 优化员提改进时，你要明确表态：[ACCEPT_OPT]（照建议重做）或 [DECLINE_OPT]（直接交审核）；\n"
+            "- 审核员驳回时，你要明确表态：[REDO]（照意见重做）或 [FINAL]（照样总结）；\n"
+            "- 最后把所有产出收敛成一份交付，直接给用户。\n"
+            "你是这个群里**唯一**能看到全貌的人。"
+        )
+    if role == "reviewer":
+        return (
+            "你在这个**工作群**里是**审核员**：\n"
+            "- 你只会看到**本轮交付物**（看不到执行过程，也看不到别人的发言）；\n"
+            "- 按「能不能直接交给用户用」验收：完整性、有没有明显错漏、有没有跑题；\n"
+            "- 达标：在最后单独一行写 [PASS]；\n"
+            "- 不达标：写 [REJECT]，并在同一段里说清**具体缺什么、该怎么改**；\n"
+            "- 不要自己动手改交付物 —— 你只判，改由执行者做。"
+        )
+    if role == "advisor":
+        return (
+            "你在这个**工作群**里是**优化员**：\n"
+            "- 你只会看到**本轮交付物**（看不到执行过程，也看不到别人的发言）；\n"
+            "- 只提**必要**的改进（明显更优的方案、遗漏的关键点），可有可无的小修一律不提；\n"
+            "- 有改进：在最后写 [OPTIMIZE]，后面接具体建议（改什么、为什么值得改、大概怎么改）；\n"
+            "- 没有值得改的：写 [NO_OPTIMIZE]；\n"
+            "- 你**不直接改**交付物，也不做验收 —— 那是审核员的活。"
+        )
+    return (
+        "你在这个**工作群**里是**执行者**：\n"
+        "- 你**只看到总管分派给你的那部分任务**（以及你自己上一轮的产出），"
+        "看不到别人做了什么，也看不到群聊历史；\n"
+        "- 只做自己这一份，做完直接把成果写出来（要能直接拼进最终交付物）；\n"
+        "- 需要别人配合时**不要** @ 别人（工作群不走轮流发言，没人会回你），"
+        "把你需要的支持写进成果里，由总管统筹；\n"
+        "- 被要求改进时，会一并告诉你「上一轮你做的」和「这次要改什么」，照着改即可。"
+    )

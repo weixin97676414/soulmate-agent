@@ -108,13 +108,22 @@ def _register_probe(runtime, calls: list[str], *, level: str = "admin") -> None:
 
 
 async def _create_group(
-    client, *, name: str = "研究组", member_ids: list[str] | None = None
+    client,
+    *,
+    name: str = "研究组",
+    member_ids: list[str] | None = None,
+    group_type: str = "discussion",
+    advisor_id: str = "",
+    reviewer_id: str = "",
 ) -> dict:
     created = await client.post(
         "/v1/groups",
         json={
             "name": name,
             "member_assistant_ids": member_ids or ["RelationBuddy", "LoveBuddy"],
+            "group_type": group_type,
+            "advisor_id": advisor_id,
+            "reviewer_id": reviewer_id,
         },
     )
     assert created.status_code == 200, created.text
@@ -316,7 +325,21 @@ async def test_create_group_reports_unknown_members(runtime):
     
     assert created["existing_assistants"]
     
-    assert "team_assign_group_roles" in created["next_step"]
+    
+    assert created["group_type"] == "discussion"
+    assert "team_start_discussion" in created["next_step"]
+    assert "team_assign_group_roles" not in created["next_step"]
+
+    
+    work = await TeamCreateGroupSkill().run(
+        _make_ctx(runtime),
+        name="工作群组",
+        member_ids=["RelationBuddy", "LoveBuddy"],
+        group_type="work",
+    )
+    assert work["created"]["group_type"] == "work"
+    assert "team_assign_group_roles" in work["created"]["next_step"]
+    assert "优化员" in work["created"]["next_step"]
 
 
 
@@ -401,25 +424,48 @@ async def test_remove_coordinator_clears_the_group_field(runtime):
 
 
 @pytest.mark.asyncio
-async def test_discussion_is_refused_until_roles_are_submitted(runtime, client):
-
+async def test_work_group_is_refused_until_roles_are_submitted(runtime):
 
 
 
 
 
     install_fake_model(runtime, FakeLLM(["不该跑到这里"]))
-    group = await _create_group(client, name="没配角色的群")
+    created = await TeamCreateGroupSkill().run(
+        _make_ctx(runtime),
+        name="没配角色的工作群",
+        member_ids=["RelationBuddy", "LoveBuddy"],
+        group_type="work",
+    )
+    group_id = created["created"]["id"]
 
     with pytest.raises(SkillExecutionError) as exc:
         await TeamStartDiscussionSkill().run(
-            _make_ctx(runtime), topic="定一下这周的学习计划", group_id=group["id"]
+            _make_ctx(runtime), topic="定一下这周的学习计划", group_id=group_id
         )
 
     message = str(exc.value)
+    assert "工作群" in message
     assert "team_assign_group_roles" in message, "拒绝时要告诉模型下一步该调哪个工具"
-    assert "审核员" in message and "优化顾问" in message
+    assert "审核员" in message and "优化员" in message
     assert "没有「不需要」" in message, "不能留一句「不需要就算了」的口子"
+
+
+@pytest.mark.asyncio
+async def test_discussion_group_starts_without_any_roles(runtime, client):
+
+
+
+
+    install_fake_model(runtime, FakeLLM(["我觉得可以"]))
+    group = await _create_group(client, name="不配角色的讨论群")
+    assert group["group_type"] == "discussion"
+
+    started = await TeamStartDiscussionSkill().run(
+        _make_ctx(runtime), topic="随便聊聊", group_id=group["id"]
+    )
+    assert started["group_id"] == group["id"]
+    await runtime.orchestrator.stop_discussion(group["id"])
 
 
 @pytest.mark.asyncio
@@ -459,7 +505,11 @@ async def test_confirmed_roles_are_remembered_and_invalidated(runtime, client):
 
 
     group = await _create_group(
-        client, name="角色记忆群", member_ids=["RelationBuddy", "LoveBuddy", "soulmate"]
+        client,
+        name="角色记忆群",
+        member_ids=["RelationBuddy", "LoveBuddy", "soulmate"],
+        
+        group_type="work",
     )
 
     async with event_collector(client) as events:

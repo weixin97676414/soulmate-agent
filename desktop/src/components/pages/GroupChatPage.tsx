@@ -355,6 +355,13 @@ export function GroupChatPage({
 
 
   const [newAvatar, setNewAvatar] = useState('')
+  
+
+
+
+
+
+  const [newGroupType, setNewGroupType] = useState<'work' | 'discussion'>('discussion')
   const [picked, setPicked] = useState<string[]>([])
   const [pendingDelete, setPendingDelete] = useState(false)
   const [pendingClear, setPendingClear] = useState(false)
@@ -604,6 +611,7 @@ export function GroupChatPage({
         member_assistant_ids: picked,
         
         speaking_order: picked,
+        group_type: newGroupType,
         
         avatar: newAvatar,
       })
@@ -1637,6 +1645,41 @@ export function GroupChatPage({
             placeholder="群名称（必填），例如 我的智囊团"
             className="h-9 w-full rounded-[8px] border-2 border-brand/40 bg-canvas px-3 text-[13px] text-ink transition-colors placeholder:font-medium placeholder:text-brand/60 focus:border-brand focus:outline-none"
           />
+
+          {}
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                {
+                  value: 'discussion' as const,
+                  title: '讨论群',
+                  hint: '所有人共享全部对话、轮流发言。适合头脑风暴与多人评议。',
+                },
+                {
+                  value: 'work' as const,
+                  title: '工作群',
+                  hint: '总管分派任务，执行者并行各干各的（彼此看不到对方的活）。需配优化员 + 审核员。',
+                },
+              ]
+            ).map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setNewGroupType(option.value)}
+                className={
+                  'rounded-[8px] border px-3 py-2 text-left transition-colors ' +
+                  (newGroupType === option.value
+                    ? 'border-brand bg-brand/10'
+                    : 'border-line hover:border-brand/40')
+                }
+              >
+                <div className="text-[12.5px] font-medium text-ink">{option.title}</div>
+                <div className="mt-0.5 text-[11px] leading-relaxed text-ink-faint">
+                  {option.hint}
+                </div>
+              </button>
+            ))}
+          </div>
 
           {
 

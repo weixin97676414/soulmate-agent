@@ -120,6 +120,19 @@ function summarizerName(data: Record<string, unknown>): string | null {
 export function applyGroupEvent(bubbles: Bubble[], event: string, data: Record<string, unknown>): Bubble[] {
   const push = (bubble: Bubble) => [...bubbles, bubble]
   switch (event) {
+    case 'stage':
+      
+
+
+
+
+
+      return push({
+        id: newId(),
+        kind: 'system',
+        name: '',
+        content: String(data.label ?? ''),
+      })
     case 'topic':
       return push({ id: newId(), kind: 'user', name: '我', content: String(data.content ?? '') })
     
@@ -361,6 +374,11 @@ interface GroupState {
     speaking_order?: string[]
     
     avatar?: string
+    
+    group_type?: 'work' | 'discussion'
+    
+    advisor_id?: string
+    reviewer_id?: string
   }) => Promise<GroupProfile | null>
   deleteGroup: (id: string) => Promise<void>
   
@@ -825,6 +843,14 @@ export const useGroupStore = create<GroupState>((set, get) => ({
     const attachmentIds = readyFileIds(attachments, 'file')
     const imageIds = readyFileIds(attachments, 'image')
     if (!text && attachmentIds.length === 0 && imageIds.length === 0) return
+
+    
+    
+    
+    if (abortController) {
+      abortController.abort()
+      abortController = null
+    }
 
     abortController = new AbortController()
     activeBubbleId = ''

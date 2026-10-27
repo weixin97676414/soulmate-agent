@@ -1400,6 +1400,21 @@ class GroupProfile(BaseModel):
     
     
     
+    
+    
+    group_type: Literal["work", "discussion"] = Field(
+        "discussion",
+        description="群类型：work = 工作群（流水线 + 上下文隔离）/ discussion = 讨论群（圆桌共享）",
+    )
+
+    
+    
+    
+    
+    
+    
+    
+    
     avatar: str = Field("", description="群头像（data URL）；留空由前端按规则补一张")
 
     

@@ -1,7 +1,7 @@
 {
   "version": "1.0.2",
-  "generated_at": "2026-10-27T12:17:50.455Z",
-  "exe_sha256": "7e403f587d01775588274a7bceaaa7128cac2ff6bbedfaa1cb525a1fdb359d6f",
+  "generated_at": "2026-10-27T16:15:29.474Z",
+  "exe_sha256": "e5fac01c7f63151c728bb91e6c4f4eb6c02bb41be4f6088751cf65e941482bca",
   "asar_sha256": "3b54d832f397f13eed27c79822788447e0f72feff7efd12e8fb99a0a9eb4ca0b",
   "entries": [
     [
@@ -16406,7 +16406,7 @@
     ],
     [
       "resources/agent-core/agent-core.exe",
-      46744768
+      46764010
     ],
     [
       "resources/app.asar",

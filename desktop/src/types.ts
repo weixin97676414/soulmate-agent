@@ -466,6 +466,15 @@ export interface GroupProfile {
 
 
 
+
+
+
+  group_type: 'work' | 'discussion'
+  
+
+
+
+
   reasoning_effort: 'low' | 'medium' | 'high' | null
   
 
