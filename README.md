@@ -380,6 +380,14 @@ xattr -cr "/Applications/Soulmate Agent.app"
 
 ---
 
+## 更新日志
+
+当前版本 **v1.0.2**（2026-10-27）：工具支持「带图」、新增待确认清单、群聊上下文改由总管分配、确认按风险分级。
+
+完整说明见 [CHANGELOG.md](CHANGELOG.md)，历史版本见 [Releases](https://github.com/weixin97676414/soulmate-agent/releases)。
+
+---
+
 ## 许可证
 
 [Apache-2.0](LICENSE)
