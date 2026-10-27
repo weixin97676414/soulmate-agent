@@ -53,7 +53,6 @@ class ToolCall:
 
 
 @dataclass
-@dataclass
 class ImagePart:
 
 
@@ -234,9 +233,13 @@ class BaseLLM(ABC):
         supports_tools: bool = True,
         supports_stream: bool = True,
         supports_reasoning: bool = True,
+        
+        
+        supports_vision: bool = False,
         token_limit: int = 32768,
     ) -> None:
         self.model_name = model_name
+        self.supports_vision = supports_vision
         
         
         

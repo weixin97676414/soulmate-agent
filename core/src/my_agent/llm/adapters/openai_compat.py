@@ -68,6 +68,7 @@ class OpenAICompatAdapter(BaseLLM):
         supports_tools: bool = True,
         supports_stream: bool = True,
         supports_reasoning: bool = True,
+        supports_vision: bool = False,
         token_limit: int = 32768,
         use_system_proxy: bool = False,
         transport: httpx.AsyncBaseTransport | None = None,
@@ -77,6 +78,7 @@ class OpenAICompatAdapter(BaseLLM):
             supports_tools=supports_tools,
             supports_stream=supports_stream,
             supports_reasoning=supports_reasoning,
+            supports_vision=supports_vision,
             token_limit=token_limit,
         )
         self.base_url = base_url.rstrip("/")

@@ -201,6 +201,62 @@ async def set_confirm_mode(
     return {"mode": saved.security.confirm_mode}
 
 
+class PermissionOverridePayload(BaseModel):
+    skill: str
+    remember: bool = True
+
+
+@router.get("/v1/security/overrides")
+async def get_security_overrides(request: Request) -> dict[str, Any]:
+
+    runtime: AppRuntime = get_runtime(request)
+    return {"overrides": dict(runtime.config.settings.security.permission_overrides)}
+
+
+@router.post("/v1/security/overrides")
+async def add_security_override(
+    payload: PermissionOverridePayload, request: Request
+) -> dict[str, Any]:
+
+    runtime: AppRuntime = get_runtime(request)
+    skill = runtime.skills.get(payload.skill)
+    if skill is None:
+        raise HTTPException(status_code=404, detail=f"没有叫「{payload.skill}」的技能")
+
+    from ...security.permission import risk_of
+
+    if risk_of(skill.meta) == "high":
+        raise HTTPException(
+            status_code=400,
+            detail=f"「{payload.skill}」是高危操作（删除 / 命令 / 系统控制 / 密钥），不能记住。",
+        )
+    current = runtime.config.settings
+    overrides = dict(current.security.permission_overrides)
+    if payload.remember:
+        overrides[payload.skill] = "safe"
+    else:
+        overrides.pop(payload.skill, None)
+    updated = current.model_copy(
+        update={
+            "security": current.security.model_copy(update={"permission_overrides": overrides})
+        }
+    )
+    saved = runtime.apply_settings(updated)
+    return {"overrides": dict(saved.security.permission_overrides)}
+
+
+@router.delete("/v1/security/overrides")
+async def clear_security_overrides(request: Request) -> dict[str, Any]:
+
+    runtime: AppRuntime = get_runtime(request)
+    current = runtime.config.settings
+    updated = current.model_copy(
+        update={"security": current.security.model_copy(update={"permission_overrides": {}})}
+    )
+    saved = runtime.apply_settings(updated)
+    return {"overrides": dict(saved.security.permission_overrides)}
+
+
 @router.get("/v1/paths")
 async def get_paths(request: Request) -> dict[str, Any]:
     runtime: AppRuntime = get_runtime(request)

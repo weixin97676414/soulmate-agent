@@ -18,7 +18,12 @@ from __future__ import annotations
 import pytest
 
 from my_agent.assistants import evolution, persona
-from my_agent.assistants.persona import EVOLUTION_LOG_FILE, MEMORY_FILE
+from my_agent.assistants.persona import (
+    EVOLUTION_LOG_FILE,
+    IDENTITY_FILE,
+    MEMORY_FILE,
+    RULES_FILE,
+)
 from my_agent.config.paths import AppPaths
 from my_agent.config.schemas import ScheduledTaskSpec
 from my_agent.errors import SkillExecutionError
@@ -138,6 +143,70 @@ async def test_update_skill_passes_memory_append_through(runtime):
     assert "[月度复盘] 这周先练短回答。" in persona.read_file(
         runtime.paths, BUILTIN_ID, MEMORY_FILE
     )
+
+
+
+
+
+@pytest.mark.asyncio
+async def test_rules_replace_overwrites_the_whole_file(runtime):
+
+    original = persona.read_file(runtime.paths, BUILTIN_ID, RULES_FILE)
+    result = await runtime.orchestrator.append_assistant_setup(
+        assistant_id=BUILTIN_ID,
+        rules_replace="# 全新规则\n\n1. 只说重点。\n",
+    )
+    after = persona.read_file(runtime.paths, BUILTIN_ID, RULES_FILE)
+    assert after.strip() == "# 全新规则\n\n1. 只说重点。".strip()
+    assert original.strip() not in after
+    assert RULES_FILE in result["replaced"]
+    assert RULES_FILE not in result["appended"]
+
+
+@pytest.mark.asyncio
+async def test_identity_replace_on_builtin(runtime):
+
+    result = await runtime.orchestrator.append_assistant_setup(
+        assistant_id=BUILTIN_ID,
+        identity_replace="# 新身份\n\n我是新的。\n",
+    )
+    assert "我是新的" in persona.read_file(runtime.paths, BUILTIN_ID, IDENTITY_FILE)
+    assert IDENTITY_FILE in result["replaced"]
+
+
+@pytest.mark.asyncio
+async def test_description_replace_rejected_for_builtin(runtime):
+
+
+
+
+    with pytest.raises(ValueError):
+        await runtime.orchestrator.append_assistant_setup(
+            assistant_id=BUILTIN_ID, description_replace="全新的简介"
+        )
+
+
+@pytest.mark.asyncio
+async def test_append_and_replace_on_the_same_file_is_rejected(runtime):
+
+    with pytest.raises(ValueError) as exc:
+        await runtime.orchestrator.append_assistant_setup(
+            assistant_id=BUILTIN_ID,
+            rules_append="追加",
+            rules_replace="覆盖",
+        )
+    assert "不能同时" in str(exc.value)
+
+
+@pytest.mark.asyncio
+async def test_skill_layer_passes_replace_through(runtime):
+
+    await TeamUpdateAssistantSkill().run(
+        _ctx(runtime),
+        assistant_id=BUILTIN_ID,
+        rules_replace="# 技能层覆盖\n",
+    )
+    assert "技能层覆盖" in persona.read_file(runtime.paths, BUILTIN_ID, RULES_FILE)
 
 
 

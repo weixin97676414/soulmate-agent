@@ -60,6 +60,7 @@ class FallbackLLM(BaseLLM):
             model_name=primary.model_name,
             supports_tools=primary.supports_tools,
             supports_stream=primary.supports_stream,
+            supports_vision=primary.supports_vision,
             token_limit=primary.token_limit,
         )
         self._primary = primary

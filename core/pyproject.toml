@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "my-agent-core"
-version = "1.0.1"
+version = "1.0.2"
 description = "自研智能体框架核心（Agent Core）—— 面向办公职场与日常生活的轻量智能体框架"
 readme = "README.md"
 requires-python = ">=3.11"

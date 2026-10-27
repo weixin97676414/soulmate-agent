@@ -296,6 +296,17 @@ class ScreenshotSkill(BaseSkill):
             raise _to_skill_error(exc) from exc
 
         artifact = await ctx.register_artifact(target, note="屏幕截图")
+        
+        
+        
+        try:
+            from ..storage import images
+
+            _, data_url = await images.to_data_url(str(target), max_bytes=4 * 1024 * 1024)
+        except Exception:  
+            data_url = ""
+        if data_url:
+            ctx.emit_image(data_url)
         return {
             "path": str(target),
             "artifact": artifact,

@@ -216,7 +216,7 @@ class TeamCreateAssistantSkill(BaseSkill):
 
 class AssistantSetupParams(BaseModel):
     assistant_id: str = Field(
-        ..., min_length=1, description="要补充设定的搭子 id（来自 team_list_assistants 的结果）"
+        ..., min_length=1, description="要修改设定的搭子 id（来自 team_list_assistants 的结果）"
     )
     identity_append: str = Field(
         "", description="追加到 IDENTITY.md 的内容（新增的能力 / 职责范围）"
@@ -239,16 +239,43 @@ class AssistantSetupParams(BaseModel):
     description_append: str = Field(
         "", description="追加到简介末尾的内容（新增能力时同步更新简介，界面才看得到）"
     )
+    identity_replace: str = Field(
+        "",
+        description=(
+            "**覆盖** IDENTITY.md（整份替换为这段文本）。用于「身份写错了要重写」，"
+            "会丢掉原有内容，慎用；与 identity_append 不能同时传"
+        ),
+    )
+    rules_replace: str = Field(
+        "",
+        description=(
+            "**覆盖** RULES.md（整份替换）。用于「规则要重写」，会丢掉原有内容，慎用；"
+            "与 rules_append 不能同时传"
+        ),
+    )
+    tone_replace: str = Field(
+        "",
+        description=(
+            "**覆盖** SOUL.md（整份替换）。用于「语气风格要重写」，会丢掉原有内容，慎用；"
+            "与 tone_append 不能同时传"
+        ),
+    )
+    description_replace: str = Field(
+        "",
+        description=(
+            "**覆盖**简介（整份替换）。用于简介写错了要重写；与 description_append 不能同时传"
+        ),
+    )
 
 
 @skill(
     name="team_update_assistant",
-    display_name="补充搭子设定",
+    display_name="修改搭子设定",
     description=(
-        "在**现有**搭子的设定上补充能力与规则（用于「这个搭子还差点什么，给它加上」）。\n"
-        "只能**追加**，不能删改原有内容 —— 要删除只能由用户自己在设置页操作。\n"
+        "修改**现有**搭子的设定：既能**追加**（`*_append`），也能**覆盖**（`*_replace`）。\n"
+        "「这个搭子还差点什么」用 append；「这段写错了 / 要重写」用 replace（会让原文丢掉，慎用）。\n"
         "调用前先 team_list_assistants 看它现在有哪些设定，避免重复补充。\n"
-        "memory_append 是给「全员进化月度复盘」回写各人下月重点用的，平时别用它。\n"
+        "memory_append 是给「全员进化月度复盘」回写各人下月重点用的，平时别用它（且只支持追加）。\n"
         + evolution.APPEND_ONLY_CLAUSE
     ),
     params_model=AssistantSetupParams,
@@ -259,18 +286,21 @@ class AssistantSetupParams(BaseModel):
 class TeamUpdateAssistantSkill(BaseSkill):
     async def run(self, ctx: SkillContext, **params: Any) -> dict[str, Any]:
         args = AssistantSetupParams(**params)
-        if not any(
-            [
-                args.identity_append.strip(),
-                args.rules_append.strip(),
-                args.tone_append.strip(),
-                args.memory_append.strip(),
-                args.description_append.strip(),
-            ]
-        ):
+        provided = [
+            args.identity_append.strip(),
+            args.rules_append.strip(),
+            args.tone_append.strip(),
+            args.memory_append.strip(),
+            args.description_append.strip(),
+            args.identity_replace.strip(),
+            args.rules_replace.strip(),
+            args.tone_replace.strip(),
+            args.description_replace.strip(),
+        ]
+        if not any(provided):
             raise SkillExecutionError(
-                "至少要给一段要补充的内容（identity_append / rules_append / "
-                "tone_append / memory_append / description_append 之一）。"
+                "至少要给一段要写的内容（identity/rules/tone/description 的 _append 或 _replace 之一，"
+                "或 memory_append）。"
             )
         team = ctx.service("team")
         try:
@@ -281,15 +311,21 @@ class TeamUpdateAssistantSkill(BaseSkill):
                 tone_append=args.tone_append,
                 memory_append=args.memory_append,
                 description_append=args.description_append,
+                identity_replace=args.identity_replace,
+                rules_replace=args.rules_replace,
+                tone_replace=args.tone_replace,
+                description_replace=args.description_replace,
                 actor_id=ctx.assistant_id,
             )
         except ValueError as exc:
             raise SkillExecutionError(str(exc)) from exc
+        replaced = bool(result.get("replaced"))
+        detail = "、".join(result.get("changed") or []) or "简介"
         return {
             "updated": result,
             "message": (
-                f"已给「{args.assistant_id}」补上设定（原有内容一个字都没动）："
-                f"{'、'.join(result['appended']) or '简介'}。"
+                f"已{'覆盖' if replaced else '补充'}「{args.assistant_id}」的设定：{detail}。"
+                + ("（覆盖会丢掉原文，已在 updated.replaced 里标明）" if replaced else "")
             ),
         }
 
@@ -349,6 +385,126 @@ class TeamReadAssistantFileSkill(BaseSkill):
         }
 
 
+class ConfirmationItem(BaseModel):
+    check: str = Field(..., min_length=1, description="要核对什么（一句话，用户看得懂）")
+    expect: str = Field("", description="期望看到什么（用户对照着看）")
+    pass_if: str = Field("", description="怎么算通过（判据）")
+
+
+class TeamAddConfirmationParams(BaseModel):
+    assistant_id: str = Field(
+        ..., min_length=1, description="哪个搭子的待确认清单（来自 team_list_assistants 的结果）"
+    )
+    items: list[ConfirmationItem] = Field(..., min_length=1, description="要追加的核对条目")
+
+
+@skill(
+    name="team_add_confirmation",
+    display_name="写待确认清单",
+    description=(
+        "把「需要用户**亲眼核对**的事」写进某个搭子的 `待确认.md`（结构化条目，用户逐条勾选）。\n"
+        "**你看不到客户端界面**（截图内容进不了你的上下文；UI 自动化对 Electron 自绘窗口也失效），\n"
+        "所以**不要写**「点右上角齿轮」这类操作脚本 —— 只写「核对项 / 期望 / 判据」三件事，"
+        "由用户自己去对照画面确认。"
+    ),
+    params_model=TeamAddConfirmationParams,
+    category="system",
+    permission_level="confirm",
+    tags=["搭子团队"],
+)
+class TeamAddConfirmationSkill(BaseSkill):
+    async def run(self, ctx: SkillContext, **params: Any) -> dict[str, Any]:
+        from ...assistants.persona import CONFIRM_FILE, read_file, write_file
+
+        args = TeamAddConfirmationParams(**params)
+        team = ctx.service("team")
+        if not team.list_assistants(assistant_id=args.assistant_id):
+            raise SkillExecutionError(
+                f"没有 id 为「{args.assistant_id}」的搭子（先用 team_list_assistants 看清单）。"
+            )
+        try:
+            current = read_file(ctx.paths, args.assistant_id, CONFIRM_FILE)
+        except (OSError, ValueError):
+            current = ""
+        
+        existing = current.count("\n## ") + (1 if current.strip().startswith("## ") else 0)
+        blocks: list[str] = []
+        for offset, item in enumerate(args.items, start=existing + 1):
+            blocks.append(
+                f"## {offset}\n"
+                f"- 核对项：{item.check.strip()}\n"
+                f"- 期望：{item.expect.strip() or '（未写）'}\n"
+                f"- 判据：{item.pass_if.strip() or '（未写）'}\n"
+                f"- 结论：待定\n"
+            )
+        addition = "\n".join(blocks)
+        merged = (
+            f"{current.rstrip()}\n\n{addition}\n"
+            if current.strip()
+            else f"# 待确认清单\n\n{addition}\n"
+        )
+        try:
+            write_file(ctx.paths, args.assistant_id, CONFIRM_FILE, merged)
+        except ValueError as exc:
+            raise SkillExecutionError(str(exc)) from exc
+        return {
+            "assistant_id": args.assistant_id,
+            "added": len(args.items),
+            "content": merged,
+            "message": (
+                f"已写入 {len(args.items)} 条待确认项；用户可在设置页逐条勾选「通过 / 不通过 / 待定」。"
+            ),
+        }
+
+
+class ContextPlanItem(BaseModel):
+    member_id: str = Field(..., min_length=1, description="成员搭子 id（必须在群里）")
+    brief: str = Field(..., min_length=1, description="该成员这次只需要读的内容（摘要 / 要点）")
+
+
+class TeamDistributeContextParams(BaseModel):
+    group_id: str = Field(..., min_length=1, description="群 id")
+    thread_id: str = Field(..., min_length=1, description="当前对话 id（这条讨论的 thread_id）")
+    items: list[ContextPlanItem] = Field(..., min_length=1, description="每个成员该读什么")
+
+
+@skill(
+    name="team_distribute_context",
+    display_name="分配群聊上下文",
+    description=(
+        "把「每个成员这次该读什么」分配给一场群讨论（**取代全量广播**）。\n"
+        "用法：在开讨论之前先想清楚每个人只需要知道哪部分，用这个工具写下来；"
+        "讨论时每个成员**只收到分配给它那份**，没有分配的人才读摘要 + 最近几条。\n"
+        "这样多个执行者也能各看各的，不用每人读全量。\n"
+        "⚠️ 分配太窄会让成员漏掉必要背景；不确定时宁可给摘要、别硬裁。"
+    ),
+    params_model=TeamDistributeContextParams,
+    category="system",
+    permission_level="confirm",
+    tags=["搭子团队", "群聊"],
+)
+class TeamDistributeContextSkill(BaseSkill):
+    async def run(self, ctx: SkillContext, **params: Any) -> dict[str, Any]:
+        args = TeamDistributeContextParams(**params)
+        team = ctx.service("team")
+        try:
+            result = await team.distribute_context(
+                group_id=args.group_id,
+                thread_id=args.thread_id,
+                items=[item.model_dump() for item in args.items],
+                actor_id=ctx.assistant_id,
+            )
+        except ValueError as exc:
+            raise SkillExecutionError(str(exc)) from exc
+        return {
+            "result": result,
+            "message": (
+                f"已为 {result['assigned']} 个成员分配上下文；本次讨论里他们会只读分配到的部分"
+                "（未分配的人读摘要 + 最近几条）。"
+            ),
+        }
+
+
 class AssistantDeleteParams(BaseModel):
     assistant_id: str = Field(
         ..., min_length=1, description="要删除的搭子 id（**必须来自 team_list_assistants 的结果**）"
@@ -403,13 +559,10 @@ class GroupCreateParams(BaseModel):
         description="成员搭子的 id 列表（**必须来自 team_list_assistants 的结果**，至少两个）",
     )
     coordinator_id: str = Field(
-        ...,
-        min_length=1,
+        "",
         description=(
-            "**这个群的总管（协调者）搭子 id**：必须是 member_ids 里的一个，不能空着。"
-            "**想自己当总管，就得先把你自己也写进 member_ids** —— 你不能在群里没有席位，"
-            "却以总管自居（分工会被系统按成员名单判定，你说的和实际不一致时算你错）。"
-            "id 必须来自 team_list_assistants 的结果。"
+            "**已固定为 Buddy Manager，不用传**（群总管恒为它，且会自动把它写进成员）。"
+            "保留这个参数只为兼容老调用；传了别的 id 会被忽略。"
         ),
     )
     speaking_order: list[str] = Field(

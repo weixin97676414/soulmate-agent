@@ -167,6 +167,7 @@ async def _cmd_run(args: argparse.Namespace) -> int:
                 
                 target_assistant=session.assistant_id or "",
                 token_limit=runtime.effective_context_tokens(model_id),
+                supports_vision=getattr(llm, "supports_vision", False),
                 context_policy=ContextPolicy(
                     keep_recent=agent_cfg.keep_recent_messages,
                     compress_threshold=agent_cfg.compress_threshold,

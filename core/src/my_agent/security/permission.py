@@ -24,6 +24,62 @@ VALID_LEVELS = {"safe", "confirm", "admin"}
 VALID_MODES = {"interactive", "deny", "auto_approve"}
 
 
+
+
+
+
+_LOW_RISK_NAME_PREFIXES = ("read_", "list_", "get_", "search_", "query_", "fetch_")
+_HIGH_RISK_NAME_PREFIXES = ("delete_", "remove_", "exec", "run_")
+
+_READ_ONLY_NAMES = frozenset(
+    {
+        
+        "system_screenshot",
+        "computer_read_screen",
+        "browser_read",
+        "browser_snapshot",
+        "browser_screenshot",
+        
+        "kb_search",
+        "kb_stats",
+        "history_search",
+        
+        "system_time",
+    }
+)
+
+_SECRET_SKILLS = frozenset({"request_secret", "set_secret", "ask_choice"})
+
+
+def risk_of(meta: SkillMeta) -> str:
+
+
+
+
+
+
+    name = (meta.name or "").lower()
+    level = meta.permission_level
+    if level == "safe":
+        return "low"
+    if level == "admin":
+        return "high"
+    if name in _READ_ONLY_NAMES:
+        return "low"
+    if name in _SECRET_SKILLS:
+        return "high"
+    if name.startswith(_LOW_RISK_NAME_PREFIXES):
+        return "low"
+    if name.startswith(_HIGH_RISK_NAME_PREFIXES):
+        return "high"
+    if name.startswith(("computer_mouse", "computer_type", "computer_key")):
+        return "high"
+    if name.startswith("system_"):
+        
+        return "high"
+    return "medium"
+
+
 class PermissionGuard:
     def __init__(
         self,
@@ -131,6 +187,12 @@ class PermissionGuard:
         if level == "safe":
             return
 
+        
+        
+        if level == "confirm" and risk_of(meta) == "low":
+            await self._audit_auto_approved(ctx, meta)
+            return
+
         allow_admin = self.allow_admin(ctx)
 
         if level == "admin" and not allow_admin:
@@ -171,6 +233,35 @@ class PermissionGuard:
         approved = await ctx.ask_confirm(request)
         if not approved:
             raise SkillPermissionError(f"用户拒绝了「{meta.name}」的执行请求。")
+
+    @staticmethod
+    async def _audit_auto_approved(ctx: SkillContext, meta: SkillMeta) -> None:
+
+
+
+
+
+        audit = getattr(ctx, "audit", None)
+        if audit is None:
+            return
+        from .audit import AuditEntry
+
+        try:
+            await audit(
+                AuditEntry(
+                    skill_name=meta.name,
+                    status="auto_approved",
+                    permission_level=meta.permission_level,
+                    session_id=getattr(ctx, "session_id", None),
+                    actor_id=getattr(ctx, "assistant_id", None),
+                    kind="skill",
+                    action="auto_approved",
+                    target=meta.name,
+                    detail=f"低风险操作自动放行（未弹确认）：{meta.display_name or meta.name}",
+                )
+            )
+        except Exception:  
+            logger.warning("低风险放行审计写入失败：%s", meta.name)
 
     
     

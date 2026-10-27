@@ -193,6 +193,10 @@ class AppRuntime:
         
         
         self._group_history_summary: dict[tuple[str, str], str] = {}
+        
+        
+        
+        self._group_context_plan: dict[tuple[str, str, str], str] = {}
 
         settings = self.config.settings
         self.skills = SkillManager(
@@ -201,6 +205,9 @@ class AppRuntime:
                 allow_admin=False,
             )
         )
+        
+        
+        self.skills.apply_overrides(dict(settings.security.permission_overrides))
         
         
         from ..config.schemas import CustomSkillsConfig
@@ -1197,6 +1204,8 @@ class AppRuntime:
         saved = self.config_store.save_settings(settings)
         self._reload_config()
         self.skills.guard.set_confirm_mode(saved.security.confirm_mode)
+        
+        self.skills.apply_overrides(dict(saved.security.permission_overrides))
         
         self.path_policy = self._build_path_policy()
         

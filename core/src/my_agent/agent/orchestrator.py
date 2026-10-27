@@ -46,12 +46,11 @@ logger = logging.getLogger(__name__)
 
 
 
+
+
+
 _THINKING_RULE = (
     "开始策划前必须先调用 ai_thinking_mode 技能（AI 思考模式·道家做局思维）进行分析梳理。"
-)
-_RESTRUCTURE_RULE = (
-    "策划完成后必须调用 team_restructure 技能重塑团队：先查看现有群成员的设定与技能配置，"
-    "再围绕任务核心把团队调整为最佳配置。"
 )
 
 
@@ -78,6 +77,9 @@ _ROLE_NAMES: dict[str, str] = {
     "reviewer": "审核员",
     "advisor": "优化顾问",
 }
+
+
+BUDDY_MANAGER_ID = "BuddyManager"
 
 
 class Orchestrator:
@@ -270,6 +272,15 @@ class Orchestrator:
 
         self._ensure_library_checked(from_import)
 
+        
+        
+        
+        if group_role == "coordinator":
+            raise ValueError(
+                "群总管固定由 Buddy Manager 担任，其他搭子不能设为 coordinator；"
+                "请用 worker / reviewer / advisor。"
+            )
+
         clean_name = name.strip()
         if not clean_name:
             raise ValueError("搭子得有个名字。")
@@ -319,22 +330,16 @@ class Orchestrator:
         
         
         
-        is_analysis = group_role in ("coordinator", "advisor") or any(
+        
+        
+        is_analysis = group_role == "advisor" or any(
             keyword in (description + identity)
             for keyword in ("策划", "规划", "分析", "策略", "咨询", "顾问")
         )
-        is_coordinator = group_role == "coordinator"
 
-        
-        
-        
-        
-        
         imposed_rules: list[str] = []
         if is_analysis:
             imposed_rules.append(_THINKING_RULE)
-        if is_coordinator:
-            imposed_rules.append(_RESTRUCTURE_RULE)
         
         
         
@@ -350,7 +355,7 @@ class Orchestrator:
             enabled_skills=wanted,
             
             
-            group_role=group_role if group_role in ("coordinator", "worker", "reviewer", "advisor") else "",
+            group_role=group_role if group_role in ("worker", "reviewer", "advisor") else "",
             builtin=False,
         )
         config = runtime.assistants.model_copy(deep=True)
@@ -407,14 +412,12 @@ class Orchestrator:
         tone_append: str = "",
         memory_append: str = "",
         description_append: str = "",
+        identity_replace: str = "",
+        rules_replace: str = "",
+        tone_replace: str = "",
+        description_replace: str = "",
         actor_id: str | None = None,
     ) -> dict[str, Any]:
-
-
-
-
-
-
 
 
 
@@ -433,65 +436,125 @@ class Orchestrator:
             raise ValueError(f"搭子「{assistant_id}」不存在（请先用 team_list_assistants 看清单）。")
 
         
-        
-        
         docs = (
-            (IDENTITY_FILE, identity_append),
-            (RULES_FILE, rules_append),
-            (SOUL_FILE, tone_append),
-            
-            (MEMORY_FILE, memory_append),
+            (IDENTITY_FILE, identity_append, identity_replace),
+            (RULES_FILE, rules_append, rules_replace),
+            (SOUL_FILE, tone_append, tone_replace),
+            (MEMORY_FILE, memory_append, ""),
         )
-        for file_name, extra in docs:
-            if extra.strip():
+        for file_name, append_text, replace_text in docs:
+            if append_text.strip() and replace_text.strip():
+                raise ValueError(f"{file_name} 不能同时传追加和覆盖，请二选一。")
+        if description_append.strip() and description_replace.strip():
+            raise ValueError("简介不能同时传追加和覆盖，请二选一。")
+
+        
+        for file_name, append_text, replace_text in docs:
+            if append_text.strip() or replace_text.strip():
                 locked_builtins.ensure_persona_writable(assistant_id, file_name)
-        if description_append.strip():
-            
+        if description_append.strip() or description_replace.strip():
             locked_builtins.ensure_mutable(assistant_id, changes=("description",))
 
         appended: list[str] = []
+        replaced: list[str] = []
         failed: list[str] = []
-        for file_name, extra in docs:
-            text = extra.strip()
-            if not text:
+        for file_name, append_text, replace_text in docs:
+            append_body = append_text.strip()
+            replace_body = replace_text.strip()
+            if not append_body and not replace_body:
                 continue
-            try:
-                current = read_file(runtime.paths, profile.id, file_name)
-            except (OSError, ValueError):
-                current = ""
-            
-            merged = f"{current.rstrip()}\n\n{text}\n" if current.strip() else f"{text}\n"
+            if replace_body:
+                merged = f"{replace_body}\n"
+            else:
+                try:
+                    current = read_file(runtime.paths, profile.id, file_name)
+                except (OSError, ValueError):
+                    current = ""
+                
+                merged = f"{current.rstrip()}\n\n{append_body}\n" if current.strip() else f"{append_body}\n"
             try:
                 write_file(runtime.paths, profile.id, file_name, merged)
-                appended.append(file_name)
+                if replace_body:
+                    replaced.append(file_name)
+                else:
+                    appended.append(file_name)
             except ValueError as exc:  
                 failed.append(f"{file_name}: {exc}")
 
-        if description_append.strip():
-            merged_description = f"{profile.description.rstrip()} {description_append.strip()}".strip()
+        description_changed = bool(description_append.strip() or description_replace.strip())
+        if description_changed:
+            if description_replace.strip():
+                merged_description = description_replace.strip()
+            else:
+                merged_description = f"{profile.description.rstrip()} {description_append.strip()}".strip()
             updated = profile.model_copy(update={"description": merged_description})
             config = runtime.assistants.model_copy(deep=True)
             config.upsert(updated)
             runtime.save_assistants(config)
 
-        if appended or description_append.strip():
+        changed = appended + replaced
+        if changed or description_changed:
             await runtime.audit.op(
                 kind="assistant",
                 action="update",
                 actor_id=actor_id,
                 target=profile.id,
-                detail=f"AI 补充搭子设定：{'、'.join(appended) or '简介'}",
+                detail=f"AI 修改搭子设定：{'、'.join(changed) or '简介'}",
             )
             runtime.events.publish("assistants_changed", assistant_id=profile.id, action="update")
 
         result: dict[str, Any] = {
             "id": profile.id,
             "appended": appended,
+            "replaced": replaced,
+            "changed": changed,
             "assistants": self.list_assistants(assistant_id=profile.id),
         }
         if failed:
             result["setup_errors"] = failed
         return result
+
+    async def distribute_context(
+        self,
+        *,
+        group_id: str,
+        thread_id: str,
+        items: list[dict[str, str]],
+        actor_id: str | None = None,
+    ) -> dict[str, Any]:
+
+
+
+
+
+        runtime = self._runtime
+        group = runtime.groups.get(group_id)
+        if group is None:
+            raise ValueError(f"群「{group_id}」不存在")
+        if not thread_id.strip():
+            raise ValueError("thread_id 不能为空：给当前正在讨论的那条对话的 id。")
+        members = set(group.member_assistant_ids)
+        assigned = 0
+        for item in items:
+            member_id = (item.get("member_id") or "").strip()
+            brief = (item.get("brief") or "").strip()
+            if not member_id or not brief:
+                continue
+            if member_id not in members:
+                raise ValueError(
+                    f"「{self._display_name(member_id)}」不在这个群里，不能给它分配上下文。"
+                )
+            runtime._group_context_plan[(group_id, thread_id.strip(), member_id)] = brief
+            assigned += 1
+        if assigned:
+            await runtime.audit.op(
+                kind="group",
+                action="update",
+                actor_id=actor_id,
+                target=group_id,
+                detail=f"总管分配群上下文：{assigned} 个成员",
+            )
+        return {"group_id": group_id, "thread_id": thread_id.strip(), "assigned": assigned}
 
     
     
@@ -675,16 +738,15 @@ class Orchestrator:
                     }
                 )
                 continue
-            is_analysis = profile.group_role in ("coordinator", "advisor") or any(
+            
+            
+            is_analysis = profile.group_role == "advisor" or any(
                 keyword in (profile.description or "")
                 for keyword in ("策划", "规划", "分析", "策略", "咨询", "顾问")
             )
-            is_coordinator = profile.group_role == "coordinator"
             required: list[str] = ["self_growth"]
             if is_analysis:
                 required.append("ai_thinking_mode")
-            if is_coordinator:
-                required.append("team_restructure")
 
             added: list[str] = []
             current = list(profile.enabled_skills)
@@ -706,8 +768,6 @@ class Orchestrator:
             imposed: list[str] = []
             if is_analysis:
                 imposed.append(_THINKING_RULE)
-            if is_coordinator:
-                imposed.append(_RESTRUCTURE_RULE)
             appended_rules: list[str] = []
             if imposed:
                 try:
@@ -814,35 +874,19 @@ class Orchestrator:
             )
 
         
-        if coordinator_id and not coordinator_id.strip():
-            raise ValueError(
-                "群总管不能是空白 id：给一个真实搭子的 id，或者（只有用户手建群那种场景）"
-                "整个字段留空。"
-            )
-        coordinator = coordinator_id.strip()
-        if coordinator and coordinator not in members:
-            if actor_id and coordinator == actor_id:
+        
+        
+        
+        if not from_import:
+            if BUDDY_MANAGER_ID not in members:
+                members.append(BUDDY_MANAGER_ID)
+            coordinator = BUDDY_MANAGER_ID
+        else:
+            coordinator = coordinator_id.strip()
+            if coordinator and coordinator not in members:
                 raise ValueError(
-                    "你说自己是这个群的总管，但成员名单里没有你。要自己当总管就把"
-                    f"**你自己也写进 member_ids**（现在群里只有"
-                    f"{'、'.join(self._display_name(item) for item in members)}）。"
-                    "自称总管却不在群里，用户看到的分工就是假的。"
-                )
-            raise ValueError(
-                f"指名的群总管「{coordinator}」不在成员名单里（id 要用 list_assistants 的结果）："
-                "总管必须是这次一起拉进群的人之一。"
-            )
-        if coordinator:
-            
-            
-            
-            target = runtime.assistants.get(coordinator)
-            current_role = (target.group_role or "").strip() if target is not None else ""
-            if current_role and current_role != "coordinator":
-                raise ValueError(
-                    f"「{self._display_name(coordinator)}」现在的角色是"
-                    f"「{_ROLE_NAMES.get(current_role, current_role)}」，不能同时当这个群的"
-                    "总管（一个人的角色不能这样顶掉）。换一个成员当总管。"
+                    f"指名的群总管「{coordinator}」不在成员名单里"
+                    "（id 要用 list_assistants 的结果）。"
                 )
 
         group = GroupProfile(

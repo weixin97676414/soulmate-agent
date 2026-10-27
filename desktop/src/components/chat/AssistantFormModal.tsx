@@ -23,6 +23,7 @@ const PERSONA_FILE_NAMES = [
   'MEMORY.md',
   'USER.md',
   '进化日志.md',
+  '待确认.md',
 ] as const
 
 const PERSONA_LABELS: Record<string, string> = {
@@ -32,6 +33,7 @@ const PERSONA_LABELS: Record<string, string> = {
   'MEMORY.md': '记忆（MEMORY）',
   'USER.md': '用户档案（USER）',
   '进化日志.md': '进化日志（全员进化）',
+  '待确认.md': '待确认清单',
 }
 
 
@@ -43,6 +45,8 @@ const PERSONA_DESCRIPTIONS: Record<string, string> = {
   'USER.md': '关于你的档案：怎么称呼你、你的偏好。AI 也可以自己补充（会先确认）。',
   '进化日志.md':
     '它每周「全员进化」那一轮的记录：改了什么、为什么、下轮要验证什么。由搭子自己写，你可以看也可以改。',
+  '待确认.md':
+    '搭子看不到你的屏幕，所以把「需要你亲眼核对的事」写成条目放在这里；你可以逐条标注通过 / 不通过。',
 }
 
 const PERSONA_PLACEHOLDERS: Record<string, string> = {
@@ -53,6 +57,53 @@ const PERSONA_PLACEHOLDERS: Record<string, string> = {
   'USER.md': '关于你本人的档案：怎么称呼、职业、长期偏好（对齐 openclaw 的 user.md）。',
   '进化日志.md':
     '这一轮改了什么、为什么、下轮要验证什么。由搭子自己每周写，你不需要在这里手动记。',
+  '待确认.md':
+    '由搭子写「核对项 / 期望 / 判据」，你逐条标注通过或不通过。格式：## 1 / - 核对项： / - 期望： / - 判据： / - 结论：待定',
+}
+
+
+interface ConfirmationRow {
+  index: string
+  check: string
+  expect: string
+  passIf: string
+  verdict: string
+}
+
+
+
+
+
+
+
+
+function parseConfirmations(text: string): ConfirmationRow[] {
+  const rows: ConfirmationRow[] = []
+  for (const block of text.split(/^## /m).slice(1)) {
+    const [head, ...rest] = block.split('\n')
+    const body = rest.join('\n')
+    const pick = (label: string): string => {
+      const matched = body.match(new RegExp(`- ${label}：(.*)`))
+      return matched ? matched[1].trim() : ''
+    }
+    rows.push({
+      index: head.trim(),
+      check: pick('核对项'),
+      expect: pick('期望'),
+      passIf: pick('判据'),
+      verdict: pick('结论') || '待定',
+    })
+  }
+  return rows
+}
+
+
+function setConfirmationVerdict(text: string, index: string, verdict: string): string {
+  const safe = index.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return text.replace(
+    new RegExp(`(## ${safe}\\n(?:.*\\n)*?- 结论：)(.*)`),
+    (_match, prefix: string) => `${prefix}${verdict}`,
+  )
 }
 
 
@@ -574,9 +625,7 @@ export function AssistantFormModal({
   const lockedFields = new Set(form?.locked_fields ?? [])
   
   
-  const lockedPersonaFiles = lockedBuiltin
-    ? new Set(['RULES.md'])
-    : new Set<string>()
+  const lockedPersonaFiles = new Set<string>()
 
   
 
@@ -1295,6 +1344,75 @@ export function AssistantFormModal({
             {editingPersona === 'MEMORY.md' ? '（内容会作为独立的记忆提示进入对话）' : ''}
             {editingPersona === '进化日志.md' ? '（每周「全员进化」那轮会先读它，再按周追加）' : ''}
           </p>
+          {}
+          {editingPersona === '待确认.md'
+            ? (() => {
+                const current =
+                  personaFiles.find((file) => file.name === editingPersona)?.content ?? ''
+                const rows = parseConfirmations(current)
+                if (rows.length === 0) {
+                  return (
+                    <p className="text-[11px] text-ink-faint">
+                      还没有待确认项。搭子判断不了画面时，会往这里写。
+                    </p>
+                  )
+                }
+                return (
+                  <div className="flex flex-col gap-1.5">
+                    {rows.map((row) => (
+                      <div
+                        key={row.index}
+                        className="rounded-[6px] border border-line-soft px-2.5 py-2"
+                      >
+                        <div className="text-[12px] font-medium text-ink">
+                          {row.index}. {row.check}
+                        </div>
+                        {row.expect ? (
+                          <div className="mt-0.5 text-[11px] text-ink-faint">
+                            期望：{row.expect}
+                          </div>
+                        ) : null}
+                        {row.passIf ? (
+                          <div className="text-[11px] text-ink-faint">判据：{row.passIf}</div>
+                        ) : null}
+                        <div className="mt-1 flex gap-1.5">
+                          {(['通过', '不通过', '待定'] as const).map((verdict) => (
+                            <button
+                              key={verdict}
+                              type="button"
+                              onClick={() =>
+                                setPersonaFiles((prev) =>
+                                  prev.map((item) =>
+                                    item.name === editingPersona
+                                      ? {
+                                          ...item,
+                                          content: setConfirmationVerdict(
+                                            current,
+                                            row.index,
+                                            verdict,
+                                          ),
+                                        }
+                                      : item,
+                                  ),
+                                )
+                              }
+                              className={clsx(
+                                'rounded-[6px] px-2 py-0.5 text-[11px]',
+                                row.verdict === verdict
+                                  ? 'bg-brand/15 text-brand'
+                                  : 'text-ink-faint hover:bg-hover',
+                              )}
+                            >
+                              {verdict}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()
+            : null}
           <textarea
             value={
               personaFiles.find((file) => file.name === editingPersona)?.content ?? ''

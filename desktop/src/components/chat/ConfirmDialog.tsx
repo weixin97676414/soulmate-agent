@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ShieldAlert } from 'lucide-react'
 
 import { ParamTable } from '@/components/chat/ParamTable'
@@ -20,6 +21,8 @@ export function ConfirmDialog() {
   const permission = useChatStore((state) => state.permission)
   const activeSessionId = useChatStore((state) => state.activeSessionId)
   const respond = useChatStore((state) => state.respondPermission)
+  
+  const [remember, setRemember] = useState(false)
 
   
   
@@ -63,7 +66,7 @@ export function ConfirmDialog() {
           <Button onClick={() => void respond(false)}>拒绝</Button>
           <Button
             variant={dangerous ? 'danger' : 'primary'}
-            onClick={() => void respond(true)}
+            onClick={() => void respond(true, remember)}
           >
             允许
           </Button>
@@ -107,6 +110,23 @@ export function ConfirmDialog() {
         <div className="mb-1.5 text-[11.5px] font-medium text-ink-faint">将要使用的参数</div>
         <ParamTable skillName={permission.skillName} params={permission.params ?? {}} />
       </div>
+
+      {}
+      {dangerous ? (
+        <p className="mt-3 text-[11.5px] leading-relaxed text-danger">
+          这是高危操作（删除 / 执行命令 / 系统控制 / 密钥），每次都必须你亲自确认，不能记住。
+        </p>
+      ) : (
+        <label className="mt-3 flex cursor-pointer items-center gap-2 text-[12px] text-ink-soft">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(event) => setRemember(event.target.checked)}
+            className="h-3.5 w-3.5 accent-[var(--brand)]"
+          />
+          记住这个技能，以后同类操作不再询问（可在设置里一键撤销）
+        </label>
+      )}
 
       <p className="mt-3 text-[11.5px] leading-relaxed text-ink-faint">
         超过等待时间未响应将自动视为拒绝，且本次操作不会被执行。

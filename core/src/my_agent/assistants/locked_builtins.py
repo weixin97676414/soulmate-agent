@@ -77,7 +77,7 @@ LOCKED_FIELD_LABELS: dict[str, str] = {
 
 
 
-LOCKED_PERSONA_FILES: frozenset[str] = frozenset({persona.RULES_FILE})
+LOCKED_PERSONA_FILES: frozenset[str] = frozenset()
 
 
 
@@ -187,9 +187,9 @@ def lock_payload(assistant_id: str) -> dict[str, Any]:
         "locked": True,
         "locked_fields": sorted(LOCKED_FIELD_LABELS),
         "locked_reason": (
-            "这是内置搭子：名称、简介与人格规则（RULES.md）由产品固定，不能修改或删除；"
-            "可用能力可以像普通搭子一样勾选技能，昵称、头像与人格（SOUL / IDENTITY）"
-            "仍可自由设置。"
+            "这是内置搭子：名称与简介由产品固定，不能修改或删除；"
+            "可用能力可以像普通搭子一样勾选技能，昵称、头像与人格文件"
+            "（SOUL / IDENTITY / RULES / MEMORY / USER）均可自由设置。"
         ),
     }
 

@@ -213,18 +213,14 @@ async def test_orchestrator_delete_raises_a_user_facing_error(runtime) -> None:
 
 
 
-def test_persona_files_are_locked_but_memory_is_not() -> None:
+def test_all_persona_files_are_writable_for_builtins() -> None:
 
 
 
 
-
-
-    with pytest.raises(LockedBuiltinError):
-        ensure_persona_writable("LoveBuddy", RULES_FILE)
 
     
-    for name in (SOUL_FILE, IDENTITY_FILE, "MEMORY.md", "USER.md"):
+    for name in (SOUL_FILE, IDENTITY_FILE, RULES_FILE, "MEMORY.md", "USER.md"):
         ensure_persona_writable("LoveBuddy", name)
     
     for name in (SOUL_FILE, IDENTITY_FILE, RULES_FILE):
@@ -237,8 +233,8 @@ def test_write_file_is_the_backstop(runtime) -> None:
 
 
 
-    with pytest.raises(LockedBuiltinError):
-        write_file(runtime.paths, "soulmate", RULES_FILE, "# 我自己写的规则\n")
+    write_file(runtime.paths, "soulmate", RULES_FILE, "# 我自己写的规则\n")
+    assert "我自己写的规则" in persona.read_file(runtime.paths, "soulmate", RULES_FILE)
 
     
     write_file(runtime.paths, "soulmate", SOUL_FILE, "# 我自己写的人设\n")
@@ -249,22 +245,24 @@ def test_write_file_is_the_backstop(runtime) -> None:
     assert "美式" in persona.read_file(runtime.paths, "soulmate", "MEMORY.md")
 
 
-async def test_team_update_assistant_refuses_to_append(runtime) -> None:
+async def test_team_update_assistant_can_append_rules_but_not_description(runtime) -> None:
 
 
 
 
-    before = persona.read_file(runtime.paths, "soulmate", SOUL_FILE)
+
+    before_rules = persona.read_file(runtime.paths, "soulmate", RULES_FILE)
+    await runtime.orchestrator.append_assistant_setup(
+        assistant_id="soulmate", rules_append="不许说脏话。"
+    )
+    assert "不许说脏话" in persona.read_file(runtime.paths, "soulmate", RULES_FILE)
+    assert len(persona.read_file(runtime.paths, "soulmate", RULES_FILE)) > len(before_rules)
 
     with pytest.raises((LockedBuiltinError, SkillExecutionError)) as exc:
         await runtime.orchestrator.append_assistant_setup(
-            assistant_id="soulmate",
-            tone_append="以后说话简短点。",
-            rules_append="不许说脏话。",
+            assistant_id="soulmate", description_append="顺带也懂点法律。"
         )
-
     assert "内置搭子" in str(exc.value)
-    assert persona.read_file(runtime.paths, "soulmate", SOUL_FILE) == before
 
 
 async def test_team_update_assistant_refuses_to_append_description(runtime) -> None:
@@ -376,8 +374,7 @@ def test_loader_keeps_user_selected_skills_across_restart(tmp_path) -> None:
         assert loaded.get(assistant_id).enabled_skills == picked, assistant_id
 
 
-def test_loader_restores_persona_files_on_start(tmp_path) -> None:
-
+def test_loader_keeps_hand_edited_persona_files(tmp_path) -> None:
 
 
 
@@ -390,9 +387,7 @@ def test_loader_restores_persona_files_on_start(tmp_path) -> None:
 
     directory = persona.assistant_dir(paths, "soulmate")
     
-    rules = directory / RULES_FILE
-    assert rules.read_text(encoding="utf-8") == BUILTIN_RULES["soulmate"]
-    
+    assert (directory / RULES_FILE).read_text(encoding="utf-8") == "# 我自己写的规则\n"
     assert (directory / SOUL_FILE).read_text(encoding="utf-8") == "# 我自己写的人设\n"
     assert (directory / IDENTITY_FILE).read_text(encoding="utf-8") == "# 我自己写的身份\n"
 
@@ -423,7 +418,7 @@ def test_persona_pack_alignment_is_one_time(tmp_path) -> None:
 
     
     assert (directory / SOUL_FILE).read_text(encoding="utf-8") == "# 用户自己改的人设\n"
-    assert (directory / RULES_FILE).read_text(encoding="utf-8") == BUILTIN_RULES["soulmate"]
+    assert (directory / RULES_FILE).read_text(encoding="utf-8") == "# 我自己写的规则\n"
 
 
 def test_persona_pack_version_bump_realigns_once(tmp_path) -> None:

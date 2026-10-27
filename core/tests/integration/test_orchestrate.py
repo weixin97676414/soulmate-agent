@@ -24,7 +24,6 @@ import asyncio
 import json
 
 import pytest
-from pydantic import ValidationError
 
 from my_agent.assistants import evolution
 from my_agent.assistants.persona import IDENTITY_FILE, RULES_FILE, SOUL_FILE, read_file
@@ -32,7 +31,6 @@ from my_agent.errors import SkillExecutionError
 from my_agent.llm.base import LLMResponse
 from my_agent.skill.base import SkillContext
 from my_agent.skill.builtin.orchestrate import (
-    GroupCreateParams,
     TeamAssignGroupRolesSkill,
     TeamClearGroupThreadSkill,
     TeamCreateAssistantSkill,
@@ -310,8 +308,8 @@ async def test_create_group_reports_unknown_members(runtime):
     
     assert {"RelationBuddy", "LoveBuddy"} <= set(member_ids)
     
-    
-    assert (runtime.assistants.get("RelationBuddy").group_role or "") == "coordinator"
+    assert (runtime.assistants.get("BuddyManager").group_role or "") == "coordinator"
+    assert not (runtime.assistants.get("RelationBuddy").group_role or "")
     assert not (runtime.assistants.get("LoveBuddy").group_role or ""), (
         "建群不该给没被指名的人安上角色"
     )
@@ -330,55 +328,35 @@ async def test_create_group_reports_unknown_members(runtime):
 
 
 @pytest.mark.asyncio
-async def test_create_group_requires_coordinator(runtime):
+async def test_create_group_always_uses_buddy_manager_as_coordinator(runtime):
 
-    
-    with pytest.raises(ValidationError):
-        GroupCreateParams(name="缺总管的群", member_ids=["RelationBuddy", "LoveBuddy"])
 
-    
-    with pytest.raises(SkillExecutionError) as exc:
-        await TeamCreateGroupSkill().run(
-            _make_ctx(runtime, assistant_id="BuddyManager"),
-            name="自任总管的群",
-            member_ids=["RelationBuddy", "LoveBuddy"],
-            coordinator_id="BuddyManager",
-        )
-    assert "member_ids" in str(exc.value)
-    assert "自己" in str(exc.value)
 
-    
-    with pytest.raises(SkillExecutionError):
-        await TeamCreateGroupSkill().run(
-            _make_ctx(runtime),
-            name="空白总管的群",
-            member_ids=["RelationBuddy", "LoveBuddy"],
-            coordinator_id="   ",
-        )
 
-    
-    
     result = await TeamCreateGroupSkill().run(
-        _make_ctx(runtime, assistant_id="BuddyManager"),
-        name="总管在群里的群",
-        member_ids=["BuddyManager", "RelationBuddy", "LoveBuddy"],
-        coordinator_id="BuddyManager",
+        _make_ctx(runtime),
+        name="自动总管的群",
+        member_ids=["RelationBuddy", "LoveBuddy"],
     )
     created = result["created"]
     assert created["coordinator"]["id"] == "BuddyManager"
     assert runtime.groups.get(created["id"]).coordinator_id == "BuddyManager"
     assert (runtime.assistants.get("BuddyManager").group_role or "") == "coordinator"
     assert created["coordinator"]["name"] in result["message"]
+    member_ids = [item["id"] for item in created["members"]]
+    assert "BuddyManager" in member_ids, "Buddy Manager 必须自动进群"
 
 
 @pytest.mark.asyncio
-async def test_create_group_coordinator_cannot_steal_other_role(runtime):
+async def test_create_group_ignores_a_non_buddy_manager_coordinator(runtime):
+
+
+
 
     first = await TeamCreateGroupSkill().run(
         _make_ctx(runtime),
         name="第一组",
         member_ids=["RelationBuddy", "LoveBuddy"],
-        coordinator_id="RelationBuddy",
     )
     await TeamAssignGroupRolesSkill().run(
         _make_ctx(runtime),
@@ -388,14 +366,15 @@ async def test_create_group_coordinator_cannot_steal_other_role(runtime):
     )
     assert (runtime.assistants.get("LoveBuddy").group_role or "") == "reviewer"
 
-    with pytest.raises(SkillExecutionError) as exc:
-        await TeamCreateGroupSkill().run(
-            _make_ctx(runtime),
-            name="第二组",
-            member_ids=["LoveBuddy", "soulmate"],
-            coordinator_id="LoveBuddy",
-        )
-    assert "审核员" in str(exc.value)
+    second = await TeamCreateGroupSkill().run(
+        _make_ctx(runtime),
+        name="第二组",
+        member_ids=["LoveBuddy", "soulmate"],
+        coordinator_id="LoveBuddy",
+    )
+    created = second["created"]
+    assert created["coordinator"]["id"] == "BuddyManager", "总管恒为 Buddy Manager"
+    assert (runtime.assistants.get("LoveBuddy").group_role or "") == "reviewer"
 
 
 @pytest.mark.asyncio
@@ -405,14 +384,14 @@ async def test_remove_coordinator_clears_the_group_field(runtime):
         _make_ctx(runtime),
         name="换人组",
         member_ids=["RelationBuddy", "LoveBuddy", "soulmate"],
-        coordinator_id="RelationBuddy",
     )
     group_id = created["created"]["id"]
+    assert runtime.groups.get(group_id).coordinator_id == "BuddyManager"
 
     result = await TeamUpdateGroupSkill().run(
         _make_ctx(runtime),
         group_id=group_id,
-        remove_member_ids=["RelationBuddy"],
+        remove_member_ids=["BuddyManager"],
     )
     assert runtime.groups.get(group_id).coordinator_id == ""
     assert "总管" in result["message"]
@@ -633,32 +612,18 @@ async def test_foreground_discussion_still_refuses_admin_skill(runtime, client):
 
 
 @pytest.mark.asyncio
-async def test_coordinator_gets_required_skills_and_rules(runtime):
+async def test_custom_assistant_cannot_become_coordinator(runtime):
 
-
-    result = await TeamCreateAssistantSkill().run(
-        _make_ctx(runtime),
-        name="小红书策划师",
-        description="负责选题策划",
-        group_role="coordinator",
-        skills=["kb_search"],
-        **_SETUP,
-    )
-    created = result["created"]
-    
-    
-    
-    assert created["required_skills"] == "已包含在内置技能中（每个搭子都有）"
-
-    profile = runtime.assistants.get(created["id"])
-    assert profile is not None
-    
-    assert profile.enabled_skills == ["kb_search"]
-
-    rules = read_file(runtime.paths, created["id"], RULES_FILE)
-    assert "ai_thinking_mode" in rules
-    assert "team_restructure" in rules
-    assert any("ai_thinking_mode" in item for item in created["imposed_rules"])
+    with pytest.raises(SkillExecutionError) as exc:
+        await TeamCreateAssistantSkill().run(
+            _make_ctx(runtime),
+            name="小红书策划师",
+            description="负责选题策划",
+            group_role="coordinator",
+            skills=["kb_search"],
+            **_SETUP,
+        )
+    assert "Buddy Manager" in str(exc.value)
 
 
 @pytest.mark.asyncio
@@ -704,13 +669,16 @@ async def test_plain_assistant_gets_only_the_evolution_rule(runtime):
 @pytest.mark.asyncio
 async def test_ensure_required_skills_backfills(runtime):
 
+
+
+
     from my_agent.assistants.persona import write_file
 
     result = await TeamCreateAssistantSkill().run(
         _make_ctx(runtime),
         name="策划师二号",
         description="负责策划",
-        group_role="coordinator",
+        group_role="advisor",
         skills=["kb_search"],
         **_SETUP,
     )
@@ -727,15 +695,18 @@ async def test_ensure_required_skills_backfills(runtime):
     )
     item = fixed["result"]["assistants"][0]
     assert item["id"] == assistant_id
-    assert set(item["added_skills"]) >= {"self_growth", "ai_thinking_mode", "team_restructure"}
+    assert set(item["added_skills"]) >= {"self_growth", "ai_thinking_mode"}
+    assert "team_restructure" not in item["added_skills"]
     assert any("ai_thinking_mode" in r for r in item["imposed_rules"])
+    assert not any("team_restructure" in r for r in item["imposed_rules"])
 
     profile2 = runtime.assistants.get(assistant_id)
     assert profile2 is not None
-    assert set(profile2.enabled_skills) >= {"kb_search", "self_growth", "ai_thinking_mode", "team_restructure"}
+    assert set(profile2.enabled_skills) >= {"kb_search", "self_growth", "ai_thinking_mode"}
+    assert "team_restructure" not in profile2.enabled_skills
     rules = read_file(runtime.paths, assistant_id, RULES_FILE)
     assert "ai_thinking_mode" in rules
-    assert "team_restructure" in rules
+    assert "team_restructure" not in rules
 
 
 

@@ -251,20 +251,13 @@ async def test_locked_builtin_fields_are_rejected(runtime, http):
     assert "name" in resp.json()["locked_fields"]
 
 
-async def test_locked_builtin_persona_files_are_rejected(runtime, http):
+async def test_all_builtin_persona_files_are_writable(runtime, http):
 
 
 
 
 
-
-    blocked = await http.put(
-        "/v1/assistants/soulmate/persona-files/RULES.md",
-        json={"content": "# 我自己写的规则\n"},
-    )
-    assert blocked.status_code == 409
-
-    for name in ("SOUL.md", "IDENTITY.md", "MEMORY.md", "USER.md"):
+    for name in ("RULES.md", "SOUL.md", "IDENTITY.md", "MEMORY.md", "USER.md"):
         ok = await http.put(
             f"/v1/assistants/soulmate/persona-files/{name}",
             json={"content": f"# {name}\n\n我自己写的内容。\n"},

@@ -90,6 +90,24 @@ export function PreferenceSettings() {
   const [ollamaLoading, setOllamaLoading] = useState(false)
   const [ollamaError, setOllamaError] = useState('')
 
+  
+  const [overrides, setOverrides] = useState<Record<string, string>>({})
+  useEffect(() => {
+    if (!api) return
+    let cancelled = false
+    api
+      .getSecurityOverrides()
+      .then((result) => {
+        if (!cancelled) setOverrides(result.overrides ?? {})
+      })
+      .catch(() => {
+        
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [api])
+
   const loadOllamaModels = async () => {
     if (!api || !draft) return
     setOllamaLoading(true)
@@ -260,6 +278,42 @@ export function PreferenceSettings() {
               自动批准：需要确认的操作不再询问、直接执行。高危（admin）级操作仍会被拒绝（定时任务除外，见「自动化任务」页）。
             </div>
           ) : null}
+        </Section>
+
+        <Section
+          title="已授权的技能"
+          description="你在确认弹窗里勾过「记住这个技能」的项。授权后可一键全部撤销；高危操作不在其列。"
+        >
+          {Object.keys(overrides).length === 0 ? (
+            <p className="text-[12px] text-ink-faint">
+              还没有记住任何技能。确认弹窗里勾「记住这个技能」后，会出现在这里。
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap gap-1.5">
+                {Object.keys(overrides).map((skill) => (
+                  <span
+                    key={skill}
+                    className="rounded-[6px] border border-line bg-panel px-2 py-0.5 text-[11.5px] text-ink-soft"
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  if (!api) return
+                  void api.clearSecurityOverrides().then((result) => {
+                    setOverrides(result.overrides ?? {})
+                  })
+                }}
+              >
+                一键撤销全部
+              </Button>
+            </div>
+          )}
         </Section>
 
         <Section

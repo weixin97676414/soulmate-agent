@@ -35,6 +35,7 @@ def build_llm(spec: ModelSpec) -> BaseLLM:
             supports_tools=spec.supports_tools,
             supports_stream=spec.supports_stream,
             supports_reasoning=spec.supports_reasoning,
+            supports_vision=spec.supports_vision,
             token_limit=spec.token_limit,
             use_system_proxy=spec.use_system_proxy,
         )
@@ -53,6 +54,7 @@ def build_llm(spec: ModelSpec) -> BaseLLM:
             supports_tools=spec.supports_tools,
             supports_stream=spec.supports_stream,
             supports_reasoning=spec.supports_reasoning,
+            supports_vision=spec.supports_vision,
             token_limit=spec.token_limit,
             use_system_proxy=spec.use_system_proxy,
         )

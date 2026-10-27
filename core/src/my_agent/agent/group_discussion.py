@@ -114,7 +114,14 @@ async def compressed_group_history_text(
     history: list[dict[str, str]],
     llm: Any,
     token_limit: int,
+    *,
+    keep_recent: int | None = None,
+    full: bool = False,
 ) -> str:
+
+
+
+
 
 
 
@@ -125,13 +132,21 @@ async def compressed_group_history_text(
     if not history:
         return ""
 
-    total_chars = sum(len(item.get("content", "")) for item in history)
-    threshold_chars = max(4000, int(token_limit * 0.6))
-    if total_chars <= threshold_chars or len(history) <= _GROUP_KEEP_RECENT:
+    if full:
+        
         return _render_group_history(history)
 
+    keep = keep_recent if keep_recent and keep_recent > 0 else _GROUP_KEEP_RECENT
+
+    total_chars = sum(len(item.get("content", "")) for item in history)
+    threshold_chars = max(4000, int(token_limit * 0.6))
+    if total_chars <= threshold_chars or len(history) <= keep:
+        return _render_group_history(history)
+
+    
+    
     older = history[:-_GROUP_KEEP_RECENT]
-    recent = history[-_GROUP_KEEP_RECENT:]
+    recent = history[-keep:]
 
     summary = runtime._group_history_summary.get((group.id, thread_id))
     if summary is None:
@@ -149,6 +164,20 @@ async def compressed_group_history_text(
         )
     
     return _render_group_history(recent)
+
+
+def _keep_recent_for_role(role: str) -> int:
+
+
+
+
+
+
+    if role == "reviewer":
+        return 10
+    if role == "advisor":
+        return 3
+    return 5
 
 
 async def build_group_agent(
@@ -209,11 +238,24 @@ async def build_group_agent(
     if history:
         
         
-        history_text = await compressed_group_history_text(
-            runtime, group, thread_id, history, llm, token_limit=llm.token_limit
-        )
-        if history_text:
-            memory.add_user("以下是本群到目前为止的对话记录：\n\n" + history_text)
+        assigned = runtime._group_context_plan.get((group.id, thread_id, member.id))
+        if assigned:
+            memory.add_user("总管给这次讨论分配给你的上下文（只读这部分即可）：\n\n" + assigned)
+        else:
+            
+            
+            history_text = await compressed_group_history_text(
+                runtime,
+                group,
+                thread_id,
+                history,
+                llm,
+                token_limit=llm.token_limit,
+                keep_recent=_keep_recent_for_role(role),
+                full=role == "coordinator",
+            )
+            if history_text:
+                memory.add_user("以下是本群到目前为止的对话记录：\n\n" + history_text)
 
     
     
@@ -341,6 +383,8 @@ async def build_group_agent(
         
         target_assistant=member.id,
         token_limit=llm.token_limit,
+        
+        supports_vision=getattr(llm, "supports_vision", False),
         enable_planner=False,
         enable_reflection=False,
     )

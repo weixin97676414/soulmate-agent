@@ -17,7 +17,7 @@
     <!-- CSP 由 vite.config.mts 在构建时注入：开发模式下 Vite 会插入内联脚本，
          严格的 script-src 会把 React Refresh 的预置脚本一起挡掉。 -->
     <title>Soulmate Agent</title>
-    <script type="module" crossorigin src="./assets/index-BCDYMW_y.js"></script>
+    <script type="module" crossorigin src="./assets/index-COBy8gtA.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-CNzNo9y5.css">
   </head>
   <body>

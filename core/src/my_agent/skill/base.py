@@ -182,6 +182,10 @@ class SkillContext:
         self.workspace = workspace
         self.path_policy = path_policy or PathPolicy()
         self.extra = extra or {}
+        
+        
+        
+        self._image_outbox: list[Any] | None = None
 
     @property
     def has_confirm_channel(self) -> bool:
@@ -204,6 +208,22 @@ class SkillContext:
 
 
         return self.interaction is not None
+
+    
+    def set_image_outbox(self, bucket: list[Any] | None) -> None:
+
+        self._image_outbox = bucket
+
+    def emit_image(self, data_url: str, mime: str = "image/png") -> None:
+
+
+
+
+        if self._image_outbox is None or not data_url:
+            return
+        from ..llm.base import ImagePart
+
+        self._image_outbox.append(ImagePart(mime=mime, data_url=data_url))
 
     async def ask_interaction(self, request: InteractionRequest) -> dict[str, Any]:
 

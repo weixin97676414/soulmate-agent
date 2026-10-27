@@ -192,7 +192,7 @@ export function IconRail() {
       </div>
 
       <div className="pb-1 text-center text-[10px] leading-tight text-ink-faint">
-        v{appInfo?.version ?? '1.0.1'}
+        v{appInfo?.version ?? '1.0.2'}
       </div>
 
       {}

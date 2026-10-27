@@ -238,6 +238,11 @@ class AgentConfig:
 
     
     
+    
+    supports_vision: bool = False
+
+    
+    
     enable_planner: bool = False
     enable_reflection: bool = False
     reflection_rounds: int = 1
@@ -322,6 +327,10 @@ class Agent:
         
         
         self._plan_message = None
+        
+        
+        
+        self._tool_images: dict[str, list[ImagePart]] = {}
 
     
     
@@ -352,6 +361,8 @@ class Agent:
         self, user_input: str, *, images: list[ImagePart] | None = None
     ) -> AsyncIterator[AgentEvent]:
         self.memory.add_user(user_input, images=images)
+        
+        self._tool_images.clear()
         
         
         self.memory.ensure_system(self._system_prompt())
@@ -869,6 +880,7 @@ class Agent:
                 
                 outcome, plan_event = self._consume_plan_update(tc, outcome)
                 message = self.memory.add_tool(tc.id, tc.name, outcome[1])
+                self._append_tool_images(tc)
                 
                 
                 
@@ -887,6 +899,7 @@ class Agent:
             
             outcome, plan_event = self._consume_plan_update(tc, outcome)
             message = self.memory.add_tool(tc.id, tc.name, outcome[1])
+            self._append_tool_images(tc)
             if message.injection_hits:
                 yield self._injection_event(tc, display_name, message.injection_hits)
             if tc.name == "self_persona_update" and outcome[0] == "ok":
@@ -969,6 +982,9 @@ class Agent:
 
         started = asyncio.get_event_loop().time()
         status = "ok"
+        
+        outbox: list[ImagePart] = []
+        self.ctx.set_image_outbox(outbox)
         try:
             result_text = await self.skills.execute(
                 tc.name,
@@ -996,8 +1012,29 @@ class Agent:
                     f"\n（工具 {tc.name} 已连续失败 {failure_counts[tc.name]} 次，"
                     f"本轮任务内不再提供该工具，请换一种方案，或向用户说明原因。）"
                 )
+        finally:
+            self.ctx.set_image_outbox(None)
+        
+        
+        if outbox and status == "ok":
+            if self.config.supports_vision:
+                self._tool_images[tc.id] = outbox
+            else:
+                result_text += "\n（当前模型不支持看图，截图已保存到产物区。）"
         duration_ms = round((asyncio.get_event_loop().time() - started) * 1000, 2)
         return status, result_text, duration_ms
+
+    def _append_tool_images(self, tc: ToolCall) -> None:
+
+
+
+
+
+
+        images = self._tool_images.pop(tc.id, None)
+        if not images:
+            return
+        self.memory.add_user("工具返回的截图如下，请据此判断界面。", images=images)
 
     @staticmethod
     def _result_event(

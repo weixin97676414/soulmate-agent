@@ -387,6 +387,12 @@ class ConfigStore:
 
         
         
+        if self._migrate_coordinator_roles(config):
+            self._write_json(path, config.model_dump(mode="json"))
+            logger.info("已把非 Buddy Manager 的 coordinator 收敛为 worker")
+
+        
+        
         
         
         if self._patch_evolution_rules(config):
@@ -833,6 +839,24 @@ class ConfigStore:
         except OSError as exc:
             logger.warning("USER 模板补种/插行失败 %s: %s", target, exc)
             return False
+
+    def _migrate_coordinator_roles(self, config: AssistantsConfig) -> bool:
+
+
+
+
+
+
+        changed = False
+        for index, item in enumerate(config.assistants):
+            if item.id == "BuddyManager":
+                continue
+            if (item.group_role or "").strip() != "coordinator":
+                continue
+            config.assistants[index] = item.model_copy(update={"group_role": "worker"})
+            changed = True
+            logger.info("已把「%s」的群角色从 coordinator 收敛为 worker", item.id)
+        return changed
 
     def _enforce_locked_builtins(self, config: AssistantsConfig) -> bool:
 

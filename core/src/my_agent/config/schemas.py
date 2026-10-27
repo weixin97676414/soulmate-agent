@@ -467,6 +467,13 @@ class SecuritySettings(BaseModel):
     
     
     
+    permission_overrides: dict[str, str] = Field(default_factory=dict)
+    
+    
+    
+    
+    
+    
     
     
     confirm_timeout_seconds: float = Field(

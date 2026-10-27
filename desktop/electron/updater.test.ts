@@ -20,7 +20,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({
   app: {
-    getVersion: () => '1.0.1',
+    getVersion: () => '1.0.2',
     
     
     getPath: () => process.env.TEMP ?? '/tmp',
@@ -96,7 +96,7 @@ describe('状态快照', () => {
 
   it('未初始化时 fullPackageUrl 用 LINES 兜底（不依赖清单 / 打桩的 isPackaged）', () => {
     __resetForTest()
-    expect(getUpdateState().fullPackageUrl).toContain('Soulmate-Agent-Setup-1.0.1.exe')
+    expect(getUpdateState().fullPackageUrl).toContain('Soulmate-Agent-Setup-1.0.2.exe')
   })
 })
 
@@ -183,7 +183,7 @@ describe('整包地址以清单为准（2026-10-22 修：老客户端去下自�
     fetchMock.mockResolvedValue(new Response(JSON.stringify(baseManifest)))
     initUpdater({ autoUpdate: false })
     const state = await checkForUpdate()
-    expect(state.fullPackageUrl).toContain('Soulmate-Agent-Setup-1.0.1.exe')
+    expect(state.fullPackageUrl).toContain('Soulmate-Agent-Setup-1.0.2.exe')
   })
 })
 
@@ -270,15 +270,15 @@ describe('应用阶段健壮性（预检齐全才替换，防半新半旧）', (
 })
 
 describe('currentVersion：已应用版本只在更高时采用', () => {
-  it('appliedVersion 低于安装包版本（1.0.1）⇒ 用安装包版本', () => {
+  it('appliedVersion 低于安装包版本（1.0.2）⇒ 用安装包版本', () => {
     __resetForTest()
-    __setAppliedVersionForTest('1.0.0')
-    expect(getUpdateState().version).toBe('1.0.1')
+    __setAppliedVersionForTest('1.0.1')
+    expect(getUpdateState().version).toBe('1.0.2')
   })
 
   it('appliedVersion 高于安装包版本 ⇒ 用 appliedVersion', () => {
     __resetForTest()
-    __setAppliedVersionForTest('1.0.2')
-    expect(getUpdateState().version).toBe('1.0.2')
+    __setAppliedVersionForTest('1.0.3')
+    expect(getUpdateState().version).toBe('1.0.3')
   })
 })

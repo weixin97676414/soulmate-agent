@@ -225,7 +225,7 @@ interface ChatState {
 
   send: (text?: string, displayText?: string) => Promise<void>
   stop: () => Promise<void>
-  respondPermission: (approved: boolean) => Promise<void>
+  respondPermission: (approved: boolean, remember?: boolean) => Promise<void>
   
 
 
@@ -1356,7 +1356,7 @@ export const useChatStore = create<ChatState>((set, get) => {
       dropInteractionsOf(key)
     },
 
-    respondPermission: async (approved) => {
+    respondPermission: async (approved, remember = false) => {
       
       const request = get().permission
       if (!request) return
@@ -1364,6 +1364,11 @@ export const useChatStore = create<ChatState>((set, get) => {
       try {
         const api = useAppStore.getState().api
         await api?.confirm(request.requestId, approved)
+        
+        
+        if (approved && remember) {
+          await api?.addSecurityOverride(request.skillName)
+        }
       } catch {
         
       }

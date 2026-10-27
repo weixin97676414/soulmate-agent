@@ -400,6 +400,10 @@ async def delete_group(group_id: str, request: Request) -> dict[str, Any]:
         key: value for key, value in runtime._group_history_summary.items() if key[0] != group_id
     }
     
+    runtime._group_context_plan = {
+        key: value for key, value in runtime._group_context_plan.items() if key[0] != group_id
+    }
+    
     if runtime.db_ready:
         try:
             await runtime.group_event_repo.delete_group(group_id)
@@ -522,6 +526,11 @@ async def clear_group_messages(
     
     runtime._group_history.pop((group_id, resolved), None)
     runtime._group_history_summary.pop((group_id, resolved), None)
+    runtime._group_context_plan = {
+        key: value
+        for key, value in runtime._group_context_plan.items()
+        if not (key[0] == group_id and key[1] == resolved)
+    }
     return {"ok": True, "removed": removed, "thread_id": resolved}
 
 
@@ -596,6 +605,11 @@ async def delete_group_thread(
         raise HTTPException(status_code=404, detail=f"对话「{thread_id}」不存在")
     runtime._group_history.pop((group_id, thread_id), None)
     runtime._group_history_summary.pop((group_id, thread_id), None)
+    runtime._group_context_plan = {
+        key: value
+        for key, value in runtime._group_context_plan.items()
+        if not (key[0] == group_id and key[1] == thread_id)
+    }
     await runtime.audit.op(
         kind="group", action="delete", target=group_id, detail=f"删除群对话「{thread_id}」"
     )

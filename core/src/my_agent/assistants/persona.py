@@ -66,6 +66,10 @@ USER_FILE = "USER.md"
 
 
 EVOLUTION_LOG_FILE = "进化日志.md"
+
+
+
+CONFIRM_FILE = "待确认.md"
 ALLOWED_FILES: tuple[str, ...] = (
     SOUL_FILE,
     IDENTITY_FILE,
@@ -73,6 +77,7 @@ ALLOWED_FILES: tuple[str, ...] = (
     MEMORY_FILE,
     USER_FILE,
     EVOLUTION_LOG_FILE,
+    CONFIRM_FILE,
 )
 
 
@@ -122,6 +127,13 @@ DEFAULT_EVOLUTION_LOG_HINT = (
     "# 进化日志\n\n"
     "搭子每周自我进化那一轮自己写这里：改了什么、为什么改、下轮要验证什么。\n"
     "由它自动追加，你也可以直接编辑。\n"
+)
+
+
+DEFAULT_CONFIRM_HINT = (
+    "# 待确认清单\n\n"
+    "搭子看不到你的屏幕，所以它把「需要你亲眼核对的事」写成条目放在这里。\n"
+    "每条勾选「通过 / 不通过 / 待定」即可回填。\n"
 )
 
 
@@ -191,6 +203,7 @@ def list_files(paths: Any, assistant_id: str) -> list[dict[str, Any]]:
         MEMORY_FILE: DEFAULT_MEMORY_HINT,
         USER_FILE: DEFAULT_USER_HINT,
         EVOLUTION_LOG_FILE: DEFAULT_EVOLUTION_LOG_HINT,
+        CONFIRM_FILE: DEFAULT_CONFIRM_HINT,
     }
     for name in ALLOWED_FILES:
         target = _resolve(paths, assistant_id, name)

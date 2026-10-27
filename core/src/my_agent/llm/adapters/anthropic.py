@@ -109,6 +109,7 @@ class AnthropicAdapter(BaseLLM):
         supports_tools: bool = True,
         supports_stream: bool = True,
         supports_reasoning: bool = True,
+        supports_vision: bool = False,
         token_limit: int = 200_000,
         cache_enabled: bool = True,
         use_system_proxy: bool = False,
@@ -119,6 +120,7 @@ class AnthropicAdapter(BaseLLM):
             supports_tools=supports_tools,
             supports_stream=supports_stream,
             supports_reasoning=supports_reasoning,
+            supports_vision=supports_vision,
             token_limit=token_limit,
         )
         

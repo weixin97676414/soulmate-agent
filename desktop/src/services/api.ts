@@ -923,6 +923,20 @@ export class AgentApi {
     this.send<{ mode: ConfirmMode }>('/v1/security/confirm-mode', 'PUT', { mode })
 
   
+  getSecurityOverrides = () =>
+    this.get<{ overrides: Record<string, string> }>('/v1/security/overrides')
+
+  addSecurityOverride = (skill: string) =>
+    this.send<{ overrides: Record<string, string> }>('/v1/security/overrides', 'POST', {
+      skill,
+      remember: true,
+    })
+
+  
+  clearSecurityOverrides = () =>
+    this.send<{ overrides: Record<string, string> }>('/v1/security/overrides', 'DELETE')
+
+  
   getMcpServers = () =>
     this.get<{
       servers: McpServerStatus[]
