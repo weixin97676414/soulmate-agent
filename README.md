@@ -214,8 +214,7 @@ Python 智能体核心（Skill / MCP / ReAct 引擎）+ Electron 桌面外壳，
 
 | 依赖 | 版本 | 说明 |
 |---|---|---|
-| Windows | 10 / 11 x64 | 桌面端支持平台之一 |
-| macOS | 11+（arm64 / x64） | 桌面端支持平台之一（未公证，首次打开见下方「macOS 首次打开」） |
+| Windows | 10 / 11 x64 | 桌面端支持平台 |
 | Python | 3.13+ | 核心运行时（开发环境实测 3.14）。⚠️ 跑核心测试请用 `core\.venv\Scripts\python.exe` —— 系统 Python 通常没装 `sherpa_onnx`，会让语音真链路测试假红 |
 | Node.js | 20+ | 桌面端构建 |
 
@@ -349,30 +348,11 @@ npm test
 
 ---
 
-## macOS 首次打开（未签名 / 未公证）
-
-本项目是开源项目，**未购买 Apple Developer 签名证书**，因此 macOS 的 Gatekeeper 会拦截首次打开的下载应用
-（提示「无法验证开发者」或「已损坏，无法打开」）。这是正常的，放行一次即可：
-
-**方式一（推荐，图形界面）**
-1. 打开「系统设置 → 隐私与安全性」；
-2. 在「安全性」区域找到「已阻止使用 Soulmate Agent」，点「仍要打开」；
-3. 再次打开应用，在弹窗里点「打开」。
-
-**方式二（终端命令）**
-```bash
-xattr -cr "/Applications/Soulmate Agent.app"
-```
-
-> 只需放行一次，之后正常双击即可。
-
----
-
 ## 已知限制
 
-- **未做代码签名**：Windows 安装时 SmartScreen 会警告；macOS 未签名/未公证，首次打开会被 Gatekeeper 拦截（见上方「macOS 首次打开」，放行一次即可）
+- **未做代码签名**：Windows 安装时 SmartScreen 会警告，点「更多信息 → 仍要运行」即可继续
 - **Soulmate 与算命占卜依赖心鉴学服务**：拉取画像 / 排盘 / 起卦 / 洗牌都要登录该服务的账号（登录态由客户端托管）；不登录不影响其余功能
-- 桌面端支持 **Windows / macOS**；MCP 仅支持 **stdio** 传输（本地子进程）
+- 桌面端支持 **Windows**；MCP 仅支持 **stdio** 传输（本地子进程）
 - MCP 的 resources 与 prompts 尚未接入，只用 tools
 - 产物预览是**只读**的，需要改动请用「另存为」在本地打开
 - `.xls`（旧二进制格式）不支持预览，请先转 `.xlsx`；扫描版 PDF 没有文字层，预览会明确提示

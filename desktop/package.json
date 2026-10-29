@@ -75,34 +75,6 @@
         "to": "dist"
       }
     ],
-    "mac": {
-      "icon": "assets/icon.icns",
-      "category": "public.app-category.productivity",
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist",
-      "extendInfo": {
-        "NSMicrophoneUsageDescription": "Soulmate Agent 需要使用麦克风进行语音对话。",
-        "NSCameraUsageDescription": "Soulmate Agent 需要使用摄像头进行拍摄。"
-      },
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ]
-    },
     "win": {
       "icon": "assets/icon.ico",
       "target": [

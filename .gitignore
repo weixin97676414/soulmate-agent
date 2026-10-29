@@ -11,10 +11,8 @@ core/dist/
 # PyInstaller 的工作目录。注意**不能**直接忽略 build/：core/build/ 里放着
 # agent-core.spec 与 entry.py，它们是源文件，必须入库。
 core/build/.pyi/
-# desktop/build 里 installer.nsh 是 Windows 打包脚本（含大量内部踩坑记录），
-# 不进公开仓库；但 entitlements.mac.plist 是 mac 签名必需，单独放行。
+# desktop/build 里 installer.nsh 是 Windows 打包脚本（含大量内部踩坑记录），不进公开仓库。
 desktop/build/*
-!desktop/build/entitlements.mac.plist
 
 # Node / Electron
 node_modules/
@@ -44,5 +42,4 @@ core/models/
 # 编辑器 / 系统
 .vscode/
 .idea/
-.DS_Store
 Thumbs.db
