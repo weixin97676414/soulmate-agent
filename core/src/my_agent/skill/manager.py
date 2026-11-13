@@ -41,11 +41,16 @@ def stringify_result(result: Any) -> str:
 
 
 
+
+
+
+
+
     if isinstance(result, str):
         return result
     if isinstance(result, (dict, list)):
         try:
-            return json.dumps(result, ensure_ascii=False, default=str)
+            return json.dumps(result, ensure_ascii=False, indent=2, default=str)
         except (TypeError, ValueError):
             return str(result)
     return str(result)

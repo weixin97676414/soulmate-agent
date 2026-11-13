@@ -35,10 +35,30 @@ function formatDuration(ms?: number): string {
 
 
 
+
+
+const PREVIEW_CHARS = 4000
+
+
+
+
+
+
+
 export function ToolCallCard({ tool }: { tool: ToolCallState }) {
   const [open, setOpen] = useState(false)
+  
+  const [full, setFull] = useState(false)
   const meta = STATUS_META[tool.status]
   const Icon = meta.icon
+
+  const result = tool.result ?? ''
+  const resultTooLong = result.length > PREVIEW_CHARS
+  const shownResult = full || !resultTooLong ? result : result.slice(0, PREVIEW_CHARS)
+  const paramsText = JSON.stringify(tool.params ?? {}, null, 2)
+  const paramsTooLong = paramsText.length > PREVIEW_CHARS
+  const shownParams =
+    paramsTooLong && !full ? `${paramsText.slice(0, PREVIEW_CHARS)}\n…（参数过长，已折叠）` : paramsText
 
   return (
     <div
@@ -99,8 +119,8 @@ export function ToolCallCard({ tool }: { tool: ToolCallState }) {
           ) : null}
 
           <div className="mb-1 text-[11px] font-medium text-ink-faint">调用参数</div>
-          <pre className="selectable max-h-[180px] overflow-auto rounded-[8px] border border-line bg-panel p-2 text-[11.5px] leading-relaxed whitespace-pre-wrap text-ink-soft">
-            {JSON.stringify(tool.params ?? {}, null, 2)}
+          <pre className="selectable max-h-[180px] overflow-auto rounded-[8px] border border-line bg-panel p-2 text-[11.5px] leading-relaxed break-all whitespace-pre-wrap text-ink-soft">
+            {shownParams}
           </pre>
 
           {tool.result !== undefined ? (
@@ -108,14 +128,32 @@ export function ToolCallCard({ tool }: { tool: ToolCallState }) {
               <div className="mt-2.5 mb-1 text-[11px] font-medium text-ink-faint">返回结果</div>
               <pre
                 className={clsx(
-                  'selectable max-h-[280px] overflow-auto rounded-[8px] border p-2 text-[11.5px] leading-relaxed whitespace-pre-wrap',
+                  
+                  'selectable max-h-[280px] overflow-auto rounded-[8px] border p-2 text-[11.5px] leading-relaxed break-all whitespace-pre-wrap',
                   tool.status === 'error' || tool.status === 'denied'
                     ? 'border-danger/25 bg-danger-soft text-ink-soft'
                     : 'border-line bg-panel text-ink-soft',
                 )}
               >
-                {tool.result}
+                {shownResult}
               </pre>
+              {resultTooLong || paramsTooLong ? (
+                <div className="mt-1.5 flex items-center gap-2 text-[11px] text-ink-faint">
+                  <span>
+                    {resultTooLong
+                      ? `结果共 ${result.length.toLocaleString()} 字符`
+                      : `参数共 ${paramsText.length.toLocaleString()} 字符`}
+                    {result.includes('界面预览已省略') ? '（后端已截断，完整内容在模型那边）' : ''}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setFull((value) => !value)}
+                    className="rounded-[6px] border border-line px-2 py-0.5 text-ink-soft hover:bg-hover"
+                  >
+                    {full ? '收起' : '展开全部'}
+                  </button>
+                </div>
+              ) : null}
             </>
           ) : null}
         </div>

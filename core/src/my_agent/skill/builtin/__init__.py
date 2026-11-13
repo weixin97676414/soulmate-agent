@@ -37,6 +37,10 @@ _MODULES: list[str] = [
     "my_agent.skill.builtin.clipboard",
     "my_agent.skill.builtin.system_control",
     
+    
+    
+    "my_agent.skill.builtin.command",
+    
     "my_agent.skill.builtin.doc_convert",
     
     "my_agent.skill.builtin.office.excel",

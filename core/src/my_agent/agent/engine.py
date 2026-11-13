@@ -1036,9 +1036,36 @@ class Agent:
             return
         self.memory.add_user("工具返回的截图如下，请据此判断界面。", images=images)
 
-    @staticmethod
+    
+    
+    
+    
+    
+    
+    
+    
+    PREVIEW_CHARS = 32_000
+
+    @classmethod
+    def _preview_text(cls, text: str) -> str:
+
+        if len(text) <= cls.PREVIEW_CHARS:
+            return text
+        omitted = len(text) - cls.PREVIEW_CHARS
+        return (
+            text[: cls.PREVIEW_CHARS]
+            + f"\n\n…（界面预览已省略 {omitted:,} 字符 / 共 {len(text):,}。"
+            "完整内容已交给模型，可以让它继续读，或让它写到产物文件里。）"
+        )
+
+    @classmethod
     def _result_event(
-        tc: ToolCall, display_name: str, status: str, result_text: str, duration_ms: float
+        cls,
+        tc: ToolCall,
+        display_name: str,
+        status: str,
+        result_text: str,
+        duration_ms: float,
     ) -> AgentEvent:
         return AgentEvent(
             "tool_result",
@@ -1047,7 +1074,9 @@ class Agent:
                 "name": tc.name,
                 "display_name": display_name,
                 "status": status,
-                "result": result_text,
+                "result": cls._preview_text(result_text),
+                
+                "result_chars": len(result_text),
                 "duration_ms": duration_ms,
             },
         )

@@ -1,0 +1,67 @@
+name: Build macOS
+
+# 手动触发，或推送 v* 标签时触发。
+# ⚠️ 签名/公证依赖 secrets（见下），未配置时会跳过、只出未签名包（供内测；
+# 内测机需 `xattr -cr /Applications/Soulmate Agent.app` 绕过 Gatekeeper）。
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装桌面端依赖
+        working-directory: desktop
+        run: npm ci
+
+      - name: 安装核心依赖
+        working-directory: core
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: 构建 Python 核心（PyInstaller，mac 产物为 agent-core）
+        working-directory: desktop
+        run: npm run build:core
+
+      - name: 构建前端与主进程
+        working-directory: desktop
+        run: npm run build
+
+      - name: 打包 .app / .dmg / .zip
+        working-directory: desktop
+        run: npx --no-install electron-builder --mac
+        env:
+          # 代码签名：配置后 electron-builder 自动用 Developer ID 证书签名。
+          # 未配置（secret 为空）则跳过签名，出未签名包（内测机 xattr -cr 绕过 Gatekeeper）。
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          # 公证：需先签名成功；首版未配置 APPLE_ID 时 electron-builder 自动跳过公证。
+          # 正式分发前补上这三个 secret 即可（见 mac版/构建/签名证书说明.md）。
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-release
+          path: |
+            desktop/release/*.dmg
+            desktop/release/*.zip
+          if-no-files-found: error

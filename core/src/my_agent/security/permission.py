@@ -48,7 +48,18 @@ _READ_ONLY_NAMES = frozenset(
     }
 )
 
-_SECRET_SKILLS = frozenset({"request_secret", "set_secret", "ask_choice"})
+_ALWAYS_HIGH_NAMES = frozenset(
+    {
+        
+        "request_secret",
+        "set_secret",
+        "ask_choice",
+        
+        
+        
+        "buddy_run_command",
+    }
+)
 
 
 def risk_of(meta: SkillMeta) -> str:
@@ -66,7 +77,7 @@ def risk_of(meta: SkillMeta) -> str:
         return "high"
     if name in _READ_ONLY_NAMES:
         return "low"
-    if name in _SECRET_SKILLS:
+    if name in _ALWAYS_HIGH_NAMES:
         return "high"
     if name.startswith(_LOW_RISK_NAME_PREFIXES):
         return "low"
