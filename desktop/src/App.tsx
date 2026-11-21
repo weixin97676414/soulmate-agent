@@ -13,6 +13,7 @@ import { SessionList } from '@/components/SessionList'
 import { AppearanceSettings } from '@/components/settings/AppearanceSettings'
 import { AuditSettings } from '@/components/settings/AuditSettings'
 import { CalendarSettings } from '@/components/settings/CalendarSettings'
+import { FeishuSettings } from '@/components/settings/FeishuSettings'
 import { McpSettings } from '@/components/settings/McpSettings'
 import { ModelSettings } from '@/components/settings/ModelSettings'
 import { PreferenceSettings } from '@/components/settings/PreferenceSettings'
@@ -34,7 +35,7 @@ import { useAppStore } from '@/stores/appStore'
 import { useAssistantStore } from '@/stores/assistantStore'
 import { useAccountStore } from '@/stores/accountStore'
 import { useChatStore } from '@/stores/chatStore'
-import { useNotificationStore } from '@/stores/notificationStore'
+import { subscribeAppEvents, useNotificationStore } from '@/stores/notificationStore'
 import { closeAllTransientDialogs, useTransientDialogsStore } from '@/stores/transientDialogs'
 import { useVoiceCommand } from '@/stores/voiceCommandStore'
 import { useVoiceSessionStore } from '@/stores/voiceSessionStore'
@@ -66,6 +67,24 @@ export default function App() {
 
   const loadSessions = useChatStore((state) => state.loadSessions)
   const startNewSession = useChatStore((state) => state.startNewSession)
+
+  
+
+
+
+
+
+
+
+  useEffect(() => {
+    return subscribeAppEvents((type, data) => {
+      if (type !== 'session_message') return
+      const state = useChatStore.getState()
+      void state.loadSessions()
+      const changed = (data as { session_id?: string } | undefined)?.session_id
+      if (changed && changed === state.activeSessionId) void state.reloadMessages()
+    })
+  }, [])
   const loadAssistants = useAssistantStore((state) => state.load)
   const startEventStream = useNotificationStore((state) => state.startEventStream)
   const stopEventStream = useNotificationStore((state) => state.stopEventStream)
@@ -351,6 +370,8 @@ export default function App() {
       <SkillSettings />
     ) : view === 'mcp' ? (
       <McpSettings />
+    ) : view === 'feishu' ? (
+      <FeishuSettings />
     ) : view === 'workspace' ? (
       <WorkspaceSettings />
     ) : view === 'usage' ? (

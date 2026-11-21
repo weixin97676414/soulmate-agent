@@ -323,6 +323,9 @@ def _cmd_replay(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    
+    
+    
     args = build_parser().parse_args(argv)
 
     if args.command == "skills":

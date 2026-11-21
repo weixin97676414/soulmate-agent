@@ -168,6 +168,21 @@ class AppPaths:
         return self.config_dir / "groups.json"
 
     @property
+    def feishu_file(self) -> Path:
+
+        return self.config_dir / "feishu.json"
+
+    @property
+    def feishu_secrets_file(self) -> Path:
+
+
+
+
+
+
+        return self.config_dir / "feishu-secrets.bin"
+
+    @property
     def db_file(self) -> Path:
         return self.data_dir / "agent.db"
 

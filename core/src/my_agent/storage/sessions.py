@@ -57,8 +57,9 @@ UPSERT_SESSION = """
 INSERT INTO sessions
     (id, title, model_id, system_prompt, enabled_skills, assistant_id,
      context_summary, context_summary_upto, reasoning_effort,
+     source, external_id,
      message_count, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO UPDATE SET
     title = excluded.title,
     model_id = excluded.model_id,
@@ -68,6 +69,8 @@ ON CONFLICT(id) DO UPDATE SET
     context_summary = excluded.context_summary,
     context_summary_upto = excluded.context_summary_upto,
     reasoning_effort = excluded.reasoning_effort,
+    source = excluded.source,
+    external_id = excluded.external_id,
     message_count = excluded.message_count,
     updated_at = excluded.updated_at
 """
@@ -92,6 +95,12 @@ class SessionRecord:
     
     
     reasoning_effort: str | None = None
+    
+    
+    source: str = "local"
+    
+    
+    external_id: str = ""
     message_count: int = 0
     created_at: float = field(default_factory=time.time)
     updated_at: float = field(default_factory=time.time)
@@ -175,6 +184,35 @@ class SessionRepository:
         row = await self._db.fetch_one("SELECT * FROM sessions WHERE id = ?", (session_id,))
         return self._row_to_record(row) if row else None
 
+    async def find_by_external(
+        self, source: str, external_id: str, assistant_id: str | None = None
+    ) -> SessionRecord | None:
+
+
+
+
+
+
+
+
+
+
+        if not external_id:
+            return None
+        if assistant_id is None:
+            row = await self._db.fetch_one(
+                "SELECT * FROM sessions WHERE source = ? AND external_id = ?"
+                " ORDER BY updated_at DESC LIMIT 1",
+                (source, external_id),
+            )
+        else:
+            row = await self._db.fetch_one(
+                "SELECT * FROM sessions WHERE source = ? AND external_id = ?"
+                " AND IFNULL(assistant_id, '') = ? ORDER BY updated_at DESC LIMIT 1",
+                (source, external_id, assistant_id),
+            )
+        return self._row_to_record(row) if row else None
+
     async def count_sessions(self) -> int:
         row = await self._db.fetch_one("SELECT COUNT(*) AS n FROM sessions")
         return int(row["n"]) if row else 0
@@ -197,6 +235,10 @@ class SessionRepository:
             system_prompt=row.get("system_prompt") or "",
             enabled_skills=skills,
             assistant_id=row.get("assistant_id"),
+            
+            
+            source=row.get("source") or "local",
+            external_id=row.get("external_id") or "",
             context_summary=row.get("context_summary") or "",
             context_summary_upto=int(row.get("context_summary_upto") or 0),
             
@@ -240,6 +282,11 @@ class SessionRepository:
                     record.context_summary,
                     record.context_summary_upto,
                     record.reasoning_effort,
+                    
+                    
+                    
+                    record.source,
+                    record.external_id,
                     record.message_count,
                     record.created_at,
                     record.updated_at,

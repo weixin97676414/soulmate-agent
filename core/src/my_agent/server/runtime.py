@@ -48,6 +48,8 @@ from ..config.skill_secrets import (
     read_skill_secrets_file,
 )
 from ..errors import LLMError
+from ..feishu.bridge import FeishuBridge
+from ..feishu.handler import FeishuHandler
 from ..llm.base import BaseLLM
 from ..llm.factory import build_llm, build_registry
 from ..llm.registry import LlmRegistry
@@ -287,6 +289,12 @@ class AppRuntime:
 
         
         self.events = EventBus()
+        
+        
+        
+        
+        self.feishu = FeishuBridge(self)
+        self.feishu_handler = FeishuHandler(self)
         
         
         
@@ -617,6 +625,11 @@ class AppRuntime:
         
         
         await self.task_scheduler.start()
+        
+        
+        
+        self.feishu.set_on_event(self.feishu_handler.handle)
+        await self.feishu.start()
         
         
         
@@ -1632,6 +1645,10 @@ class AppRuntime:
     
     
     async def shutdown(self) -> None:
+        
+        
+        with contextlib.suppress(Exception):
+            await self.feishu.stop()
         self.reject_pending()
         
         

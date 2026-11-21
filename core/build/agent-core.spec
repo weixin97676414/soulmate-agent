@@ -85,6 +85,26 @@ datas.append((resources_src, "my_agent/resources"))
 # ---- 2) uvicorn ---------------------------------------------------------- #
 hiddenimports += collect_submodules("uvicorn")
 
+# ---- 2.5) 飞书 SDK（2026-11-21）------------------------------------------- #
+#
+# ⚠️ **必须显式收集**：`lark_oapi` 只在 `feishu/worker.py::run()` 里做**延迟 import**
+# （主进程不能加载它 —— 它的 `ws.client.loop` 是模块级全局变量，见 bridge.py 的说明）。
+# PyInstaller 的静态分析看不到函数体内的 import，`collect_submodules("my_agent")`
+# 也不会顺带把它带进来。
+#
+# 漏掉它的症状**极其隐蔽**：主程序一切正常、设置页能保存，只有真的发消息时才报
+# "没有安装 lark-oapi" —— 而开发机上永远复现不了（那里装了这个包）。
+#
+# ⚠️ **不能** `collect_submodules("lark_oapi")`：实测会扫到 **10721 个**模块
+# （它把整个开放平台的每个业务域 × 每个版本 × 每个 model 都列了一遍），
+# 装进包里是几十 MB 的无用代码。真正需要的只有四块：
+#   · `ws` —— 长连接客户端
+#   · `event` —— 事件分发（`EventDispatcherHandler`）
+#   · `api.im` —— 消息事件与发消息（worker 里注册的那一个）
+#   · 顶层 `lark_oapi` —— `JSON.marshal` / `ws.Client` 的入口
+hiddenimports += ["lark_oapi", "lark_oapi.ws", "lark_oapi.event"]
+hiddenimports += collect_submodules("lark_oapi.api.im")
+
 # ---- 3) MCP SDK 与办公文档库 --------------------------------------------- #
 for package in ("mcp", "openpyxl", "docx", "pypdf", "sse_starlette"):
     try:

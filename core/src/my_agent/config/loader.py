@@ -22,6 +22,7 @@ from .schemas import (
     AppSettings,
     AssistantsConfig,
     CustomSkillsConfig,
+    FeishuConfig,
     GroupsConfig,
     McpConfig,
     ModelsConfig,
@@ -1044,6 +1045,36 @@ class ConfigStore:
     def save_groups(self, config: GroupsConfig) -> GroupsConfig:
         validated = GroupsConfig.model_validate(config.model_dump(mode="json"))
         self._write_json(self._paths.groups_file, validated.model_dump(mode="json"))
+        return validated
+
+    
+    
+    
+    
+    
+    
+    
+    def load_feishu(self) -> FeishuConfig:
+
+
+
+
+
+        path = self._paths.feishu_file
+        if not path.exists():
+            config = FeishuConfig(bots=[])
+            self._write_json(path, config.model_dump(mode="json"))
+            return config
+        try:
+            raw = self._read_json(path)
+            return FeishuConfig.model_validate(raw)
+        except (ConfigError, ValueError) as exc:
+            logger.warning("飞书机器人清单读取失败，按空处理：%s", exc)
+            return FeishuConfig(bots=[])
+
+    def save_feishu(self, config: FeishuConfig) -> FeishuConfig:
+        validated = FeishuConfig.model_validate(config.model_dump(mode="json"))
+        self._write_json(self._paths.feishu_file, validated.model_dump(mode="json"))
         return validated
 
     

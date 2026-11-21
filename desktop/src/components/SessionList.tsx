@@ -7,6 +7,7 @@ import {
   Pencil,
   PictureInPicture2,
   Search,
+  Send,
   Trash2,
   Eraser,
   AlertTriangle,
@@ -383,6 +384,17 @@ export function SessionList() {
                             active ? 'font-medium text-brand' : 'text-ink',
                           )}
                         >
+                          {
+
+
+}
+                          {session.source === 'feishu' ? (
+                            <Send
+                              size={10}
+                              className="mr-1 inline-block shrink-0 align-[-1px] text-brand/70"
+                              aria-label="来自飞书"
+                            />
+                          ) : null}
                           {session.title}
                         </div>
                       )}

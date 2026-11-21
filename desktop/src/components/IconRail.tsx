@@ -10,6 +10,7 @@ import {
   Palette,
   Plug,
   ScrollText,
+  Send,
   ShieldCheck,
   Sparkles,
   Users,
@@ -81,6 +82,8 @@ const ITEMS: RailItem[] = [
   
   
   { key: 'mcp', label: 'MCP', icon: Plug },
+  
+  { key: 'feishu', label: '飞书', icon: Send },
   { key: 'workspace', label: '产物', icon: FolderOpen },
   { key: 'calendar', label: '日历', icon: CalendarDays },
   { key: 'audit', label: '日志', icon: ScrollText },
@@ -192,7 +195,7 @@ export function IconRail() {
       </div>
 
       <div className="pb-1 text-center text-[10px] leading-tight text-ink-faint">
-        v{appInfo?.version ?? '1.0.3'}
+        v{appInfo?.version ?? '1.0.4'}
       </div>
 
       {}

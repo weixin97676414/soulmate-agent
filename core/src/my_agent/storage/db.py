@@ -20,7 +20,7 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 13
+SCHEMA_VERSION = 14
 
 SCHEMA_V1 = """
 CREATE TABLE IF NOT EXISTS sessions (
@@ -324,6 +324,19 @@ CREATE INDEX IF NOT EXISTS idx_group_events_thread ON group_events(group_id, thr
 """
 
 
+
+
+
+
+
+
+SCHEMA_V14 = """
+ALTER TABLE sessions ADD COLUMN source TEXT NOT NULL DEFAULT 'local';
+ALTER TABLE sessions ADD COLUMN external_id TEXT NOT NULL DEFAULT '';
+CREATE INDEX IF NOT EXISTS idx_sessions_external ON sessions(source, external_id);
+"""
+
+
 MIGRATIONS: dict[int, str] = {
     1: SCHEMA_V1,
     2: SCHEMA_V2,
@@ -338,6 +351,7 @@ MIGRATIONS: dict[int, str] = {
     11: SCHEMA_V11,
     12: SCHEMA_V12,
     13: SCHEMA_V13,
+    14: SCHEMA_V14,
 }
 
 

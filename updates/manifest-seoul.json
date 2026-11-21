@@ -1,10 +1,10 @@
 {
-  "version": "1.0.3",
-  "min_from": "1.0.3",
+  "version": "1.0.4",
+  "min_from": "1.0.4",
   "line": "seoul",
-  "generated_at": "2026-11-13T01:07:52.821Z",
+  "generated_at": "2026-11-21T17:26:57.072Z",
   "base_url": "https://raw.githubusercontent.com/weixin97676414/soulmate-agent/main/updates",
-  "full_package": "https://github.com/weixin97676414/soulmate-agent/releases/download/v1.0.3/Soulmate-Agent-Setup-1.0.3.exe",
+  "full_package": "https://github.com/weixin97676414/soulmate-agent/releases/download/v1.0.4/Soulmate-Agent-Setup-1.0.4.exe",
   "files": [
     {
       "target": "core",
@@ -9836,15 +9836,15 @@
     },
     {
       "target": "renderer",
-      "path": "assets/index-CNzNo9y5.css",
-      "size": 234255,
-      "sha256": "26a939cfc7f806fc8ef0e5f24683d600da00a0677202b990ccacc375719bda8d"
+      "path": "assets/index-B9Z-CZ2n.css",
+      "size": 235012,
+      "sha256": "3fe3de1b1240321a6a7b0159bdf2d5b22b007f3cf39450144378d45894358761"
     },
     {
       "target": "renderer",
-      "path": "assets/index-COuIyQIq.js",
-      "size": 1407603,
-      "sha256": "2995d511cab3a7c148bf9af957db7bd021dab02cd89a003132ba3f1608903db8"
+      "path": "assets/index-BA5tNtcK.js",
+      "size": 1422359,
+      "sha256": "c07f4f2014075346a3d585320107ca461d84fd8567b62627f6c5ebae1f6ce3d0"
     },
     {
       "target": "renderer",
@@ -9856,7 +9856,7 @@
       "target": "renderer",
       "path": "index.html",
       "size": 1803,
-      "sha256": "d22518d5c88330ca71bf2e396e01e740eb6c30d6daa245f2a200a3b9a327c420"
+      "sha256": "941087f531e316f07695d7caa2f5dc189eafdee319281f3d9f209c8177363adf"
     }
   ]
 }

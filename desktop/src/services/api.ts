@@ -16,6 +16,8 @@ import type {
   ConfirmModeState,
   CustomSkillDef,
   FileRecord,
+  FeishuBot,
+  FeishuStatus,
   GroupProfile,
   GroupThread,
   GroupUpdate,
@@ -698,6 +700,54 @@ export class AgentApi {
     this.get<{ session_id: string; messages: HistoryMessage[] }>(`/v1/sessions/${id}/messages`)
   clearMessages = (id: string) =>
     this.send<{ ok: boolean }>(`/v1/sessions/${id}/messages`, 'DELETE')
+
+  
+  
+  
+  
+  listFeishuBots = () => this.get<{ bots: FeishuBot[] }>('/v1/feishu/bots')
+
+  createFeishuBot = (payload: {
+    name: string
+    app_id: string
+    app_secret?: string
+    assistant_id: string
+    enabled?: boolean
+    group_policy?: 'mention' | 'all'
+    sync_reply_to_feishu?: boolean
+  }) => this.send<{ bot: FeishuBot }>('/v1/feishu/bots', 'POST', payload)
+
+  updateFeishuBot = (
+    id: string,
+    patch: Partial<{
+      name: string
+      app_id: string
+      
+      app_secret: string
+      assistant_id: string
+      enabled: boolean
+      group_policy: 'mention' | 'all'
+      sync_reply_to_feishu: boolean
+    }>,
+  ) => this.send<{ bot: FeishuBot }>(`/v1/feishu/bots/${id}`, 'PATCH', patch)
+
+  deleteFeishuBot = (id: string) =>
+    this.send<{ ok: boolean }>(`/v1/feishu/bots/${id}`, 'DELETE')
+
+  
+
+
+
+
+
+  testFeishuBot = (payload: { bot_id?: string; app_id?: string; app_secret?: string }) =>
+    this.send<{ ok: boolean; app_name: string; open_id: string }>(
+      '/v1/feishu/test',
+      'POST',
+      payload,
+    )
+
+  feishuStatus = () => this.get<FeishuStatus>('/v1/feishu/status')
 
   
   getFiles = (kind?: 'upload' | 'artifact') =>

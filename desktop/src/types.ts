@@ -24,6 +24,13 @@ export interface SessionSummary {
   created_at: number
   updated_at: number
   message_count: number
+  
+
+
+
+
+
+  source?: string
 }
 
 export interface HistoryMessage {
@@ -1467,4 +1474,35 @@ export interface ImportOutcome {
   
   skills_missing?: string[]
   results: ImportResultRow[]
+}
+
+
+
+
+
+
+
+
+
+
+export interface FeishuBot {
+  id: string
+  name: string
+  app_id: string
+  
+  assistant_id: string
+  enabled: boolean
+  
+  group_policy: 'mention' | 'all'
+  
+  sync_reply_to_feishu: boolean
+  
+  has_secret: boolean
+}
+
+
+export interface FeishuStatus {
+  
+  bridge: 'running' | 'not_started'
+  bots: Array<{ id: string; state: string; error: string }>
 }

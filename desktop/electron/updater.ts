@@ -69,14 +69,14 @@ const LINES = {
   cn: {
     baseUrl: 'https://china.xinjianxue.com/updates',
     fullPackage: isMac
-      ? 'https://china.xinjianxue.com/download/mac/Soulmate-Agent-1.0.3.dmg'
-      : 'https://china.xinjianxue.com/download/win/Soulmate-Agent-Setup-1.0.3.exe',
+      ? 'https://china.xinjianxue.com/download/mac/Soulmate-Agent-1.0.4.dmg'
+      : 'https://china.xinjianxue.com/download/win/Soulmate-Agent-Setup-1.0.4.exe',
   },
   seoul: {
     baseUrl: 'https://raw.githubusercontent.com/weixin97676414/soulmate-agent/main/updates',
     fullPackage: isMac
-      ? 'https://github.com/weixin97676414/soulmate-agent/releases/download/v1.0.3/Soulmate-Agent-1.0.3.dmg'
-      : 'https://github.com/weixin97676414/soulmate-agent/releases/download/v1.0.3/Soulmate-Agent-Setup-1.0.3.exe',
+      ? 'https://github.com/weixin97676414/soulmate-agent/releases/download/v1.0.4/Soulmate-Agent-1.0.4.dmg'
+      : 'https://github.com/weixin97676414/soulmate-agent/releases/download/v1.0.4/Soulmate-Agent-Setup-1.0.4.exe',
   },
 } as const
 

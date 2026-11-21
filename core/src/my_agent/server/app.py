@@ -27,6 +27,7 @@ from .routes import (
     audit,
     chat,
     events,
+    feishu,
     files,
     groups,
     life,
@@ -235,6 +236,7 @@ def create_app(*, runtime: AppRuntime | None = None, token: str = "") -> FastAPI
     app.include_router(runs.router)
     app.include_router(assistants.router)
     app.include_router(groups.router)
+    app.include_router(feishu.router)
     app.include_router(usage.router)
     app.include_router(metrics.router)
     app.include_router(traces.router)

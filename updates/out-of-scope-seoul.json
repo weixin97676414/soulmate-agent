@@ -1,8 +1,8 @@
 {
-  "version": "1.0.3",
-  "generated_at": "2026-11-13T01:07:53.359Z",
-  "exe_sha256": "df8ff2cdb9002baf617ec167c1f5a1180dfff728f23f3e710fb29e9421351c39",
-  "asar_sha256": "5a29c9ad6380c5948b01582feedaded4ed7b3348e1fa7e47a3994135069f0631",
+  "version": "1.0.4",
+  "generated_at": "2026-11-21T17:26:57.109Z",
+  "exe_sha256": "b957b8dc580d24a019280c3f890021674aa51dfdc2f5f44d3865d425c19762e7",
+  "asar_sha256": "30b24919b515b1e74579ee77decfce0dc26a8a50acf7919bb3cbf63de01ffc9e",
   "entries": [
     [
       "LICENSE.electron.txt",
@@ -16406,7 +16406,7 @@
     ],
     [
       "resources/agent-core/agent-core.exe",
-      46772368
+      63753217
     ],
     [
       "resources/app.asar",

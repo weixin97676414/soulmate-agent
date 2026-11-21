@@ -40,6 +40,12 @@ class Session:
     assistant_id: str | None = None
     
     reasoning_effort: str | None = None
+    
+    
+    source: str = "local"
+    
+    
+    external_id: str = ""
     created_at: float = field(default_factory=time.time)
     updated_at: float = field(default_factory=time.time)
     memory: MemoryManager = field(default_factory=MemoryManager)
@@ -121,6 +127,8 @@ class Session:
             
             
             "reasoning_effort": self.reasoning_effort,
+            
+            "source": self.source,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "message_count": self.message_count,
@@ -234,6 +242,8 @@ class SessionManager:
                 enabled_skills=set(record.enabled_skills) if record.enabled_skills else None,
                 assistant_id=record.assistant_id,
                 reasoning_effort=record.reasoning_effort,
+                source=record.source,
+                external_id=record.external_id,
                 created_at=record.created_at,
                 updated_at=record.updated_at,
                 message_count=record.message_count,
@@ -248,9 +258,27 @@ class SessionManager:
     
     
     async def create(
-        self, *, model_id: str | None = None, title: str = "新对话"
+        self,
+        *,
+        model_id: str | None = None,
+        title: str = "新对话",
+        assistant_id: str | None = None,
+        source: str = "local",
+        external_id: str = "",
     ) -> Session:
-        session = Session(id=uuid.uuid4().hex[:12], title=title, model_id=model_id)
+
+
+
+
+
+        session = Session(
+            id=uuid.uuid4().hex[:12],
+            title=title,
+            model_id=model_id,
+            assistant_id=assistant_id,
+            source=source,
+            external_id=external_id,
+        )
         self._sessions[session.id] = session
         self._loaded.add(session.id)
         await self.persist(session, include_messages=True)
@@ -300,6 +328,8 @@ class SessionManager:
                 enabled_skills=set(record.enabled_skills) if record.enabled_skills else None,
                 assistant_id=record.assistant_id,
                 reasoning_effort=record.reasoning_effort,
+                source=record.source,
+                external_id=record.external_id,
                 created_at=record.created_at,
                 updated_at=record.updated_at,
                 message_count=record.message_count,
@@ -453,6 +483,10 @@ class SessionManager:
             enabled_skills=sorted(session.enabled_skills) if session.enabled_skills else None,
             assistant_id=session.assistant_id,
             reasoning_effort=session.reasoning_effort,
+            
+            
+            source=session.source,
+            external_id=session.external_id,
             context_summary=session.context_summary,
             context_summary_upto=session.context_summary_upto,
             message_count=session.message_count,

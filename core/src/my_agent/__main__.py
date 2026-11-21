@@ -126,6 +126,20 @@ def main(argv: list[str] | None = None) -> int:
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    if argv[:1] == ["--feishu-worker"]:
+        from .feishu.worker import run as run_feishu_worker
+
+        return run_feishu_worker()
+
+    
+    
     if argv and argv[0] == "mcp-sample":
         from .mcp.sample_server import main as sample_main
 

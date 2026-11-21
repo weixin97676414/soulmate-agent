@@ -1557,6 +1557,63 @@ class GroupsConfig(BaseModel):
         return len(self.groups) != before
 
 
+
+
+
+
+
+
+
+
+
+
+class FeishuBot(BaseModel):
+
+
+
+
+
+
+    id: str = Field(..., min_length=1, max_length=64)
+    name: str = Field(..., min_length=1, max_length=48)
+    app_id: str = Field(..., min_length=1, max_length=128)
+    
+    assistant_id: str = Field(..., min_length=1, max_length=64)
+    enabled: bool = True
+    
+    group_policy: Literal["mention", "all"] = Field(
+        "mention", description="群聊响应方式：mention = 只回 @ 它的消息；all = 全部都回"
+    )
+    
+    sync_reply_to_feishu: bool = Field(
+        True, description="客户端发出的回复是否同步发回飞书"
+    )
+
+
+class FeishuConfig(BaseModel):
+
+
+    bots: list[FeishuBot] = Field(default_factory=list)
+
+    def get(self, bot_id: str) -> FeishuBot | None:
+        return next((item for item in self.bots if item.id == bot_id), None)
+
+    def upsert(self, bot: FeishuBot) -> None:
+        for index, item in enumerate(self.bots):
+            if item.id == bot.id:
+                self.bots[index] = bot
+                return
+        self.bots.append(bot)
+
+    def remove(self, bot_id: str) -> bool:
+        before = len(self.bots)
+        self.bots = [item for item in self.bots if item.id != bot_id]
+        return len(self.bots) != before
+
+    def enabled_bots(self) -> list[FeishuBot]:
+        return [item for item in self.bots if item.enabled]
+
+
 class AppConfig(BaseModel):
 
 

@@ -46,6 +46,8 @@ export type ViewKey =
   | 'appearance'
   | 'skills'
   | 'mcp'
+  
+  | 'feishu'
   | 'workspace'
   | 'usage'
   | 'calendar'

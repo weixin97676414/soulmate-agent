@@ -23,15 +23,14 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, field_validator
 
-from ...agent.context import ContextPolicy
-from ...agent.engine import Agent, AgentConfig, AgentEvent
+from ...agent.engine import Agent, AgentEvent
+from ...agent.turn_builder import build_agent_config
 from ...llm.base import ImagePart
 from ...llm.router import ModelRouter
 from ...observability.metrics import METRICS
 from ...observability.request_context import bind_session, current_session_id
 from ...observability.tracer import Tracer
 from ...skill.base import ConfirmRequest, InteractionRequest, SkillContext
-from ...skill.custom import persona_with_instructions
 
 
 
@@ -243,6 +242,47 @@ async def build_image_parts(runtime: AppRuntime, file_ids: list[str]) -> list[Im
     return parts
 
 
+async def _echo_to_feishu(runtime: AppRuntime, session: Any, text: str) -> None:
+
+
+
+
+
+
+
+
+    from ...feishu import config as feishu_config
+    from ...feishu.client import FeishuAPIError, client_for
+
+    bot = next(
+        (
+            item
+            for item in feishu_config.load_bots(runtime.config_store).bots
+            if item.assistant_id == session.assistant_id
+            and item.enabled
+            and item.sync_reply_to_feishu
+        ),
+        None,
+    )
+    if bot is None:
+        return
+    secret = feishu_config.get_secret(runtime.paths, bot.id)
+    if not secret:
+        logger.warning("飞书机器人 %s 没有 App Secret，客户端回复没法同步回去", bot.id)
+        return
+    try:
+        await client_for(bot.app_id, secret).send_text(session.external_id, text)
+    except FeishuAPIError as exc:
+        logger.warning("回发飞书失败 session=%s：%s", session.id, exc)
+        with contextlib.suppress(Exception):
+            await runtime.audit.op(
+                kind="feishu",
+                action="send_failed",
+                target=session.external_id,
+                detail=f"客户端回复回发失败：{exc}"[:300],
+            )
+
+
 @router.post("/v1/chat")
 async def chat(payload: ChatRequest, request: Request) -> StreamingResponse:
     runtime: AppRuntime = get_runtime(request)
@@ -417,86 +457,21 @@ async def chat(payload: ChatRequest, request: Request) -> StreamingResponse:
         confirm_mode=lambda: runtime.assistant_confirm_mode(session.assistant_id),
     )
 
-    agent_cfg = settings.agent
     agent = Agent(
         llm=llm,
         
         utility_llm=runtime.utility_llm(llm),
         skill_manager=runtime.skills,
         memory=session.memory,
-        config=AgentConfig(
-            
-            
-            max_iterations=(
-                profile.max_iterations if profile and profile.max_iterations else agent_cfg.max_iterations
-            ),
-            max_tool_calls_per_turn=(
-                profile.max_tool_calls_per_turn
-                if profile and profile.max_tool_calls_per_turn
-                else agent_cfg.max_tool_calls_per_turn
-            ),
-            temperature=(
-                profile.temperature
-                if profile and profile.temperature is not None
-                else agent_cfg.temperature
-            ),
-            
-            
-            
-            top_p=agent_cfg.top_p,
-            frequency_penalty=agent_cfg.frequency_penalty,
-            presence_penalty=agent_cfg.presence_penalty,
-            
-            
-            
-            reasoning_effort=session.reasoning_effort,
-            
-            
-            
-            
-            
-            
-            
-            
-            persona=lambda: persona_with_instructions(  
-                runtime, session.assistant_id, session.enabled_skills
-            ),
-            same_tool_failure_tolerance=agent_cfg.same_tool_failure_tolerance,
-            
-            
-            
-            enabled_skills=runtime.skills.allowed_names(
-                assistant_id=session.assistant_id,
-                enabled_skills=session.enabled_skills,
-            ),
-            
-            
-            target_assistant=session.assistant_id or "",
-            
-            
-            
-            
-            
-            token_limit=runtime.effective_context_tokens(model_id),
-            
-            supports_vision=getattr(llm, "supports_vision", False),
-            context_policy=ContextPolicy(
-                keep_recent=agent_cfg.keep_recent_messages,
-                compress_threshold=agent_cfg.compress_threshold,
-            ),
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            enable_planner=True,
+        
+        
+        config=build_agent_config(
+            runtime=runtime,
+            session=session,
+            profile=profile,
+            model_id=model_id,
+            llm=llm,
             plan_decider=plan_decider,
-            enable_reflection=agent_cfg.enable_reflection,
-            reflection_rounds=agent_cfg.reflection_rounds,
         ),
         ctx=ctx,
         tracer=tracer,
@@ -504,6 +479,10 @@ async def chat(payload: ChatRequest, request: Request) -> StreamingResponse:
 
     
     run_stats: dict[str, Any] = {}
+    
+    
+    
+    collected: list[str] = []
 
     
     async def produce() -> None:
@@ -511,6 +490,13 @@ async def chat(payload: ChatRequest, request: Request) -> StreamingResponse:
             async for event in agent.run_stream(user_text, images=image_parts):
                 if event.type == "done":
                     run_stats["iterations"] = int(event.data.get("iterations") or 0)
+                elif event.type == "delta":
+                    
+                    
+                    data = event.data or {}
+                    chunk = data.get("text") or data.get("content")
+                    if isinstance(chunk, str):
+                        collected.append(chunk)
                 await queue.put(event)
         except asyncio.CancelledError:
             logger.info("任务已取消 session=%s", session.id)
@@ -540,6 +526,16 @@ async def chat(payload: ChatRequest, request: Request) -> StreamingResponse:
             
             
             await queue.put(None)
+            
+            
+            
+            
+            if session.source == "feishu" and session.external_id:
+                reply = "".join(collected).strip()
+                if reply:
+                    asyncio.create_task(
+                        _echo_to_feishu(runtime, session, reply), name="feishu-echo"
+                    )
 
     
     async def event_stream() -> AsyncIterator[str]:
